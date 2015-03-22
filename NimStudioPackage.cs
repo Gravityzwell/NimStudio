@@ -46,13 +46,13 @@ namespace NimStudio.NimStudio {
 
     [ProvideLanguageExtensionAttribute(typeof(VSNimLangServ), VSNConst.FileExt)]
 
-    [ProvideLanguageCodeExpansionAttribute(typeof(VSNimLangServ), VSNConst.LangName,
-                 106,           // Resource ID
-                 "testlanguage", // key for snippet templates
-                 @"%InstallRoot%\Test Language\SnippetsIndex.xml",  // Path to snippets index
-                 SearchPaths = @"%InstallRoot%\Test Language\Snippets\%LCID%\Snippets\;" +
-                               @"%TestDocs%\Code Snippets\Test Language\Test Code Snippets"
-                 )]
+    //[ProvideLanguageCodeExpansionAttribute(typeof(VSNimLangServ), VSNConst.LangName,
+    //             106,           // Resource ID
+    //             "testlanguage", // key for snippet templates
+    //             @"%InstallRoot%\Test Language\SnippetsIndex.xml",  // Path to snippets index
+    //             SearchPaths = @"%InstallRoot%\Test Language\Snippets\%LCID%\Snippets\;" +
+    //                           @"%TestDocs%\Code Snippets\Test Language\Test Code Snippets"
+    //             )]
 
     [ProvideLanguageEditorOptionPageAttribute(
              typeof(VSNimOptions),

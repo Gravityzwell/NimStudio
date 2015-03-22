@@ -66,8 +66,8 @@ namespace NimStudio.NimStudio {
         public void init() {
             proc = new Process();
             proc.StartInfo.CreateNoWindow = true;
-            proc.StartInfo.WorkingDirectory = @"d:\source\nim1";
-            proc.StartInfo.Arguments = @"--stdin d:\source\nim1\htmlarc.nim";
+            proc.StartInfo.WorkingDirectory = @"c:\MyProgs\Nim";
+            proc.StartInfo.Arguments = @"--stdin c:\MyProgs\Nim\htmlarc.nim";
             proc.StartInfo.FileName = @"c:\MyProgs\Nim\bin\nimsuggest.exe";
             proc.StartInfo.RedirectStandardOutput = true;
             proc.StartInfo.RedirectStandardError = true;
