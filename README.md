@@ -3,7 +3,7 @@ NimStudio
 
 Visual Studio support for the [Nim](https://github.com/Araq/Nim) language.
 
-NOTE: This project is very early in development, and is not yet functional.
+NOTE: This project is in the early stage of development, and is not yet functional.
 
 VSIX
 ----
