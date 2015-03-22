@@ -1,5 +1,5 @@
 ##NimStudio
-
+---
 Visual Studio support for the [Nim](https://github.com/Araq/Nim) language.
 
 ###*NOTE*: This project is in the early stages of development, and is **not yet functional**.
