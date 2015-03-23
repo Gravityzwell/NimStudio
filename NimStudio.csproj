@@ -154,6 +154,7 @@
     <Compile Include="PkgCmdID.cs" />
     <None Include="VSNimCodeXtra.cs" />
     <Compile Include="VSNimCodeWindow.cs" />
+    <Compile Include="VSNimINI.cs" />
     <Compile Include="VSNimIntellisense.cs" />
     <Compile Include="VSNimLangServ.cs" />
     <Compile Include="VSNimScanner.cs" />

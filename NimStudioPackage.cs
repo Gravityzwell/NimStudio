@@ -94,6 +94,7 @@ namespace NimStudio.NimStudio {
 
         private uint m_ComponentID;
         public static NimSuggestProc nimsuggest;
+        //public static string UserDataPath;
 
         public NimStudioPackage() {
             //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering constructor for: {0}", this.ToString()));
@@ -134,6 +135,9 @@ namespace NimStudio.NimStudio {
 
             nimsuggest = new NimSuggestProc();
             nimsuggest.init();
+            System.Diagnostics.Debug.Print("Dir is:",this.UserDataPath);
+            System.Diagnostics.Debug.Print("Dir is:", this.UserLocalDataPath);
+            System.Diagnostics.Debug.Print("Dir is:", this.UserDataPath);
         }
 
         public int FDoIdle(uint grfidlef) {

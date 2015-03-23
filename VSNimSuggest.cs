@@ -27,11 +27,11 @@ namespace NimStudio.NimStudio {
         }
 
 
-        public void query(string filepath) {
+        public void query(string filepath, string qtype, int qline, int qcol) {
             conout.Clear();
             sugs.Clear();
             queryfinished = false;
-            proc.StandardInput.WriteLine(str);
+            proc.StandardInput.WriteLine();
             int waitcount = 0;
             while (!queryfinished) {
                 Thread.Sleep(50);
