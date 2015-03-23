@@ -52,11 +52,9 @@ namespace NimStudio.NimStudio {
                     qwords[7] = qwords[7].Trim(new char[]{'"'});
                     if (qwords[7] != "")
                         qwords[7] = "\n\n" + qwords[7];
-                    sugs.Add(new List<string>(new string[] { qwords[2], qwords[3] + qwords[7]  }));
+                    sugs.Add(new List<string>(new string[] { qwords[2], qwords[3] + qwords[7] }));
                 }
-                string word1 = "aa";
             }
-            
         }
 
         public void quit() {

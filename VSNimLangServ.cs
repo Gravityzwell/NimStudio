@@ -40,6 +40,24 @@ namespace NimStudio.NimStudio {
             return m_scanner;
         }
 
+
+        void UpdateViewInfo(IVsTextView textView, int line, int col) {
+            if (textView != null) {
+                var source = GetSource(textView);
+                if (source != null) {
+                    if (line >= 0 && col >= 0 || !ErrorHandler.Failed(textView.GetCaretPos(out line, out col)))
+                        System.Diagnostics.Debug.Write("Activated : " + source.GetFilePath());
+                        //source.GetEngine().SetTextCursorLocation(source.FileIndex, line + 1, col + 1);
+                }
+            }
+        }
+
+        public override void OnActiveViewChanged(IVsTextView textView) {
+            UpdateViewInfo(textView, -1, -1);
+            base.OnActiveViewChanged(textView);
+        }
+
+
         public override string Name {
             get { return VSNConst.LangName; }
         }

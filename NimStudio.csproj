@@ -152,9 +152,12 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PkgCmdID.cs" />
+    <None Include="VSNimCodeLib.cs" />
+    <Compile Include="VSNimCodeWindow.cs" />
     <Compile Include="VSNimIntellisense.cs" />
     <Compile Include="VSNimLangServ.cs" />
     <Compile Include="VSNimScanner.cs" />
+    <Compile Include="VSNimSelectionListener.cs" />
     <Compile Include="VSNimSuggest.cs" />
   </ItemGroup>
   <ItemGroup>
