@@ -12,7 +12,6 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Operations;
 using Microsoft.VisualStudio.TextManager.Interop;
-using Microsoft.VisualStudioTools;
 using Microsoft.VisualStudio.Utilities;
 using IServiceProvider = System.IServiceProvider;
 
@@ -203,12 +202,12 @@ namespace NimStudio.NimStudio {
         }
 
         private void QueryStatusExtractMethod(OLECMD[] prgCmds, int i) {
-            var activeView = CommonPackage.GetActiveTextView(_serviceProvider);
+            //var activeView = CommonPackage.GetActiveTextView(_serviceProvider);
 
         }
 
         private void QueryStatusRename(OLECMD[] prgCmds, int i) {
-            IWpfTextView activeView = CommonPackage.GetActiveTextView(_serviceProvider);
+            //IWpfTextView activeView = CommonPackage.GetActiveTextView(_serviceProvider);
         }
 
         internal void DoIdle(IOleComponentManager compMgr) {

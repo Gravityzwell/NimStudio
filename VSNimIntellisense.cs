@@ -107,26 +107,18 @@ namespace NimStudio.NimStudio {
 
         void ICompletionSource.AugmentCompletionSession(ICompletionSession session, IList<CompletionSet> completionSets) {
             List<string> strList = new List<string>();
-            //var model = NimStudioPackage.GetGlobalService(typeof(SComponentModel));
-            //IComponentModel compMod = NimStudioPackage.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
-            //var adapterFactory = compMod.GetService<IVsEditorAdaptersFactoryService>();
-            //IVsTextView textView = adapterFactory.CreateVsTextViewAdapter(GetService(typeof(IOleServiceProvider)) as IOleServiceProvider);
 
-            //IComponentModel componentModel = NimStudioPackage.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
-            //IVsEditorAdaptersFactoryService editorFactory = componentModel.GetService<IVsEditorAdaptersFactoryService>();
-            //Microsoft.VisualStudio.OLE.Interop.IServiceProvider sp = NimStudioPackage.GetGlobalService(typeof(Microsoft.VisualStudio.OLE.Interop.IServiceProvider)) as Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
-            //IVsTextView textview = editorFactory.CreateVsTextViewAdapter(sp);
-
-            int caretline, caretcol;
-            caretline = VSNCompletionCommandHandler.caretline;
-            caretcol = VSNCompletionCommandHandler.caretcol;
+            // should pull this from VSNimLangServ.textview_current
+            int caretlineline2, caretcol2;
+            VSNimLangServ.textview_current.GetCaretPos(out caretlineline2, out caretcol2);
+            caretlineline2++;
+            int caretline = VSNCompletionCommandHandler.caretline;
+            int caretcol = VSNCompletionCommandHandler.caretcol;
             //textview.GetCaretPos(out line, out idx);
 
             String nimsugcmd = String.Format("sug htmlarc.nim:{0}:{1}",caretline,caretcol);
             NimStudioPackage.nimsuggest.conwrite(nimsugcmd);
 
-            //var adapterFactory = model.GetService<IVsEditorAdaptersFactoryService>();
-            //NimStudioPackage.GetGlobalService
             //strList.Add("addition");
             //strList.Add("adaptation");
             //strList.Add("subtraction");
@@ -140,9 +132,7 @@ namespace NimStudio.NimStudio {
             ITextStructureNavigator navigator = m_sourceProvider.NavigatorService.GetTextStructureNavigator(m_textBuffer);
             TextExtent extent = navigator.GetExtentOfWord(currentPoint);
             string w1 = currentPoint.Snapshot.GetText(extent.Span);
-            //var applicableTo = currentPoint.Snapshot.CreateTrackingSpan(extent.Span, SpanTrackingMode.EdgeInclusive);
             var startpoint = session.GetTriggerPoint(session.TextView.TextBuffer).GetPosition(currentPoint.Snapshot);
-            // Microsoft.VisualStudio.Text.ITrackingSpan {Microsoft.VisualStudio.Text.Implementation.ForwardFidelityTrackingSpan}
 
             ITrackingSpan applicableTo;
             if (w1==".")

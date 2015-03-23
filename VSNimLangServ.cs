@@ -19,6 +19,8 @@ namespace NimStudio.NimStudio {
     public class VSNimLangServ: LanguageService {
         private VSNimScanner m_scanner;
         private LanguagePreferences languageprefs;
+        public static IVsTextView textview_current;
+        public static string codefile_path_current;
 
         public override string GetFormatFilterList() {
             return "Nim file(*.nim)";
@@ -41,20 +43,18 @@ namespace NimStudio.NimStudio {
         }
 
 
-        void UpdateViewInfo(IVsTextView textView, int line, int col) {
-            if (textView != null) {
-                var source = GetSource(textView);
-                if (source != null) {
-                    if (line >= 0 && col >= 0 || !ErrorHandler.Failed(textView.GetCaretPos(out line, out col)))
-                        System.Diagnostics.Debug.Write("Activated : " + source.GetFilePath());
-                        //source.GetEngine().SetTextCursorLocation(source.FileIndex, line + 1, col + 1);
-                }
+        public override void OnActiveViewChanged(IVsTextView textview) {
+            if (textview != null) {
+                textview_current = textview;
+                var source = GetSource(textview);
+                codefile_path_current = source.GetFilePath();
+                //if (source != null) {
+                //    int line, col;
+                //    textview.GetCaretPos(out line, out col);
+                //    System.Diagnostics.Debug.Write("Activated : " + source.GetFilePath());
+                //}
             }
-        }
-
-        public override void OnActiveViewChanged(IVsTextView textView) {
-            UpdateViewInfo(textView, -1, -1);
-            base.OnActiveViewChanged(textView);
+            base.OnActiveViewChanged(textview);
         }
 
 
