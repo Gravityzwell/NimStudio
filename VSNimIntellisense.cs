@@ -136,7 +136,7 @@ namespace NimStudio.NimStudio {
             var startpoint = session.GetTriggerPoint(session.TextView.TextBuffer).GetPosition(currentPoint.Snapshot);
 
             ITrackingSpan applicableTo;
-            if (w1==".")
+            if (w1=="." || true)
                 applicableTo = currentPoint.Snapshot.CreateTrackingSpan(startpoint, 0, SpanTrackingMode.EdgeInclusive);
             else
                 applicableTo = currentPoint.Snapshot.CreateTrackingSpan(extent.Span, SpanTrackingMode.EdgeInclusive);
