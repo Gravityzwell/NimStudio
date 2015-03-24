@@ -276,11 +276,18 @@ namespace NimStudio.NimStudio {
                     (!typedChar.Equals(char.MinValue) && char.IsLetterOrDigit(typedChar)) ) {
                 if (m_session == null || m_session.IsDismissed) {
                     this.TriggerCompletion();
-                    m_session.Filter();
+                    System.Threading.Thread.Sleep(50);
+                    if (m_session == null) {
+                        handled = false;
+                        Debug.Print("session not created!");
+                    } else {
+                        m_session.Filter();
+                        handled = true;
+                    }
                 } else {
                     m_session.Filter(); // session active
+                    handled = true;
                 }
-                handled = true;
             } else if (commandID == (uint)VSConstants.VSStd2KCmdID.BACKSPACE || commandID == (uint)VSConstants.VSStd2KCmdID.DELETE) {
                 // redo the filter if there is a deletion
                 if (m_session != null && !m_session.IsDismissed)

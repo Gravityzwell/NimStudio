@@ -13,7 +13,7 @@ namespace NimStudio.NimStudio {
 
     public class NimSuggestProc {
         private Process proc = null;
-        public List<string> conout = new List<string>();
+        private List<string> conout = new List<string>();
         public List<List<string>> sugs = new List<List<string>>();
         //private Thread thread = null;
         private bool queryfinished = false;
@@ -37,6 +37,7 @@ namespace NimStudio.NimStudio {
             string fstr = Path.GetFileName(VSNimLangServ.codefile_path_current);
             if (fstr != filepath_prev) {
                 Close();
+                Init();
             }
             filepath_prev=fstr;
             conout.Clear();
@@ -54,13 +55,13 @@ namespace NimStudio.NimStudio {
                     break;
                 }
             }
-            foreach (string qstr in conout) {
-                string[] qwords = qstr.Split(new char[] { '\t' });
-                //List<string> qwords = new List<string>(qstr.Split(new Char[] { '\t' }));
+            string fnamestrip = Path.GetFileNameWithoutExtension(VSNimLangServ.codefile_path_current) + ".";
+            foreach (string cstr in conout) {
+                string[] qwords = cstr.Split(new char[] { '\t' });
                 if (qwords.Length < 2) break;
                 if (qwords[1] == "skProc" || qwords[1] == "skVar") {
                     //new List<string>(new string[]{"G","H","I"})
-                    qwords[2] = qwords[2].Replace("htmlarc.", "");
+                    qwords[2] = qwords[2].Replace(fnamestrip, "");
                     qwords[7] = qwords[7].Replace(@"\x0D\x0A", "\n");
                     qwords[7] = qwords[7].Trim(new char[] { '"' });
                     if (qwords[7] != "")
