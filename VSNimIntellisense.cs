@@ -276,11 +276,11 @@ namespace NimStudio.NimStudio {
                     (!typedChar.Equals(char.MinValue) && char.IsLetterOrDigit(typedChar)) ) {
                 if (m_session == null || m_session.IsDismissed) {
                     this.TriggerCompletion();
-                    System.Threading.Thread.Sleep(50);
                     if (m_session == null) {
                         handled = false;
-                        Debug.Print("session not created!");
+                        Debug.Print("NimStudio - Completion session not created.");
                     } else {
+                        Debug.Print("NimStudio - Completion session created. Tot:" + m_session.CompletionSets.Count.ToString());
                         m_session.Filter();
                         handled = true;
                     }
@@ -318,6 +318,7 @@ namespace NimStudio.NimStudio {
         private void OnSessionDismissed(object sender, EventArgs e) {
             m_session.Dismissed -= this.OnSessionDismissed;
             m_session = null;
+            Debug.Print("NimStudio - Completion session dismissed.");
         }
     }
 }

@@ -171,7 +171,7 @@ namespace NimStudio.NimStudio {
             }
             if (VSNimINI.Get("Main", nimexes[1]) != "") { 
                 nimsuggest = new NimSuggestProc();
-                nimsuggest.Init();
+                //nimsuggest.Init();
             }
         }
 
