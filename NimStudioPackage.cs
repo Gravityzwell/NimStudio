@@ -2,6 +2,7 @@
 //#define ivslang
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -94,6 +95,8 @@ namespace NimStudio.NimStudio {
 
         private uint m_ComponentID;
         public static NimSuggestProc nimsuggest;
+        public static NimStudioPackage nspackage;
+        public static string nimsettingsini;
         //public static string UserDataPath;
 
         public NimStudioPackage() {
@@ -104,6 +107,7 @@ namespace NimStudio.NimStudio {
 
             //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
             base.Initialize();
+            nspackage = this;
 
             #if ivslang
             LangInfo = new VSNLanguageInfo();
@@ -133,9 +137,38 @@ namespace NimStudio.NimStudio {
                 int hr = mgr.FRegisterComponent(this, crinfo, out m_ComponentID);
             }
 
-            nimsuggest = new NimSuggestProc();
-            nimsuggest.init();
-            System.Diagnostics.Debug.Print("Dir is:",this.UserDataPath);
+            nimsettingsini = System.IO.Path.Combine(UserDataPath, "nimstudio.ini");
+            System.Diagnostics.Debug.Print("Ini path is:", nimsettingsini);
+            VSNimINI.Init(nimsettingsini);
+            string[] nimexes = { "nim.exe", "nimsuggest.exe" };
+            for (int lexe = 0; lexe < 2; lexe++) {
+                if (VSNimINI.Get("Main", nimexes[lexe]) == "") {
+                    var patharr = new List<string>((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';'));
+                    patharr.Add(@"c:\nim\bin");
+                    foreach (string spathi in patharr) {
+                        string sfullpath = Path.Combine(spathi.Trim(), nimexes[lexe]);
+                        if (File.Exists(sfullpath)) {
+                            VSNimINI.Add("Main", nimexes[lexe], Path.GetFullPath(sfullpath));
+                            VSNimINI.Write();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (VSNimINI.Get("Main", nimexes[0]) == "" || VSNimINI.Get("Main", nimexes[1]) == "") {
+                string msg = "";
+                if (VSNimINI.Get("Main", nimexes[0]) == "" && VSNimINI.Get("Main", nimexes[1]) == "")
+                    msg = "Path to nim.exe and nimsuggest.exe not found.";
+                else
+                    msg = String.Format("Path to {0} not found.", (VSNimINI.Get("Main", nimexes[0]) == "") ? nimexes[0] : nimexes[1]);
+                    
+                System.Windows.Forms.MessageBox.Show(msg, "Nim configuration", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
+            }
+            if (VSNimINI.Get("Main", nimexes[1]) != "") { 
+                nimsuggest = new NimSuggestProc();
+                nimsuggest.init();
+            }
             System.Diagnostics.Debug.Print("Dir is:", this.UserLocalDataPath);
             System.Diagnostics.Debug.Print("Dir is:", this.UserDataPath);
         }

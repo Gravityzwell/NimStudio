@@ -9,11 +9,34 @@ using System.Collections;
 
 namespace NimStudio.NimStudio {
 
-    public class VSNimINI {
-        public SortedDictionary<string, string> inidct = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        private string inifilepath;
+    class VSNimUtil {
+        public static void NimExeFind(NimStudioPackage pkg) {
+            string[] nimexes = { "nim.exe", "nimsuggest.exe" };
 
-        public VSNimINI(string inipath) {
+            var patharr = new List<string>((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';'));
+            patharr.Add(@"c:\myprogs\nim\bin");
+            foreach (string nimexe in nimexes) {
+                foreach (string spathi in patharr) {
+                    if (VSNimINI.Get("Main", nimexe) == "") {
+                        string sfullpath = Path.Combine(spathi.Trim(), nimexe);
+                        if (File.Exists(sfullpath)) {
+                            VSNimINI.Add("Main", nimexe, Path.GetFullPath(sfullpath));
+                            VSNimINI.Write();
+                            pkg.GetType().GetProperty(nimexe.Replace(".", "")).SetValue(nimexe.Replace(".", ""), sfullpath);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public class VSNimINI {
+        private static SortedDictionary<string, string> inidct = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static string inifilepath;
+
+        public static void Init(string inipath) {
+            inidct.Clear();
             TextReader srfile = null;
             string linestr = null;
             string inisectcurrent = "MAIN";
@@ -47,7 +70,7 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        public string Get(string inisect, string inikey) {
+        public static string Get(string inisect, string inikey) {
             string dkey = inisect + "|" + inikey;
             if (inidct.ContainsKey(dkey))
                 return inidct[dkey];
@@ -56,7 +79,7 @@ namespace NimStudio.NimStudio {
         }
 
         // return the section as list of arraylist of inikeys+inivalues
-        public ArrayList Get(string inisect) {
+        public static ArrayList Get(string inisect) {
             ArrayList arrlst = new ArrayList();
             foreach (string dkey in inidct.Keys) {
                 string[] sectkeyarr = dkey.Split(new char[] { '|' }, 2);
@@ -66,24 +89,24 @@ namespace NimStudio.NimStudio {
             return arrlst;
         }
 
-        public void Add(string inisect, string inikey, string settingValue) {
+        public static void Add(string inisect, string inikey, string settingValue) {
             string dkey = inisect + "|" + inikey;
             if (inidct.ContainsKey(dkey))
                 inidct.Remove(dkey);
             inidct.Add(dkey, settingValue);
         }
 
-        public void Add(string inisect, string inikey) {
+        public static void Add(string inisect, string inikey) {
             Add(inisect, inikey, "");
         }
 
-        public void Delete(string inisect, string inikey) {
+        public static void Delete(string inisect, string inikey) {
             string dkey = inisect + "|" + inikey;
             if (inidct.ContainsKey(dkey))
                 inidct.Remove(dkey);
         }
 
-        public void Write(string inifilepathnew) {
+        public static void Write(string inifilepathnew) {
             ArrayList sections = new ArrayList();
             string inivalue = "";
             string inifilebuff = "";
@@ -113,9 +136,8 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        public void Write() {
+        public static void Write() {
             Write(inifilepath);
         }
     }
 }
-

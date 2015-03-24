@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -97,11 +98,23 @@ namespace NimStudio.NimStudio {
         }
 
         public void init() {
+            string nimsuggestexe = VSNimINI.Get("Main", "nimsuggest.exe");
+            if (nimsuggestexe == "") {
+                System.Diagnostics.Debug.Print("Nimsuggest.exe not set in nimstudio.ini!");
+                return;
+            }
+            if (!File.Exists(nimsuggestexe)) {
+                System.Diagnostics.Debug.Print("Nimsuggest.exe not found!");
+                return;
+            }
+            
             proc = new Process();
             proc.StartInfo.CreateNoWindow = true;
-            proc.StartInfo.WorkingDirectory = @"c:\MyProgs\Nim";
-            proc.StartInfo.Arguments = @"--stdin c:\MyProgs\Nim\htmlarc.nim";
-            proc.StartInfo.FileName = @"c:\MyProgs\Nim\bin\nimsuggest.exe";
+            //proc.StartInfo.WorkingDirectory = @"c:\MyProgs\Nim";
+            proc.StartInfo.WorkingDirectory = Path.GetDirectoryName(VSNimLangServ.codefile_path_current);
+            //proc.StartInfo.Arguments = @"--stdin c:\MyProgs\Nim\htmlarc.nim";
+            proc.StartInfo.Arguments = @"--stdin " + VSNimLangServ.codefile_path_current + ":1:1";
+            proc.StartInfo.FileName = VSNimINI.Get("Main", "nimsuggest.exe");
             proc.StartInfo.RedirectStandardOutput = true;
             proc.StartInfo.RedirectStandardError = true;
             proc.StartInfo.RedirectStandardInput = true;
