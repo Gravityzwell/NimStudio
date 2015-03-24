@@ -138,7 +138,7 @@ namespace NimStudio.NimStudio {
             }
 
             nimsettingsini = System.IO.Path.Combine(UserDataPath, "nimstudio.ini");
-            System.Diagnostics.Debug.Print("Ini path is:", nimsettingsini);
+            System.Diagnostics.Debug.Print("NimStudio ini:" + nimsettingsini);
             VSNimINI.Init(nimsettingsini);
             string[] nimexes = { "nim.exe", "nimsuggest.exe" };
             for (int lexe = 0; lexe < 2; lexe++) {
@@ -152,6 +152,10 @@ namespace NimStudio.NimStudio {
                             VSNimINI.Write();
                             break;
                         }
+                    }
+                } else {
+                    if (!File.Exists(VSNimINI.Get("Main", nimexes[lexe]))) {
+                        System.Diagnostics.Debug.Print("NimStudio warning:" + nimexes[lexe] + " not found!");
                     }
                 }
             }
@@ -167,10 +171,8 @@ namespace NimStudio.NimStudio {
             }
             if (VSNimINI.Get("Main", nimexes[1]) != "") { 
                 nimsuggest = new NimSuggestProc();
-                nimsuggest.init();
+                nimsuggest.Init();
             }
-            System.Diagnostics.Debug.Print("Dir is:", this.UserLocalDataPath);
-            System.Diagnostics.Debug.Print("Dir is:", this.UserDataPath);
         }
 
         public int FDoIdle(uint grfidlef) {

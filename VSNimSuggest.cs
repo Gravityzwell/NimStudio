@@ -18,6 +18,11 @@ namespace NimStudio.NimStudio {
         //private Thread thread = null;
         private bool queryfinished = false;
         private string filepath_prev="";
+        public enum qtype_enum {
+            sug,
+            def,
+            con
+        }
 
         static NimSuggestProc() {
             // static constructor
@@ -28,11 +33,17 @@ namespace NimStudio.NimStudio {
         }
 
 
-        public void query(string filepath, string qtype, int qline, int qcol) {
+        public void Query(qtype_enum qtype, int qline, int qcol) {
+            string fstr = Path.GetFileName(VSNimLangServ.codefile_path_current);
+            if (fstr != filepath_prev) {
+                Close();
+            }
+            filepath_prev=fstr;
             conout.Clear();
             sugs.Clear();
             queryfinished = false;
-            proc.StandardInput.WriteLine();
+            string qstr = qtype.ToString() + " " + fstr + ":" + qline.ToString() + ":" + qcol.ToString();
+            proc.StandardInput.WriteLine(qstr);
             int waitcount = 0;
             while (!queryfinished) {
                 Thread.Sleep(50);
@@ -59,7 +70,7 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        public void conwrite(string str) {
+        public void conwriteold(string str) {
             conout.Clear();
             sugs.Clear();
             queryfinished=false;
@@ -93,11 +104,24 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        public void quit() {
+        public void Close() {
+            if (proc==null) return;
             proc.StandardInput.WriteLine("quit");
+            int waitcount = 0;
+            while (true) {
+                if (proc == null || proc.HasExited) break;
+                Thread.Sleep(25);
+                waitcount++;
+                if (waitcount > 200) { // 5 second wait cap
+                    proc.Kill();
+                    Thread.Sleep(25);
+                }
+                break;
+            }
+            proc=null;
         }
 
-        public void init() {
+        public void Init() {
             string nimsuggestexe = VSNimINI.Get("Main", "nimsuggest.exe");
             if (nimsuggestexe == "") {
                 System.Diagnostics.Debug.Print("Nimsuggest.exe not set in nimstudio.ini!");

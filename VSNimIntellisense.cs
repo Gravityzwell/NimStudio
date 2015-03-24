@@ -116,8 +116,9 @@ namespace NimStudio.NimStudio {
             int caretcol = VSNCompletionCommandHandler.caretcol;
             //textview.GetCaretPos(out line, out idx);
 
-            String nimsugcmd = String.Format("sug htmlarc.nim:{0}:{1}",caretline,caretcol);
-            NimStudioPackage.nimsuggest.conwrite(nimsugcmd);
+            //String nimsugcmd = String.Format("sug htmlarc.nim:{0}:{1}",caretline,caretcol);
+            //NimStudioPackage.nimsuggest.conwrite(nimsugcmd);
+            NimStudioPackage.nimsuggest.Query(NimSuggestProc.qtype_enum.sug, caretline, caretcol);
 
             //strList.Add("addition");
             //strList.Add("adaptation");
