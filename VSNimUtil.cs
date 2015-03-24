@@ -10,6 +10,8 @@ using System.Collections;
 namespace NimStudio.NimStudio {
 
     class VSNimUtil {
+        public static bool debug=false;
+
         public static void NimExeFind(NimStudioPackage pkg) {
             string[] nimexes = { "nim.exe", "nimsuggest.exe" };
 
@@ -29,6 +31,12 @@ namespace NimStudio.NimStudio {
                 }
             }
         }
+
+        public static void DebugPrint(string debugmsg) {
+            if (debug)
+                Console.WriteLine(debugmsg);
+        }
+
     }
 
     public class VSNimINI {
