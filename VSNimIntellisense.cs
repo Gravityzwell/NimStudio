@@ -99,19 +99,18 @@ namespace NimStudio.NimStudio {
             m_sourceProvider = sourceProvider;
             m_textBuffer = textBuffer;
             m_glyphservice = glyphService;
-            m_glyphdct.Add("int", new BitmapImage());
-            m_glyphdct["int"].BeginInit();
-            m_glyphdct["int"].UriSource = new Uri("pack://application:,,,/NimStudio;component/Resources/glyph-int.png");
-            m_glyphdct["int"].EndInit();
-            m_glyphdct.Add("string", new BitmapImage());
-            m_glyphdct["string"].BeginInit();
-            m_glyphdct["string"].UriSource = new Uri("pack://application:,,,/NimStudio;component/Resources/glyph-string.png");
-            m_glyphdct["string"].EndInit();
-            m_glyphdct.Add("float", new BitmapImage());
-            m_glyphdct["float"].BeginInit();
-            m_glyphdct["float"].UriSource = new Uri("pack://application:,,,/NimStudio;component/Resources/glyph-float.png");
-            m_glyphdct["float"].EndInit();
-            //textBuffer.Properties.Pr
+            GlyphAdd("int");
+            GlyphAdd("float");
+            GlyphAdd("string");
+        }
+
+        private void GlyphAdd(string glyph) {
+            if (!m_glyphdct.ContainsKey(glyph)) { 
+                m_glyphdct.Add(glyph, new BitmapImage());
+                m_glyphdct[glyph].BeginInit();
+                m_glyphdct[glyph].UriSource = new Uri("pack://application:,,,/NimStudio;component/Resources/glyph-" + glyph + ".png");
+                m_glyphdct[glyph].EndInit();
+            }
         }
 
         private ITrackingSpan FindTokenSpanAtPosition(ITrackingPoint point, ICompletionSession session) {

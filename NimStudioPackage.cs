@@ -111,11 +111,7 @@ namespace NimStudio.NimStudio {
             base.Initialize();
             nspackage = this;
             //System.Windows.Media.Imaging.BitmapImage img = new System.Windows.Media.Imaging.BitmapImage();
-            imgicon = new System.Windows.Media.Imaging.BitmapImage();
-            imgicon.BeginInit();
-            //img.UriSource = new Uri("pack://application:,,,/Resources/FlagBlue.png");
-            imgicon.UriSource = new Uri("pack://application:,,,/NimStudio;component/Resources/FlagBlue.png");
-            imgicon.EndInit();
+            //imgicon = new System.Windows.Media.Imaging.BitmapImage();
             #if ivslang
             LangInfo = new VSNLanguageInfo();
             ((IServiceContainer)this).AddService(typeof(VSNLanguageInfo), LangInfo, true);
