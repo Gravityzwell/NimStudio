@@ -32,9 +32,9 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        public static void DebugPrint(string debugmsg) {
+        public static void DebugPrint(string debugmsg, params object[] args) {
             if (debug)
-                Console.WriteLine(debugmsg);
+                Console.WriteLine(string.Format(debugmsg, args));
         }
 
     }

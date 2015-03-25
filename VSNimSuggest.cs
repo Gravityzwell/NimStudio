@@ -179,7 +179,7 @@ namespace NimStudio.NimStudio {
             }
             
             proc = new Process();
-            proc.StartInfo.CreateNoWindow = false;
+            proc.StartInfo.CreateNoWindow = true;
             //proc.StartInfo.WorkingDirectory = @"c:\MyProgs\Nim";
             //proc.StartInfo.Arguments = @"--stdin c:\MyProgs\Nim\htmlarc.nim";
             //proc.StartInfo.Arguments = @"--stdin " + VSNimLangServ.codefile_path_current;

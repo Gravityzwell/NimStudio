@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.ComponentModel.Composition;
 using System.Runtime.InteropServices;
 using System.Windows;
-//using System.Windows.Media;
+using System.Windows.Media;
 
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -88,12 +88,14 @@ namespace NimStudio.NimStudio {
         private ITextBuffer m_textBuffer;
         private List<Completion> m_compList;
         private bool m_isDisposed;
+        private IGlyphService m_glyphservice;
 
         // IVsTextView textViewAdapter
         // textView  = adapterFactory.CreateVsTextViewAdapter(GetService(typeof(IOleServiceProvider)) as IOleServiceProvider);
-        public VSNCompletionSource(VSNCompletionSourceProvider sourceProvider, ITextBuffer textBuffer){ 
+        public VSNCompletionSource(VSNCompletionSourceProvider sourceProvider, ITextBuffer textBuffer, IGlyphService glyphService){ 
             m_sourceProvider = sourceProvider;
             m_textBuffer = textBuffer;
+            m_glyphservice = glyphService;
             //textBuffer.Properties.Pr
         }
 
@@ -126,7 +128,9 @@ namespace NimStudio.NimStudio {
             //strList.Add("summation");
             m_compList = new List<Completion>();
             foreach (List<string> str in NimStudioPackage.nimsuggest.sugs) {
-                m_compList.Add(new Completion(str[0], str[0], str[1], null, null));
+                //m_compList.Add(new Completion(str[0], str[0], str[1], m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupConstant, StandardGlyphItem.GlyphItemPublic), "icon text"));
+                m_compList.Add(new Completion(str[0], str[0], str[1], NimStudioPackage.imgicon, "icon text"));
+
             }
 
             SnapshotPoint currentPoint = (session.TextView.Caret.Position.BufferPosition) - 1;
@@ -136,7 +140,7 @@ namespace NimStudio.NimStudio {
             var startpoint = session.GetTriggerPoint(session.TextView.TextBuffer).GetPosition(currentPoint.Snapshot);
 
             ITrackingSpan applicableTo;
-            if (w1=="." || true)
+            if (w1==".")
                 applicableTo = currentPoint.Snapshot.CreateTrackingSpan(startpoint, 0, SpanTrackingMode.EdgeInclusive);
             else
                 applicableTo = currentPoint.Snapshot.CreateTrackingSpan(extent.Span, SpanTrackingMode.EdgeInclusive);
@@ -151,6 +155,58 @@ namespace NimStudio.NimStudio {
             //completionSets.Add(new CompletionSet("Tokens", "Tokens", FindTokenSpanAtPosition(session.GetTriggerPoint(m_textBuffer), session), m_compList, null));
         }
 
+        private enum TokenType {
+            Struct,
+            Module,
+            Function,
+            Crate,
+            Let,
+            StructField,
+            Impl,
+            Enum,
+            EnumVariant,
+            Type,
+            FnArg,
+            Trait,
+            Static,
+        }
+
+        private ImageSource GetCompletionIcon(TokenType elType) {
+            switch (elType) {
+                case TokenType.Struct:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupStruct, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.Module:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphAssembly, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.Function:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphExtensionMethod, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.Crate:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphAssembly, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.Let:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupConstant, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.StructField:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupField, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.Impl:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupTypedef, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.Enum:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupEnum, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.EnumVariant:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupEnumMember, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.Type:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupTypedef, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.Trait:
+                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupInterface, StandardGlyphItem.GlyphItemPublic);
+                case TokenType.Static:
+                    return null;
+                case TokenType.FnArg:
+                    return null;
+                default:
+                    VSNimUtil.DebugPrint("Completion type not found: {0}", elType);
+                    return null;
+            }
+        }
+
+
+
         public void Dispose() {
             if (!m_isDisposed) {
                 GC.SuppressFinalize(this);
@@ -163,10 +219,11 @@ namespace NimStudio.NimStudio {
     [ContentType(VSNConst.LangName)]
     [Name("nim completion")]
     internal class VSNCompletionSourceProvider: ICompletionSourceProvider {
-        [Import]
-        internal ITextStructureNavigatorSelectorService NavigatorService { get; set; }
+        [Import] internal ITextStructureNavigatorSelectorService NavigatorService { get; set; }
+        [Import] private IGlyphService GlyphService { get; set; }
+
         public ICompletionSource TryCreateCompletionSource(ITextBuffer textBuffer) {
-            return new VSNCompletionSource(this, textBuffer);
+            return new VSNCompletionSource(this, textBuffer, GlyphService);
         }
     }
 
@@ -175,12 +232,9 @@ namespace NimStudio.NimStudio {
     [ContentType(VSNConst.LangName)]
     [TextViewRole(PredefinedTextViewRoles.Editable)]
     internal class VSNCompletionHandlerProvider: IVsTextViewCreationListener {
-        [Import]
-        internal IVsEditorAdaptersFactoryService AdapterService = null;
-        [Import]
-        internal ICompletionBroker CompletionBroker { get; set; }
-        [Import]
-        internal SVsServiceProvider ServiceProvider { get; set; }
+        [Import] internal IVsEditorAdaptersFactoryService AdapterService = null;
+        [Import] internal ICompletionBroker CompletionBroker { get; set; }
+        [Import] internal SVsServiceProvider ServiceProvider { get; set; }
 
         public void VsTextViewCreated(IVsTextView textViewAdapter) {
             ITextView textView = AdapterService.GetWpfTextView(textViewAdapter);

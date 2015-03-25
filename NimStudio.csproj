@@ -80,6 +80,7 @@
     <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
@@ -189,6 +190,9 @@
     <None Include="Resources\Images.png" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\FlagBlue.png" />
+    <Content Include="Resources\FlagBlue2.png" />
+    <EmbeddedResource Include="Resources\FlagBlue3.png" />
     <Content Include="Resources\Package.ico" />
   </ItemGroup>
   <ItemGroup>
