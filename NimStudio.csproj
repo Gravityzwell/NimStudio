@@ -193,6 +193,9 @@
     <Resource Include="Resources\FlagBlue.png" />
     <Content Include="Resources\FlagBlue2.png" />
     <EmbeddedResource Include="Resources\FlagBlue3.png" />
+    <Resource Include="Resources\glyph-float.png" />
+    <Resource Include="Resources\glyph-int.png" />
+    <Resource Include="Resources\glyph-string.png" />
     <Content Include="Resources\Package.ico" />
   </ItemGroup>
   <ItemGroup>

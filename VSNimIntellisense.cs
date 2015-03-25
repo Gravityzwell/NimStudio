@@ -8,6 +8,7 @@ using System.ComponentModel.Composition;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -89,6 +90,8 @@ namespace NimStudio.NimStudio {
         private List<Completion> m_compList;
         private bool m_isDisposed;
         private IGlyphService m_glyphservice;
+        private static Dictionary<string, BitmapImage> m_glyphdct = new Dictionary<string, BitmapImage>();
+
 
         // IVsTextView textViewAdapter
         // textView  = adapterFactory.CreateVsTextViewAdapter(GetService(typeof(IOleServiceProvider)) as IOleServiceProvider);
@@ -96,6 +99,18 @@ namespace NimStudio.NimStudio {
             m_sourceProvider = sourceProvider;
             m_textBuffer = textBuffer;
             m_glyphservice = glyphService;
+            m_glyphdct.Add("int", new BitmapImage());
+            m_glyphdct["int"].BeginInit();
+            m_glyphdct["int"].UriSource = new Uri("pack://application:,,,/NimStudio;component/Resources/glyph-int.png");
+            m_glyphdct["int"].EndInit();
+            m_glyphdct.Add("string", new BitmapImage());
+            m_glyphdct["string"].BeginInit();
+            m_glyphdct["string"].UriSource = new Uri("pack://application:,,,/NimStudio;component/Resources/glyph-string.png");
+            m_glyphdct["string"].EndInit();
+            m_glyphdct.Add("float", new BitmapImage());
+            m_glyphdct["float"].BeginInit();
+            m_glyphdct["float"].UriSource = new Uri("pack://application:,,,/NimStudio;component/Resources/glyph-float.png");
+            m_glyphdct["float"].EndInit();
             //textBuffer.Properties.Pr
         }
 
@@ -127,10 +142,12 @@ namespace NimStudio.NimStudio {
             //strList.Add("subtraction");
             //strList.Add("summation");
             m_compList = new List<Completion>();
-            foreach (List<string> str in NimStudioPackage.nimsuggest.sugs) {
+            foreach (List<string> sugglst in NimStudioPackage.nimsuggest.sugs) {
                 //m_compList.Add(new Completion(str[0], str[0], str[1], m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupConstant, StandardGlyphItem.GlyphItemPublic), "icon text"));
-                m_compList.Add(new Completion(str[0], str[0], str[1], NimStudioPackage.imgicon, "icon text"));
-
+                if (m_glyphdct.ContainsKey(sugglst[1]))
+                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[2], m_glyphdct[sugglst[1]], "icon text"));                
+                else
+                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[2], NimStudioPackage.imgicon, "icon text"));
             }
 
             SnapshotPoint currentPoint = (session.TextView.Caret.Position.BufferPosition) - 1;

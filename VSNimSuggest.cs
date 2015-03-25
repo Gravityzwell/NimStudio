@@ -65,7 +65,8 @@ namespace NimStudio.NimStudio {
                 waitcount++;
                 if (waitcount > 200) {
                     // 5 second wait cap
-                    VSNimUtil.DebugPrint("NimStudio - querywait max hit");
+                    //VSNimUtil.DebugPrint("NimStudio - querywait max hit");
+                    con.Write("NimStudio - querywait max hit");
                     queryfinished = true;
                     break;
                 }
@@ -73,6 +74,7 @@ namespace NimStudio.NimStudio {
             string fnamestrip = Path.GetFileNameWithoutExtension(VSNimLangServ.codefile_path_current) + ".";
             VSNimUtil.DebugPrint("NimStudio - conout.count:" + conout.Count.ToString());
             foreach (string cstr in conout) {
+                if (cstr==null) continue;
                 VSNimUtil.DebugPrint("NimStudio - conout:" + cstr);
                 string[] qwords = cstr.Split(new char[] { '\t' });
                 if (qwords.Length < 2) continue;
@@ -83,10 +85,10 @@ namespace NimStudio.NimStudio {
                     qwords[7] = qwords[7].Trim(new char[] { '"' });
                     if (qwords[7] != "")
                         qwords[7] = "\n\n" + qwords[7];
-                    sugs.Add(new List<string>(new string[] { qwords[2], qwords[3] + qwords[7] }));
+                    sugs.Add(new List<string>(new string[] { qwords[2], qwords[3], qwords[3] + qwords[7] }));
                 }
             }
-            sugs.Add(new List<string>(new string[] { "func1", "func1 help" }));
+            sugs.Add(new List<string>(new string[] { "func1", "proc", "func1 help" }));
             VSNimUtil.DebugPrint("NimStudio - suggs count:" + sugs.Count.ToString());
 
         }
