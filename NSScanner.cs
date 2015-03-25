@@ -51,22 +51,22 @@ namespace NimStudio.NimStudio {
         stRaw
     }
 
-    class VSNimScanner: IScanner {
+    class NSScanner: IScanner {
         private IVsTextBuffer m_buffer;
         private string m_source;
-        private VSNimTokenizer m_tokenizer;
+        private NSTokenizer m_tokenizer;
 
-        public VSNimScanner(IVsTextBuffer buffer) {
+        public NSScanner(IVsTextBuffer buffer) {
             m_buffer = buffer;
         }
 
         public void SetSource(string source, int offset) {
             m_source = source.Substring(offset);
-            m_tokenizer = new VSNimTokenizer(m_source);
+            m_tokenizer = new NSTokenizer(m_source);
         }
 
         public bool ScanTokenAndProvideInfoAboutIt(TokenInfo tokenInfo, ref int state) {
-            NimrodScannerFlags flags = (NimrodScannerFlags)state;
+            NSScannerFlags flags = (NSScannerFlags)state;
             var lastToken = m_tokenizer.Kind;
             switch (m_tokenizer.Kind) {
                 case TTokenClass.gtEof:
@@ -99,14 +99,14 @@ namespace NimStudio.NimStudio {
                 case TTokenClass.gtStringLit:
                     tokenInfo.Type = TokenType.String;
                     tokenInfo.Color = TokenColor.String;
-                    if (!flags.HasFlag(NimrodScannerFlags.RawStringLit)) {
-                        flags ^= NimrodScannerFlags.NormalStringLit;
+                    if (!flags.HasFlag(NSScannerFlags.RawStringLit)) {
+                        flags ^= NSScannerFlags.NormalStringLit;
                     }
                     break;
                 case TTokenClass.gtLongStringLit:
                     tokenInfo.Type = TokenType.String;
                     tokenInfo.Color = TokenColor.String;
-                    flags ^= NimrodScannerFlags.RawStringLit;
+                    flags ^= NSScannerFlags.RawStringLit;
                     break;
                 case TTokenClass.gtCharLit:
                     tokenInfo.Type = TokenType.String;
@@ -180,7 +180,7 @@ namespace NimStudio.NimStudio {
                     tokenInfo.Trigger = TokenTriggers.ParameterNext;
                     break;
             }
-            if (flags.HasFlag(NimrodScannerFlags.NormalStringLit) || flags.HasFlag(NimrodScannerFlags.RawStringLit)) {
+            if (flags.HasFlag(NSScannerFlags.NormalStringLit) || flags.HasFlag(NSScannerFlags.RawStringLit)) {
                 tokenInfo.Color = TokenColor.String;
                 tokenInfo.Type = TokenType.String;
 
@@ -193,7 +193,7 @@ namespace NimStudio.NimStudio {
         }
     }
 
-    class VSNimTokenizer {
+    class NSTokenizer {
         private TTokenClass kind;
         private string m_source;
         private int start;
@@ -221,12 +221,12 @@ namespace NimStudio.NimStudio {
                 return kind;
             }
         }
-        public VSNimTokenizer(string source) {
+        public NSTokenizer(string source) {
             inString = TStringTypes.stNone;
             m_source = source;
             start = 0;
             end = 0;
-            advanceOne(NimrodScannerFlags.None);
+            advanceOne(NSScannerFlags.None);
         }
         private static int skipChar(string str, char chr, int idx) {
             if (idx == -1) {
@@ -257,7 +257,7 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        public void advanceOne(NimrodScannerFlags flags) {
+        public void advanceOne(NSScannerFlags flags) {
             /*  if (m_source.Contains("else:"))
                 {
                 Debugger.Break();
@@ -271,7 +271,7 @@ namespace NimStudio.NimStudio {
                 kind = TTokenClass.gtEof;
                 return;
             }
-            if (m_source[start] == '#' && flags == NimrodScannerFlags.None) {
+            if (m_source[start] == '#' && flags == NSScannerFlags.None) {
                 kind = TTokenClass.gtComment;
                 end = m_source.Length;
                 tokenEnd = m_source.Length;
@@ -424,7 +424,7 @@ namespace NimStudio.NimStudio {
 
     }
     [Flags]
-    enum NimrodScannerFlags: int {
+    enum NSScannerFlags: int {
         None = 0,
         RawStringLit = 1,
         NormalStringLit = 2,

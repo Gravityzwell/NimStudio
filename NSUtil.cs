@@ -9,21 +9,21 @@ using System.Collections;
 
 namespace NimStudio.NimStudio {
 
-    class VSNimUtil {
+    class NSUtil {
         public static bool debug=false;
 
-        public static void NimExeFind(NimStudioPackage pkg) {
+        public static void NimExeFind(NSPackage pkg) {
             string[] nimexes = { "nim.exe", "nimsuggest.exe" };
 
             var patharr = new List<string>((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';'));
             patharr.Add(@"c:\myprogs\nim\bin");
             foreach (string nimexe in nimexes) {
                 foreach (string spathi in patharr) {
-                    if (VSNimINI.Get("Main", nimexe) == "") {
+                    if (NSIni.Get("Main", nimexe) == "") {
                         string sfullpath = Path.Combine(spathi.Trim(), nimexe);
                         if (File.Exists(sfullpath)) {
-                            VSNimINI.Add("Main", nimexe, Path.GetFullPath(sfullpath));
-                            VSNimINI.Write();
+                            NSIni.Add("Main", nimexe, Path.GetFullPath(sfullpath));
+                            NSIni.Write();
                             pkg.GetType().GetProperty(nimexe.Replace(".", "")).SetValue(nimexe.Replace(".", ""), sfullpath);
                             break;
                         }
@@ -39,7 +39,7 @@ namespace NimStudio.NimStudio {
 
     }
 
-    public class VSNimINI {
+    public class NSIni {
         private static SortedDictionary<string, string> inidct = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private static string inifilepath;
 

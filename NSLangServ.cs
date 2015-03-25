@@ -16,8 +16,8 @@ using Microsoft.VisualStudio.Utilities;
 
 namespace NimStudio.NimStudio {
 
-    public class VSNimLangServ: LanguageService {
-        private VSNimScanner m_scanner;
+    public class NSLangServ: LanguageService {
+        private NSScanner m_scanner;
         private LanguagePreferences languageprefs;
         public static IVsTextView textview_current;
         public static string codefile_path_current;
@@ -28,7 +28,7 @@ namespace NimStudio.NimStudio {
 
         public override LanguagePreferences GetLanguagePreferences() {
             if (languageprefs == null) {
-                languageprefs = new LanguagePreferences(this.Site, typeof(VSNimLangServ).GUID, this.Name);
+                languageprefs = new LanguagePreferences(this.Site, typeof(NSLangServ).GUID, this.Name);
                 if (this.languageprefs != null)
                     this.languageprefs.Init();
                 this.languageprefs.ParameterInformation = true;
@@ -38,7 +38,7 @@ namespace NimStudio.NimStudio {
 
         public override IScanner GetScanner(IVsTextLines buffer) {
             if (m_scanner == null)
-                m_scanner = new VSNimScanner(buffer);
+                m_scanner = new NSScanner(buffer);
             return m_scanner;
         }
 
@@ -59,7 +59,7 @@ namespace NimStudio.NimStudio {
 
 
         public override string Name {
-            get { return VSNConst.LangName; }
+            get { return NSConst.LangName; }
         }
 
         public override AuthoringScope ParseSource(ParseRequest req) {

@@ -34,7 +34,7 @@ namespace NimStudio.NimStudio {
 
     //[ProvideLanguageServiceAttribute(typeof(VSNimLangServ), "VSNimLang",
 
-    [ProvideLanguageService(typeof(VSNimLangServ), VSNConst.LangName,
+    [ProvideLanguageService(typeof(NSLangServ), NSConst.LangName,
         106,                          // resource ID of localized language name
         CodeSense = true,             // IntelliSense
         RequestStockColors = false,   // Custom colors
@@ -44,9 +44,9 @@ namespace NimStudio.NimStudio {
         EnableAsyncCompletion = true  // Background parsing
         )]
 
-    [ProvideLanguageExtension(typeof(VSNimLangServ), VSNConst.FileExt)]
+    [ProvideLanguageExtension(typeof(NSLangServ), NSConst.FileExt)]
 
-    [ProvideLanguageExtensionAttribute(typeof(VSNimLangServ), VSNConst.FileExt)]
+    [ProvideLanguageExtensionAttribute(typeof(NSLangServ), NSConst.FileExt)]
 
     //[ProvideLanguageCodeExpansionAttribute(typeof(VSNimLangServ), VSNConst.LangName,
     //             106,           // Resource ID
@@ -57,38 +57,38 @@ namespace NimStudio.NimStudio {
     //             )]
 
     [ProvideLanguageEditorOptionPageAttribute(
-             typeof(VSNimOptions),
-             VSNConst.LangName,  // Registry key name for language
+             typeof(NSOptions),
+             NSConst.LangName,  // Registry key name for language
              "Options",      // Registry key name for property page
              "Page1",
              "#242"
              )]
     [ProvideLanguageEditorOptionPageAttribute(
-             typeof(VSNimOptions),
-             VSNConst.LangName,  // Registry key name for language
+             typeof(NSOptions),
+             NSConst.LangName,  // Registry key name for language
              "Advanced",     // Registry key name for node
              "Page2",
              "#243"
              )]
     [ProvideLanguageEditorOptionPageAttribute(
-             typeof(VSNimOptions),
-             VSNConst.LangName,  // Registry key name for language
+             typeof(NSOptions),
+             NSConst.LangName,  // Registry key name for language
              @"Advanced\Indenting",     // Registry key name for property page
              "Page3",         // Localized name of property page
              "#244"
              )]
 
-    [ProvideOptionPageAttribute(typeof(VSNimOptions),
+    [ProvideOptionPageAttribute(typeof(NSOptions),
     "NimStudioPackage", "OptionsPage", 113, 114, true)]
 
-    [Microsoft.VisualStudio.Shell.ProvideService(typeof(VSNimLangServ))]
+    [Microsoft.VisualStudio.Shell.ProvideService(typeof(NSLangServ))]
     //[Microsoft.VisualStudio.Shell.ProvideLanguageService(typeof(VSNimLangServ), "VSNimLang", 0,
     //    AutoOutlining = true,
     //    EnableCommenting = true,
     //    MatchBraces = true,
     //    ShowMatchingBrace = true)]
 
-    public sealed class NimStudioPackage: Package, IOleComponent {
+    public sealed class NSPackage: Package, IOleComponent {
 
         #if ivslang
         private VSNLanguageInfo LangInfo;
@@ -96,12 +96,12 @@ namespace NimStudio.NimStudio {
 
         private uint m_ComponentID;
         public static NimSuggestProc nimsuggest;
-        public static NimStudioPackage nspackage;
+        public static NSPackage nspackage;
         public static string nimsettingsini;
         public static System.Windows.Media.Imaging.BitmapImage imgicon; 
         //public static string UserDataPath;
 
-        public NimStudioPackage() {
+        public NSPackage() {
             //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering constructor for: {0}", this.ToString()));
         }
 
@@ -126,9 +126,9 @@ namespace NimStudio.NimStudio {
             }
 
             IServiceContainer ServiceCnt = this as IServiceContainer;
-            VSNimLangServ ServiceLng = new VSNimLangServ();
+            NSLangServ ServiceLng = new NSLangServ();
             ServiceLng.SetSite(this);
-            ServiceCnt.AddService(typeof(VSNimLangServ), ServiceLng, true);
+            ServiceCnt.AddService(typeof(NSLangServ), ServiceLng, true);
 
             IOleComponentManager mgr = GetService(typeof(SOleComponentManager)) as IOleComponentManager;
             if (m_ComponentID == 0 && mgr != null) {
@@ -142,37 +142,37 @@ namespace NimStudio.NimStudio {
 
             nimsettingsini = System.IO.Path.Combine(UserDataPath, "nimstudio.ini");
             System.Diagnostics.Debug.Print("NimStudio ini:" + nimsettingsini);
-            VSNimINI.Init(nimsettingsini);
+            NSIni.Init(nimsettingsini);
             string[] nimexes = { "nim.exe", "nimsuggest.exe" };
             for (int lexe = 0; lexe < 2; lexe++) {
-                if (VSNimINI.Get("Main", nimexes[lexe]) == "") {
+                if (NSIni.Get("Main", nimexes[lexe]) == "") {
                     var patharr = new List<string>((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';'));
                     patharr.Add(@"c:\nim\bin");
                     foreach (string spathi in patharr) {
                         string sfullpath = Path.Combine(spathi.Trim(), nimexes[lexe]);
                         if (File.Exists(sfullpath)) {
-                            VSNimINI.Add("Main", nimexes[lexe], Path.GetFullPath(sfullpath));
-                            VSNimINI.Write();
+                            NSIni.Add("Main", nimexes[lexe], Path.GetFullPath(sfullpath));
+                            NSIni.Write();
                             break;
                         }
                     }
                 } else {
-                    if (!File.Exists(VSNimINI.Get("Main", nimexes[lexe]))) {
+                    if (!File.Exists(NSIni.Get("Main", nimexes[lexe]))) {
                         System.Diagnostics.Debug.Print("NimStudio warning:" + nimexes[lexe] + " not found!");
                     }
                 }
             }
 
-            if (VSNimINI.Get("Main", nimexes[0]) == "" || VSNimINI.Get("Main", nimexes[1]) == "") {
+            if (NSIni.Get("Main", nimexes[0]) == "" || NSIni.Get("Main", nimexes[1]) == "") {
                 string msg = "";
-                if (VSNimINI.Get("Main", nimexes[0]) == "" && VSNimINI.Get("Main", nimexes[1]) == "")
+                if (NSIni.Get("Main", nimexes[0]) == "" && NSIni.Get("Main", nimexes[1]) == "")
                     msg = "Path to nim.exe and nimsuggest.exe not found.";
                 else
-                    msg = String.Format("Path to {0} not found.", (VSNimINI.Get("Main", nimexes[0]) == "") ? nimexes[0] : nimexes[1]);
+                    msg = String.Format("Path to {0} not found.", (NSIni.Get("Main", nimexes[0]) == "") ? nimexes[0] : nimexes[1]);
                     
                 System.Windows.Forms.MessageBox.Show(msg, "Nim configuration", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
             }
-            if (VSNimINI.Get("Main", nimexes[1]) != "") { 
+            if (NSIni.Get("Main", nimexes[1]) != "") { 
                 nimsuggest = new NimSuggestProc();
                 //nimsuggest.Init();
             }
@@ -180,7 +180,7 @@ namespace NimStudio.NimStudio {
 
         public int FDoIdle(uint grfidlef) {
             bool bPeriodic = (grfidlef & (uint)_OLEIDLEF.oleidlefPeriodic) != 0;
-            LanguageService service = GetService(typeof(VSNimLangServ)) as LanguageService;
+            LanguageService service = GetService(typeof(NSLangServ)) as LanguageService;
             if (service != null) {
                 service.OnIdle(bPeriodic);
             }
@@ -278,7 +278,7 @@ namespace NimStudio.NimStudio {
     }
     #endif
 
-    public class VSNimOptions: DialogPage {
+    public class NSOptions: DialogPage {
         bool Option1 = true;
         public bool Option {
             get {
@@ -289,7 +289,7 @@ namespace NimStudio.NimStudio {
             }
         }
     }
-    public static class VSNConst {
+    public static class NSConst {
         public const string PkgGUIDStr = "ef6a91e8-dd7d-48aa-a77c-69b7b8e9229a";
         public const string LangName      = "NimLang";
         public const string FileExt     = ".nim";

@@ -35,7 +35,7 @@ namespace NimStudio.NimStudio {
 
 
         public void Query(qtype_enum qtype, int qline, int qcol) {
-            string fstr = Path.GetFileNameWithoutExtension(VSNimLangServ.codefile_path_current);
+            string fstr = Path.GetFileNameWithoutExtension(NSLangServ.codefile_path_current);
 
             //if (fstr != filepath_prev) {
             //    Close();
@@ -44,7 +44,7 @@ namespace NimStudio.NimStudio {
             if (!filelist.Contains(fstr)) {
                 filelist.Add(fstr);
                 string basefile = "import " + string.Join(",", filelist);
-                StreamWriter sw1 = new StreamWriter(Path.GetDirectoryName(VSNimLangServ.codefile_path_current) + @"\nimstudio_base.nim");
+                StreamWriter sw1 = new StreamWriter(Path.GetDirectoryName(NSLangServ.codefile_path_current) + @"\nimstudio_base.nim");
                 sw1.WriteLine(basefile);
                 sw1.Close();
             }
@@ -57,7 +57,7 @@ namespace NimStudio.NimStudio {
             sugs.Clear();
             queryfinished = false;
             string qstr = qtype.ToString() + " " + fstr + ".nim:" + qline.ToString() + ":" + qcol.ToString();
-            VSNimUtil.DebugPrint("NimStudio - query:" + qstr);
+            NSUtil.DebugPrint("NimStudio - query:" + qstr);
             proc.StandardInput.WriteLine(qstr);
             int waitcount = 0;
             while (!queryfinished) {
@@ -71,11 +71,11 @@ namespace NimStudio.NimStudio {
                     break;
                 }
             }
-            string fnamestrip = Path.GetFileNameWithoutExtension(VSNimLangServ.codefile_path_current) + ".";
-            VSNimUtil.DebugPrint("NimStudio - conout.count:" + conout.Count.ToString());
+            string fnamestrip = Path.GetFileNameWithoutExtension(NSLangServ.codefile_path_current) + ".";
+            NSUtil.DebugPrint("NimStudio - conout.count:" + conout.Count.ToString());
             foreach (string cstr in conout) {
                 if (cstr==null) continue;
-                VSNimUtil.DebugPrint("NimStudio - conout:" + cstr);
+                NSUtil.DebugPrint("NimStudio - conout:" + cstr);
                 string[] qwords = cstr.Split(new char[] { '\t' });
                 if (qwords.Length < 2) continue;
                 if (qwords[1] == "skProc" || qwords[1] == "skVar") {
@@ -89,7 +89,7 @@ namespace NimStudio.NimStudio {
                 }
             }
             sugs.Add(new List<string>(new string[] { "func1", "proc", "func1 help" }));
-            VSNimUtil.DebugPrint("NimStudio - suggs count:" + sugs.Count.ToString());
+            NSUtil.DebugPrint("NimStudio - suggs count:" + sugs.Count.ToString());
 
         }
 
@@ -126,11 +126,11 @@ namespace NimStudio.NimStudio {
                 }
             }
             sugs.Add(new List<string>(new string[] { "func1", "func1 help" }));
-            VSNimUtil.DebugPrint("NimStudio - suggs count:" + sugs.Count.ToString());
+            NSUtil.DebugPrint("NimStudio - suggs count:" + sugs.Count.ToString());
         }
 
         public void Close() {
-            VSNimUtil.DebugPrint("NimStudio - Nimsuggest close:");
+            NSUtil.DebugPrint("NimStudio - Nimsuggest close:");
             if (proc == null) 
                 return;
 
@@ -140,7 +140,7 @@ namespace NimStudio.NimStudio {
                     proc=null;
                 }
             } catch (Exception ex) {
-                VSNimUtil.DebugPrint("NimStudio - Nimsuggest close:" + ex.Message);
+                NSUtil.DebugPrint("NimStudio - Nimsuggest close:" + ex.Message);
                 proc = null;
                 return;
             }
@@ -148,7 +148,7 @@ namespace NimStudio.NimStudio {
             try {
                 proc.StandardInput.WriteLine("quit");
             } catch (Exception ex) {
-                VSNimUtil.DebugPrint("NimStudio - Nimsuggest close:" + ex.Message);
+                NSUtil.DebugPrint("NimStudio - Nimsuggest close:" + ex.Message);
                 proc = null;
             }
 
@@ -169,14 +169,14 @@ namespace NimStudio.NimStudio {
         }
 
         public void Init() {
-            VSNimUtil.DebugPrint("NimStudio - Nimsuggest init:");
-            string nimsuggestexe = VSNimINI.Get("Main", "nimsuggest.exe");
+            NSUtil.DebugPrint("NimStudio - Nimsuggest init:");
+            string nimsuggestexe = NSIni.Get("Main", "nimsuggest.exe");
             if (nimsuggestexe == "") {
-                VSNimUtil.DebugPrint("Nimsuggest.exe not set in nimstudio.ini!");
+                NSUtil.DebugPrint("Nimsuggest.exe not set in nimstudio.ini!");
                 return;
             }
             if (!File.Exists(nimsuggestexe)) {
-                VSNimUtil.DebugPrint("Nimsuggest.exe not found!");
+                NSUtil.DebugPrint("Nimsuggest.exe not found!");
                 return;
             }
             
@@ -185,16 +185,16 @@ namespace NimStudio.NimStudio {
             //proc.StartInfo.WorkingDirectory = @"c:\MyProgs\Nim";
             //proc.StartInfo.Arguments = @"--stdin c:\MyProgs\Nim\htmlarc.nim";
             //proc.StartInfo.Arguments = @"--stdin " + VSNimLangServ.codefile_path_current;
-            proc.StartInfo.Arguments = @"--stdin " + Path.GetDirectoryName(VSNimLangServ.codefile_path_current) + @"\nimstudio_base.nim";
+            proc.StartInfo.Arguments = @"--stdin " + Path.GetDirectoryName(NSLangServ.codefile_path_current) + @"\nimstudio_base.nim";
             //proc.StartInfo.Arguments = @"--stdin " + Path.GetDirectoryName(VSNimLangServ.codefile_path_current) + "\\";
-            proc.StartInfo.FileName = VSNimINI.Get("Main", "nimsuggest.exe");
-            proc.StartInfo.WorkingDirectory = Path.GetDirectoryName(VSNimLangServ.codefile_path_current);
+            proc.StartInfo.FileName = NSIni.Get("Main", "nimsuggest.exe");
+            proc.StartInfo.WorkingDirectory = Path.GetDirectoryName(NSLangServ.codefile_path_current);
             proc.StartInfo.RedirectStandardOutput = true;
             proc.StartInfo.RedirectStandardError = false;
             proc.StartInfo.RedirectStandardInput = true;
             proc.StartInfo.UseShellExecute = false;
-            VSNimUtil.DebugPrint("NimStudio - Nimsuggest load:" + VSNimLangServ.codefile_path_current);
-            VSNimUtil.DebugPrint("NimStudio - Nimsuggest working dir:" + proc.StartInfo.WorkingDirectory);
+            NSUtil.DebugPrint("NimStudio - Nimsuggest load:" + NSLangServ.codefile_path_current);
+            NSUtil.DebugPrint("NimStudio - Nimsuggest working dir:" + proc.StartInfo.WorkingDirectory);
 
             proc.EnableRaisingEvents = true;
             proc.OutputDataReceived += new DataReceivedEventHandler(NSDRHandler);
@@ -208,7 +208,7 @@ namespace NimStudio.NimStudio {
         }
 
         private void NSExitHandler(object sender, EventArgs e) {
-            VSNimUtil.DebugPrint("NimStudio NSExitHandler ");
+            NSUtil.DebugPrint("NimStudio NSExitHandler ");
             //proc.Dispose();
             proc = null;
         }

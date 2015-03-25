@@ -83,9 +83,9 @@ namespace NimStudio.NimStudio {
 
 
 
-    internal class VSNCompletionSource: ICompletionSource {
+    internal class NSCompletionSource: ICompletionSource {
 
-        private VSNCompletionSourceProvider m_sourceProvider;
+        private NSCompletionSourceProvider m_sourceProvider;
         private ITextBuffer m_textBuffer;
         private List<Completion> m_compList;
         private bool m_isDisposed;
@@ -95,7 +95,7 @@ namespace NimStudio.NimStudio {
 
         // IVsTextView textViewAdapter
         // textView  = adapterFactory.CreateVsTextViewAdapter(GetService(typeof(IOleServiceProvider)) as IOleServiceProvider);
-        public VSNCompletionSource(VSNCompletionSourceProvider sourceProvider, ITextBuffer textBuffer, IGlyphService glyphService){ 
+        public NSCompletionSource(NSCompletionSourceProvider sourceProvider, ITextBuffer textBuffer, IGlyphService glyphService){ 
             m_sourceProvider = sourceProvider;
             m_textBuffer = textBuffer;
             m_glyphservice = glyphService;
@@ -126,27 +126,27 @@ namespace NimStudio.NimStudio {
 
             // should pull this from VSNimLangServ.textview_current
             int caretlineline2, caretcol2;
-            VSNimLangServ.textview_current.GetCaretPos(out caretlineline2, out caretcol2);
+            NSLangServ.textview_current.GetCaretPos(out caretlineline2, out caretcol2);
             caretlineline2++;
-            int caretline = VSNCompletionCommandHandler.caretline;
-            int caretcol = VSNCompletionCommandHandler.caretcol;
+            int caretline = NSCompletionCommandHandler.caretline;
+            int caretcol = NSCompletionCommandHandler.caretcol;
             //textview.GetCaretPos(out line, out idx);
 
             //String nimsugcmd = String.Format("sug htmlarc.nim:{0}:{1}",caretline,caretcol);
             //NimStudioPackage.nimsuggest.conwrite(nimsugcmd);
-            NimStudioPackage.nimsuggest.Query(NimSuggestProc.qtype_enum.sug, caretline, caretcol);
+            NSPackage.nimsuggest.Query(NimSuggestProc.qtype_enum.sug, caretline, caretcol);
 
             //strList.Add("addition");
             //strList.Add("adaptation");
             //strList.Add("subtraction");
             //strList.Add("summation");
             m_compList = new List<Completion>();
-            foreach (List<string> sugglst in NimStudioPackage.nimsuggest.sugs) {
+            foreach (List<string> sugglst in NSPackage.nimsuggest.sugs) {
                 //m_compList.Add(new Completion(str[0], str[0], str[1], m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupConstant, StandardGlyphItem.GlyphItemPublic), "icon text"));
                 if (m_glyphdct.ContainsKey(sugglst[1]))
                     m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[2], m_glyphdct[sugglst[1]], "icon text"));                
                 else
-                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[2], NimStudioPackage.imgicon, "icon text"));
+                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[2], NSPackage.imgicon, "icon text"));
             }
 
             SnapshotPoint currentPoint = (session.TextView.Caret.Position.BufferPosition) - 1;
@@ -216,7 +216,7 @@ namespace NimStudio.NimStudio {
                 case TokenType.FnArg:
                     return null;
                 default:
-                    VSNimUtil.DebugPrint("Completion type not found: {0}", elType);
+                    NSUtil.DebugPrint("Completion type not found: {0}", elType);
                     return null;
             }
         }
@@ -232,22 +232,22 @@ namespace NimStudio.NimStudio {
     }
 
     [Export(typeof(ICompletionSourceProvider))]
-    [ContentType(VSNConst.LangName)]
+    [ContentType(NSConst.LangName)]
     [Name("nim completion")]
-    internal class VSNCompletionSourceProvider: ICompletionSourceProvider {
+    internal class NSCompletionSourceProvider: ICompletionSourceProvider {
         [Import] internal ITextStructureNavigatorSelectorService NavigatorService { get; set; }
         [Import] private IGlyphService GlyphService { get; set; }
 
         public ICompletionSource TryCreateCompletionSource(ITextBuffer textBuffer) {
-            return new VSNCompletionSource(this, textBuffer, GlyphService);
+            return new NSCompletionSource(this, textBuffer, GlyphService);
         }
     }
 
     [Export(typeof(IVsTextViewCreationListener))]
     [Name("nim completion handler")]
-    [ContentType(VSNConst.LangName)]
+    [ContentType(NSConst.LangName)]
     [TextViewRole(PredefinedTextViewRoles.Editable)]
-    internal class VSNCompletionHandlerProvider: IVsTextViewCreationListener {
+    internal class NSCompletionHandlerProvider: IVsTextViewCreationListener {
         [Import] internal IVsEditorAdaptersFactoryService AdapterService = null;
         [Import] internal ICompletionBroker CompletionBroker { get; set; }
         [Import] internal SVsServiceProvider ServiceProvider { get; set; }
@@ -257,24 +257,24 @@ namespace NimStudio.NimStudio {
             if (textView == null)
                 return;
 
-            Func<VSNCompletionCommandHandler> createCommandHandler = delegate() { 
-                return new VSNCompletionCommandHandler(textViewAdapter, textView, this);
+            Func<NSCompletionCommandHandler> createCommandHandler = delegate() { 
+                return new NSCompletionCommandHandler(textViewAdapter, textView, this);
             };
             textView.Properties.GetOrCreateSingletonProperty(createCommandHandler);
         }
 
     }
 
-    internal class VSNCompletionCommandHandler: IOleCommandTarget {
+    internal class NSCompletionCommandHandler: IOleCommandTarget {
         private IOleCommandTarget m_nextCommandHandler;
         private ITextView m_textView;
         private IVsTextView m_textViewAdapter;
-        private VSNCompletionHandlerProvider m_provider;
+        private NSCompletionHandlerProvider m_provider;
         private ICompletionSession m_session;
         public static int caretline=0;
         public static int caretcol=0;
 
-        internal VSNCompletionCommandHandler(IVsTextView textViewAdapter, ITextView textView, VSNCompletionHandlerProvider provider) {
+        internal NSCompletionCommandHandler(IVsTextView textViewAdapter, ITextView textView, NSCompletionHandlerProvider provider) {
             this.m_textView = textView;
             this.m_provider = provider;
             this.m_textViewAdapter = textViewAdapter;

@@ -16,17 +16,17 @@ using Microsoft.VisualStudio.Utilities;
 using IServiceProvider = System.IServiceProvider;
 
 namespace NimStudio.NimStudio {
-    class VSNimCodeWindow: IVsCodeWindowManager, IVsCodeWindowEvents {
+    class NSCodeWindow: IVsCodeWindowManager, IVsCodeWindowEvents {
 
         private readonly IServiceProvider _serviceProvider;
         private readonly IVsCodeWindow _window;
         private readonly ITextBuffer _textBuffer;
         private IWpfTextView _curView;
-        private static readonly HashSet<VSNimCodeWindow> _windows = new HashSet<VSNimCodeWindow>();
+        private static readonly HashSet<NSCodeWindow> _windows = new HashSet<NSCodeWindow>();
         private uint _cookieVsCodeWindowEvents;
         private static IVsEditorAdaptersFactoryService _vsEditorAdaptersFactoryService = null;
 
-        public VSNimCodeWindow(IServiceProvider serviceProvider, IVsCodeWindow codeWindow, IWpfTextView textView) {
+        public NSCodeWindow(IServiceProvider serviceProvider, IVsCodeWindow codeWindow, IWpfTextView textView) {
             _serviceProvider = serviceProvider;
             _window = codeWindow;
             _textBuffer = textView.TextBuffer;

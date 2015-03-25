@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 */
 
 namespace NimStudio.NimStudio {
-    class VSNimCodeXtra {
+    class NSCodeXtra {
 
         // Get IVsTextView from filepath
         internal static Microsoft.VisualStudio.TextManager.Interop.IVsTextView IVsTextView_FromFilePath_Get(string filePath) {
