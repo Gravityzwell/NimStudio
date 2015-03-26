@@ -30,7 +30,7 @@ namespace NimStudio.NimStudio {
 
     // GUID
     //[Guid("B98EABF4-9F60-432D-885D-73BD12CC638F")]
-    [Guid(GuidList.guidNimStudioPkgString)]
+    [Guid(GuidList.NSPkgGUIDStr)]
 
     //[ProvideLanguageServiceAttribute(typeof(VSNimLangServ), "VSNimLang",
 
@@ -119,9 +119,21 @@ namespace NimStudio.NimStudio {
             // menu commands - .vsct file
             OleMenuCommandService mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (null != mcs) {
-                CommandID menuCommandID = new CommandID(GuidList.guidNimStudioCmdSet, (int)PkgCmdIDList.cmdidCommand1);
-                MenuCommand menuItem = new MenuCommand(MenuItemCallback, menuCommandID);
-                mcs.AddCommand(menuItem);
+
+                CommandID menuCommandID1 = new CommandID(GuidList.NSMenuCmdTopGUID, (int)PkgCmdIDList.NSMenuCmdTop1);
+                MenuCommand MenuTop1 = new MenuCommand(MenuItemCallback, menuCommandID1);
+                mcs.AddCommand(MenuTop1);
+
+                CommandID MenuSub1 = new CommandID(GuidList.NSMenuCmdSubGUID, (int)PkgCmdIDList.NSMenuCmdID0);
+                MenuCommand MenuSubItem1 = new MenuCommand(MenuItemCallback, MenuSub1);
+                mcs.AddCommand(MenuSubItem1);
+                CommandID MenuSub2 = new CommandID(GuidList.NSMenuCmdSubGUID, (int)PkgCmdIDList.NSMenuCmdID1);
+                MenuCommand MenuSubItem2 = new MenuCommand(MenuItemCallback, MenuSub2);
+                mcs.AddCommand(MenuSubItem2);
+                CommandID MenuSub3 = new CommandID(GuidList.NSMenuCmdSubGUID, (int)PkgCmdIDList.NSMenuCmdID2);
+                MenuCommand MenuSubItem3 = new MenuCommand(MenuItemCallback, MenuSub3);
+                mcs.AddCommand(MenuSubItem3);
+
             }
 
             IServiceContainer ServiceCnt = this as IServiceContainer;
