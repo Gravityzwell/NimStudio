@@ -36,7 +36,7 @@ namespace NimStudio.NimStudio {
 
         public static void DebugPrint(string debugmsg, params object[] args) {
             if (debug)
-                Console.WriteLine(string.Format(debugmsg, args));
+                System.Diagnostics.Debug.Print(string.Format(debugmsg, args));
         }
 
         public static bool SaveIfDirty(string fpath) {
@@ -60,7 +60,7 @@ namespace NimStudio.NimStudio {
             }
 
             Microsoft.VisualStudio.Shell.VsShellUtilities.SaveFileIfDirty(ServiceProvider.GlobalProvider, fpath);
-
+            System.Diagnostics.Debug.Print(string.Format("NS saved file {0}", fpath));
             return dirty;
 
         }
