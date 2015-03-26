@@ -146,7 +146,7 @@ namespace NimStudio.NimStudio {
                 if (m_glyphdct.ContainsKey(sugglst[1]))
                     m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[2], m_glyphdct[sugglst[1]], "icon text"));                
                 else
-                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[2], NSPackage.imgicon, "icon text"));
+                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[2], null, "icon text"));
             }
 
             SnapshotPoint currentPoint = (session.TextView.Caret.Position.BufferPosition) - 1;

@@ -98,7 +98,6 @@ namespace NimStudio.NimStudio {
         public static NimSuggestProc nimsuggest;
         public static NSPackage nspackage;
         public static string nimsettingsini;
-        public static System.Windows.Media.Imaging.BitmapImage imgicon; 
         //public static string UserDataPath;
 
         public NSPackage() {

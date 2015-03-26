@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System;
 using System.IO;
 using System.Collections;
+using Microsoft.VisualStudio.Shell;
+
+
 
 namespace NimStudio.NimStudio {
 
@@ -37,7 +39,51 @@ namespace NimStudio.NimStudio {
                 Console.WriteLine(string.Format(debugmsg, args));
         }
 
+        public static bool SaveIfDirty(string fpath) {
+            bool dirty=false;
+
+            Microsoft.VisualStudio.Shell.Interop.IVsPersistDocData persistDocData;
+            Microsoft.VisualStudio.Shell.Interop.IVsHierarchy hierarchy;
+            uint vsitemid = Microsoft.VisualStudio.VSConstants.VSITEMID_NIL;
+            uint doccook;
+            VsShellUtilities.GetRDTDocumentInfo(ServiceProvider.GlobalProvider, fpath, out hierarchy, out vsitemid, out persistDocData, out doccook);
+            if (hierarchy == null || doccook == (uint)Microsoft.VisualStudio.Shell.Interop.Constants.VSDOCCOOKIE_NIL) {
+                dirty = false;
+                return dirty;
+            }
+            if (persistDocData != null) {
+                int docdirty;
+                persistDocData.IsDocDataDirty(out docdirty);
+                dirty = (docdirty != 0);
+                if (!dirty)
+                    return false;
+            }
+
+            Microsoft.VisualStudio.Shell.VsShellUtilities.SaveFileIfDirty(ServiceProvider.GlobalProvider, fpath);
+
+            return dirty;
+
+        }
+
+
+        //public static bool SaveDirtyFiles() {
+        //    var rdt = ServiceProvider.GlobalProvider.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
+        //    if (rdt != null) {
+        //        // Consider using (uint)(__VSRDTSAVEOPTIONS.RDTSAVEOPT_SaveIfDirty | __VSRDTSAVEOPTIONS.RDTSAVEOPT_PromptSave)
+        //        // when VS settings include prompt for save on build
+        //        var saveOpt = (uint)__VSRDTSAVEOPTIONS.RDTSAVEOPT_SaveIfDirty;
+        //        var hr = rdt.SaveDocuments(saveOpt, null, VSConstants.VSITEMID_NIL, VSConstants.VSCOOKIE_NIL);
+        //        if (hr == VSConstants.E_ABORT) {
+        //            return false;
+        //        }
+        //    }
+
+        //    return true;
+        //}
+
     }
+
+
 
     public class NSIni {
         private static SortedDictionary<string, string> inidct = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);

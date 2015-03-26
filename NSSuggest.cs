@@ -36,7 +36,7 @@ namespace NimStudio.NimStudio {
 
         public void Query(qtype_enum qtype, int qline, int qcol) {
             string fstr = Path.GetFileNameWithoutExtension(NSLangServ.codefile_path_current);
-
+            NSUtil.SaveIfDirty(NSLangServ.codefile_path_current);
             //if (fstr != filepath_prev) {
             //    Close();
             //    Init();
