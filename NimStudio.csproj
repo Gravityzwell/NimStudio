@@ -186,6 +186,7 @@
     <Resource Include="Resources\glyph-float.png" />
     <Resource Include="Resources\glyph-int.png" />
     <Resource Include="Resources\glyph-string.png" />
+    <Resource Include="Resources\Logo2-32.png" />
     <Content Include="Resources\Package.ico" />
   </ItemGroup>
   <ItemGroup>

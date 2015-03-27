@@ -6,7 +6,7 @@
     <Commands package="guidNimStudioPkg">
 
         <Menus>
-            <Menu guid="NSCmdsGUID" id="MenuTop" priority="0x0001" type="Menu">
+            <Menu guid="NSCmdsGUID" id="MenuTop" priority="0x700" type="Menu">
                 <Parent guid="NSCmdsGUID" id="MenuGrpTop" />
                 <CommandFlag>AlwaysCreate</CommandFlag>
                 <CommandFlag>IconAndText</CommandFlag>
@@ -16,7 +16,7 @@
                     <CommandName>NimStudio</CommandName>
                 </Strings>
             </Menu>
-            <Menu guid="NSCmdsGUID" id="MenuSub1" priority="0x0001" type="Menu">
+            <Menu guid="NSCmdsGUID" id="MenuSub1" priority="0x700" type="Menu">
                 <Parent guid="NSCmdsGUID" id="MenuGrpSub1" />
                 <CommandFlag>AlwaysCreate</CommandFlag>
                 <CommandFlag>IconAndText</CommandFlag>
@@ -29,22 +29,22 @@
 
         <Groups>
             <!-- Top level menu group: Tools->NimStudio -->
-            <Group guid="NSCmdsGUID" id="MenuGrpTop" priority="0x0001">
+            <Group guid="NSCmdsGUID" id="MenuGrpTop" priority="0x700">
                 <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
             </Group>
             <!-- Sub menu group: Tools->NimStudio->* -->
-            <Group guid="NSCmdsGUID" id="MenuGrpSub1" priority="0x0001">
+            <Group guid="NSCmdsGUID" id="MenuGrpSub1" priority="0x700">
                 <Parent guid="NSCmdsGUID" id="MenuTop"/>
             </Group>
             <!-- Sub Sub menu group: Tools->NimStudio->Sub->* -->
-            <Group guid="NSCmdsGUID" id="MenuGrpSubSub1" priority="0x0001">
+            <!--<Group guid="NSCmdsGUID" id="MenuGrpSubSub1" priority="0x700">
                 <Parent guid="NSCmdsGUID" id="MenuSub1"/>
-            </Group>
+            </Group>-->
         </Groups>
         <Buttons>
             <Button guid="NSCmdsGUID" id="CmdOptionsEdit" priority="0x0100" type="Button">
                 <Parent guid="NSCmdsGUID" id="MenuGrpSub1" />
-                <Icon guid="guidImages" id="bmpPic1" />
+                <Icon guid="guidImages" id="logoimg" />
                 <Strings>
                     <ButtonText>Options Edit</ButtonText>
                     <ToolTipText>Open NimStudio INI with text editor</ToolTipText>
@@ -52,23 +52,23 @@
             </Button>
             <Button guid="NSCmdsGUID" id="CmdOptionsLoad" priority="0x0100" type="Button">
                 <Parent guid="NSCmdsGUID" id="MenuGrpSub1" />
-                <Icon guid="guidImages" id="bmpPic1" />
+                <Icon guid="guidImages" id="logoimg" />
                 <Strings>
                     <ButtonText>Options Load</ButtonText>
                     <ToolTipText>Reload NimStudio INI</ToolTipText>
                 </Strings>
             </Button>
-            <Button guid="NSCmdsGUID" id="cmdid_g1c3" priority="0x0100" type="Button">
+            <!--<Button guid="NSCmdsGUID" id="cmdid_g1c3" priority="0x0100" type="Button">
                 <Parent guid="NSCmdsGUID" id="MenuGrpSubSub1" />
-                <Icon guid="guidImages" id="bmpPic1" />
+                <Icon guid="guidImages" id="logoimg" />
                 <Strings>
                     <ButtonText>cmdid_g1c3</ButtonText>
                 </Strings>
-            </Button>
+            </Button>-->
         </Buttons>
 
         <Bitmaps>
-            <Bitmap guid="guidImages" href="Resources\Images.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
+            <Bitmap guid="guidImages" href="Resources\Images.png" usedList="logoimg, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
         </Bitmaps>
 
     </Commands>
@@ -86,7 +86,7 @@
             <IDSymbol name="cmdid_g1c3" value="0x0102" />
         </GuidSymbol>
         <GuidSymbol name="guidImages" value="{29e0e9bb-d281-4515-9520-cce25cbaf19c}" >
-            <IDSymbol name="bmpPic1" value="1" />
+            <IDSymbol name="logoimg" value="1" />
             <IDSymbol name="bmpPic2" value="2" />
             <IDSymbol name="bmpPicSearch" value="3" />
             <IDSymbol name="bmpPicX" value="4" />
@@ -127,7 +127,7 @@
         <Buttons>
             <Button guid="NSMenuCmdTopGUID" id="NSMenuCmdTop1" priority="0x0025" type="Button">
                 <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS" />
-                <Icon guid="guidImages" id="bmpPic1" />
+                <Icon guid="guidImages" id="logoimg" />
                 <Strings>
                     <ButtonText>NimStudio</ButtonText>
                 </Strings>
@@ -135,7 +135,7 @@
 
             <Button guid="NSMenuCmdSubGUID" id="NSMenuCmdID0" priority="0x0050" type="Button">
                 <Parent guid="NSMenuCmdTopGUID" id="NSMenuCmdTop1" />
-                <Icon guid="guidImages" id="bmpPic1" />
+                <Icon guid="guidImages" id="logoimg" />
                 <Strings>
                     <ButtonText>NSCmd0</ButtonText>
                 </Strings>
@@ -143,7 +143,7 @@
 
             <Button guid="NSMenuCmdSubGUID" id="NSMenuCmdID1" priority="0x0100" type="Button">
                 <Parent guid="NSMenuCmdTopGUID" id="NSMenuCmdTop1" />
-                <Icon guid="guidImages" id="bmpPic1" />
+                <Icon guid="guidImages" id="logoimg" />
                 <Strings>
                     <ButtonText>NSCmd1</ButtonText>
                 </Strings>
@@ -151,7 +151,7 @@
 
             <Button guid="NSMenuCmdSubGUID" id="NSMenuCmdID2" priority="0x0110" type="Button">
                 <Parent guid="NSMenuCmdTopGUID" id="NSMenuCmdTop1" />
-                <Icon guid="guidImages" id="bmpPic1" />
+                <Icon guid="guidImages" id="logoimg" />
                 <Strings>
                     <ButtonText>NSCmd2</ButtonText>
                 </Strings>
@@ -159,7 +159,7 @@
         </Buttons>
 
         <Bitmaps>
-            <Bitmap guid="guidImages" href="Resources\Images.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
+            <Bitmap guid="guidImages" href="Resources\Images.png" usedList="logoimg, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
         </Bitmaps>
     </Commands>
     <Symbols>
@@ -174,7 +174,7 @@
             <IDSymbol name="NSMenuCmdTop1" value="0x0025" />
         </GuidSymbol>
         <GuidSymbol name="guidImages" value="{29e0e9bb-d281-4515-9520-cce25cbaf19c}" >
-            <IDSymbol name="bmpPic1" value="1" />
+            <IDSymbol name="logoimg" value="1" />
             <IDSymbol name="bmpPic2" value="2" />
             <IDSymbol name="bmpPicSearch" value="3" />
             <IDSymbol name="bmpPicX" value="4" />
