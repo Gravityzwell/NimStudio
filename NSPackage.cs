@@ -124,13 +124,13 @@ namespace NimStudio.NimStudio {
                 MenuCommand MenuTop1 = new MenuCommand(MenuItemCallback, menuCommandID1);
                 mcs.AddCommand(MenuTop1);
 
-                CommandID MenuSub1 = new CommandID(GuidList.NSMenuCmdSubGUID, (int)PkgCmdIDList.NSMenuCmdID0);
+                CommandID MenuSub1 = new CommandID(GuidList.NSMenuCmdTopGUID, (int)PkgCmdIDList.NSMenuCmdID0);
                 MenuCommand MenuSubItem1 = new MenuCommand(MenuItemCallback, MenuSub1);
                 mcs.AddCommand(MenuSubItem1);
-                CommandID MenuSub2 = new CommandID(GuidList.NSMenuCmdSubGUID, (int)PkgCmdIDList.NSMenuCmdID1);
+                CommandID MenuSub2 = new CommandID(GuidList.NSMenuCmdTopGUID, (int)PkgCmdIDList.NSMenuCmdID1);
                 MenuCommand MenuSubItem2 = new MenuCommand(MenuItemCallback, MenuSub2);
                 mcs.AddCommand(MenuSubItem2);
-                CommandID MenuSub3 = new CommandID(GuidList.NSMenuCmdSubGUID, (int)PkgCmdIDList.NSMenuCmdID2);
+                CommandID MenuSub3 = new CommandID(GuidList.NSMenuCmdTopGUID, (int)PkgCmdIDList.NSMenuCmdID2);
                 MenuCommand MenuSubItem3 = new MenuCommand(MenuItemCallback, MenuSub3);
                 mcs.AddCommand(MenuSubItem3);
 
