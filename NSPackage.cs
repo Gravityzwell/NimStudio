@@ -98,6 +98,8 @@ namespace NimStudio.NimStudio {
         public static NimSuggestProc nimsuggest;
         public static NSPackage nspackage;
         public static string nimsettingsini;
+        public static Dictionary<uint, string> menucmds;
+
         //public static string UserDataPath;
 
         public NSPackage() {
@@ -116,24 +118,19 @@ namespace NimStudio.NimStudio {
             ((IServiceContainer)this).AddService(typeof(VSNLanguageInfo), LangInfo, true);
             #endif
 
+            var menucmds = new Dictionary<uint, string>() { 
+                { 0x0100, "NSMenuCmdOptionsEdit"},
+                { 0x0101, "NSMenuCmdOptionsLoad"} 
+            };
+
             // menu commands - .vsct file
             OleMenuCommandService mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
-            if (null != mcs) {
-
-                CommandID menuCommandID1 = new CommandID(GuidList.NSMenuCmdTopGUID, (int)PkgCmdIDList.NSMenuCmdTop1);
-                MenuCommand MenuTop1 = new MenuCommand(MenuItemCallback, menuCommandID1);
-                mcs.AddCommand(MenuTop1);
-
-                CommandID MenuSub1 = new CommandID(GuidList.NSMenuCmdTopGUID, (int)PkgCmdIDList.NSMenuCmdID0);
-                MenuCommand MenuSubItem1 = new MenuCommand(MenuItemCallback, MenuSub1);
-                mcs.AddCommand(MenuSubItem1);
-                CommandID MenuSub2 = new CommandID(GuidList.NSMenuCmdTopGUID, (int)PkgCmdIDList.NSMenuCmdID1);
-                MenuCommand MenuSubItem2 = new MenuCommand(MenuItemCallback, MenuSub2);
-                mcs.AddCommand(MenuSubItem2);
-                CommandID MenuSub3 = new CommandID(GuidList.NSMenuCmdTopGUID, (int)PkgCmdIDList.NSMenuCmdID2);
-                MenuCommand MenuSubItem3 = new MenuCommand(MenuItemCallback, MenuSub3);
-                mcs.AddCommand(MenuSubItem3);
-
+            if (mcs != null) {
+                foreach (int dkey in menucmds.Keys) {
+                    CommandID cmdid = new CommandID(GuidList.NSMenuCmdTopGUID, dkey);
+                    MenuCommand menucmd = new MenuCommand(MenuItemCallback, cmdid);
+                    mcs.AddCommand(menucmd);
+                }
             }
 
             IServiceContainer ServiceCnt = this as IServiceContainer;
@@ -246,21 +243,17 @@ namespace NimStudio.NimStudio {
 
         // menu callback
         private void MenuItemCallback(object sender, EventArgs e) {
-            IVsUIShell uiShell = (IVsUIShell)GetService(typeof(SVsUIShell));
-            Guid clsid = Guid.Empty;
-            int result;
-            Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(uiShell.ShowMessageBox(
-                       0,
-                       ref clsid,
-                       "NimStudio",
-                       string.Format(CultureInfo.CurrentCulture, "Inside {0}.MenuItemCallback()", this.ToString()),
-                       string.Empty,
-                       0,
-                       OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                       OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST,
-                       OLEMSGICON.OLEMSGICON_INFO,
-                       0,        // false
-                       out result));
+
+            //IVsUIShell uiShell = (IVsUIShell)GetService(typeof(SVsUIShell));
+            //Guid clsid = Guid.Empty;
+
+            MenuCommand menucmd = (MenuCommand)sender;
+
+            string msg = "Command ID: " + menucmd.CommandID.ID.ToString();
+            System.Windows.Forms.MessageBox.Show(msg, "Nim Command", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
+
+
+
         }
     }
 
@@ -315,6 +308,5 @@ namespace NimStudio.NimStudio {
         //    public const int NemerleMacroReferences = 3;
         //}
     }
-
 
 }

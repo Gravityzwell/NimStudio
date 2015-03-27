@@ -6,81 +6,65 @@
     <Commands package="guidNimStudioPkg">
 
         <Menus>
-            <Menu guid="CmdSet1GUID" id="Menu1" priority="0x0001" type="Menu">
-                <Parent guid="CmdSet1GUID" id="MenuGroup1" />
+            <Menu guid="NSCmdsGUID" id="MenuTop" priority="0x0001" type="Menu">
+                <Parent guid="NSCmdsGUID" id="MenuGrpTop" />
                 <CommandFlag>AlwaysCreate</CommandFlag>
                 <CommandFlag>IconAndText</CommandFlag>
                 <Strings>
-                    <ToolTipText>This</ToolTipText>
-                    <ButtonText>TestMenu</ButtonText>
-                    <CommandName>TestMenu1</CommandName>
+                    <ToolTipText>NimStudio Commands</ToolTipText>
+                    <ButtonText>NimStudio</ButtonText>
+                    <CommandName>NimStudio</CommandName>
                 </Strings>
             </Menu>
-            <Menu guid="CmdSet1GUID" id="MenuSub1" priority="0x0001" type="Menu">
-                <Parent guid="CmdSet1GUID" id="MenuGroup2" />
+            <Menu guid="NSCmdsGUID" id="MenuSub1" priority="0x0001" type="Menu">
+                <Parent guid="NSCmdsGUID" id="MenuGrpSub1" />
                 <CommandFlag>AlwaysCreate</CommandFlag>
                 <CommandFlag>IconAndText</CommandFlag>
                 <Strings>
-                    <ButtonText>TestMenu2</ButtonText>
-                    <CommandName>TestMenu2</CommandName>
+                    <ButtonText>SubSubMenu</ButtonText>
+                    <CommandName>SubSubMenu</CommandName>
                 </Strings>
             </Menu>
         </Menus>
 
         <Groups>
-            <!-- Logical group for holding the submenus of the top level menu -->
-            <Group guid="CmdSet1GUID" id="MenuGroup1" priority="0x0001">
+            <!-- Top level menu group: Tools->NimStudio -->
+            <Group guid="NSCmdsGUID" id="MenuGrpTop" priority="0x0001">
                 <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
             </Group>
-            <Group guid="CmdSet1GUID" id="MenuGroup2" priority="0x0001">
-                <Parent guid="CmdSet1GUID" id="Menu1"/>
+            <!-- Sub menu group: Tools->NimStudio->* -->
+            <Group guid="NSCmdsGUID" id="MenuGrpSub1" priority="0x0001">
+                <Parent guid="NSCmdsGUID" id="MenuTop"/>
             </Group>
-            <Group guid="CmdSet1GUID" id="MenuGroup3" priority="0x0001">
-                <Parent guid="CmdSet1GUID" id="MenuSub1"/>
+            <!-- Sub Sub menu group: Tools->NimStudio->Sub->* -->
+            <Group guid="NSCmdsGUID" id="MenuGrpSubSub1" priority="0x0001">
+                <Parent guid="NSCmdsGUID" id="MenuSub1"/>
             </Group>
         </Groups>
-        <!--A standard menu must have a group on the Visual Studio menu bar as its parent. 
-        For a submenu, the parent must be a group on another menu (or on a toolbar or other menu type). 
-        For a menu or submenu to be displayed, it must host a group that contains at least one active command, 
-        or have the AlwaysCreate command flag set.-->
         <Buttons>
-            <Button guid="CmdSet1GUID" id="cmdid_g1c1" priority="0x0100" type="Button">
-                <Parent guid="CmdSet1GUID" id="MenuGroup2" />
+            <Button guid="NSCmdsGUID" id="CmdOptionsEdit" priority="0x0100" type="Button">
+                <Parent guid="NSCmdsGUID" id="MenuGrpSub1" />
                 <Icon guid="guidImages" id="bmpPic1" />
                 <Strings>
-                    <ButtonText>cmdid_g1c1</ButtonText>
+                    <ButtonText>Options Edit</ButtonText>
+                    <ToolTipText>Open NimStudio INI with text editor</ToolTipText>
                 </Strings>
             </Button>
-            <Button guid="CmdSet1GUID" id="cmdid_g1c2" priority="0x0100" type="Button">
-                <Parent guid="CmdSet1GUID" id="MenuGroup2" />
+            <Button guid="NSCmdsGUID" id="CmdOptionsLoad" priority="0x0100" type="Button">
+                <Parent guid="NSCmdsGUID" id="MenuGrpSub1" />
                 <Icon guid="guidImages" id="bmpPic1" />
                 <Strings>
-                    <ButtonText>cmdid_g1c2</ButtonText>
+                    <ButtonText>Options Load</ButtonText>
+                    <ToolTipText>Reload NimStudio INI</ToolTipText>
                 </Strings>
             </Button>
-            <Button guid="CmdSet1GUID" id="cmdid_g1c3" priority="0x0100" type="Button">
-                <Parent guid="CmdSet1GUID" id="MenuGroup3" />
+            <Button guid="NSCmdsGUID" id="cmdid_g1c3" priority="0x0100" type="Button">
+                <Parent guid="NSCmdsGUID" id="MenuGrpSubSub1" />
                 <Icon guid="guidImages" id="bmpPic1" />
                 <Strings>
                     <ButtonText>cmdid_g1c3</ButtonText>
                 </Strings>
             </Button>
-            <!--<Button guid="CmdSet2GUID" id="cmdid_g2c2" priority="0x0110" type="Button">
-                <Parent guid="CmdSet2GUID" id="MenuGroup2" />
-                <Icon guid="guidImages" id="bmpPic1" />
-                <Strings>
-                    <ButtonText>cmdid_g2c2</ButtonText>
-                </Strings>
-            </Button>
-            <Button guid="CmdSet2GUID" id="cmdid_g2c3" priority="0x0120" type="Button">
-                <Parent guid="CmdSet2GUID" id="MenuGroup2" />
-                <Icon guid="guidImages" id="bmpPic1" />
-                <Strings>
-                    <ButtonText>cmdid_g2c3</ButtonText>
-                </Strings>
-            </Button>-->
-
-
         </Buttons>
 
         <Bitmaps>
@@ -89,30 +73,18 @@
 
     </Commands>
 
-    <!--<CommandPlacements>
-        <CommandPlacement guid="CmdSet2GUID" id="cmdid_g2c3" priority="0x0100">
-            <Parent guid="CmdSet1GUID" id="cmdid_g1c2" />
-        </CommandPlacement>
-    </CommandPlacements>-->
-
     <Symbols>
         <GuidSymbol name="guidNimStudioPkg" value="{ef6a91e8-dd7d-48aa-a77c-69b7b8e9229a}" />
-        <GuidSymbol name="CmdSet1GUID" value="{91aa9d6a-53f9-4ffb-8534-a7733de397c8}">
-            <IDSymbol name="Menu1" value="0x200" />
+        <GuidSymbol name="NSCmdsGUID" value="{91aa9d6a-53f9-4ffb-8534-a7733de397c8}">
+            <IDSymbol name="MenuTop" value="0x200" />
             <IDSymbol name="MenuSub1" value="0x201" />
-            <IDSymbol name="MenuGroup1" value="0x300" />
-            <IDSymbol name="MenuGroup2" value="0x302" />
-            <IDSymbol name="MenuGroup3" value="0x303" />
-            <IDSymbol name="cmdid_g1c1" value="0x0100" />
-            <IDSymbol name="cmdid_g1c2" value="0x0101" />
+            <IDSymbol name="MenuGrpTop" value="0x300" />
+            <IDSymbol name="MenuGrpSub1" value="0x302" />
+            <IDSymbol name="MenuGrpSubSub1" value="0x303" />
+            <IDSymbol name="CmdOptionsEdit" value="0x0100" />
+            <IDSymbol name="CmdOptionsLoad" value="0x0101" />
             <IDSymbol name="cmdid_g1c3" value="0x0102" />
         </GuidSymbol>
-        <!--<GuidSymbol name="CmdSet2GUID" value="{C4A591D1-AEE4-4145-A648-F21096EF4FBB}">
-            <IDSymbol name="MenuGroup2" value="0x1020" />
-            <IDSymbol name="cmdid_g2c1" value="0x0151" />
-            <IDSymbol name="cmdid_g2c2" value="0x0152" />
-            <IDSymbol name="cmdid_g2c3" value="0x0153" />
-        </GuidSymbol>-->
         <GuidSymbol name="guidImages" value="{29e0e9bb-d281-4515-9520-cce25cbaf19c}" >
             <IDSymbol name="bmpPic1" value="1" />
             <IDSymbol name="bmpPic2" value="2" />

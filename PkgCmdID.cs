@@ -1,15 +1,15 @@
 ﻿
-using System;
+//using System;
 
-namespace NimStudio.NimStudio {
+//namespace NimStudio.NimStudio {
 
-    static class PkgCmdIDList {
+//    static class PkgCmdIDList {
 
-        public const uint NSMenuCmdTop1 = 0x100;
-        public const uint NSMenuCmdID0 = 0x101;
-        public const uint NSMenuCmdID1 = 0x102;
-        public const uint NSMenuCmdID2 = 0x103;
+//        public const uint NSMenuCmdTop = 0x0050;
+//        public const uint NSMenuCmdOptionsEdit = 0x0100;
+//        public const uint NSMenuCmdOptionsLoad = 0x0101;
+//        public const uint NSMenuCmdOptionsOther = 0x0102;
 
-    };
+//    };
 
-}
+//}
