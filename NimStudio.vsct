@@ -7,19 +7,22 @@
 
         <Menus>
             <Menu guid="CmdSet1GUID" id="Menu1" priority="0x0001" type="Menu">
-                <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS" />
+                <Parent guid="CmdSet1GUID" id="MenuGroup1" />
                 <CommandFlag>AlwaysCreate</CommandFlag>
+                <CommandFlag>IconAndText</CommandFlag>
                 <Strings>
+                    <ToolTipText>This</ToolTipText>
                     <ButtonText>TestMenu</ButtonText>
-                    <CommandName>TestMenu</CommandName>
+                    <CommandName>TestMenu1</CommandName>
                 </Strings>
             </Menu>
             <Menu guid="CmdSet1GUID" id="MenuSub1" priority="0x0001" type="Menu">
                 <Parent guid="CmdSet1GUID" id="MenuGroup1" />
                 <CommandFlag>AlwaysCreate</CommandFlag>
+                <CommandFlag>IconAndText</CommandFlag>
                 <Strings>
                     <ButtonText>TestMenu</ButtonText>
-                    <CommandName>TestMenu</CommandName>
+                    <CommandName>TestMenu2</CommandName>
                 </Strings>
             </Menu>
         </Menus>
@@ -27,10 +30,10 @@
         <Groups>
             <!-- Logical group for holding the submenus of the top level menu -->
             <Group guid="CmdSet1GUID" id="MenuGroup1" priority="0x0001">
-                <Parent guid="CmdSet1GUID" id="Menu1"/>
+                <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
             </Group>
             <Group guid="CmdSet1GUID" id="MenuGroup2" priority="0x0001">
-                <Parent guid="CmdSet1GUID" id="MenuSub1"/>
+                <Parent guid="CmdSet1GUID" id="Menu1"/>
             </Group>
         </Groups>
         <!--A standard menu must have a group on the Visual Studio menu bar as its parent. 
@@ -39,7 +42,7 @@
         or have the AlwaysCreate command flag set.-->
         <Buttons>
             <Button guid="CmdSet1GUID" id="cmdid_g1c1" priority="0x0100" type="Button">
-                <Parent guid="CmdSet1GUID" id="Menu1" />
+                <Parent guid="CmdSet1GUID" id="MenuGroup2" />
                 <Icon guid="guidImages" id="bmpPic1" />
                 <Strings>
                     <ButtonText>cmdid_g1c1</ButtonText>
