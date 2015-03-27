@@ -98,7 +98,7 @@ namespace NimStudio.NimStudio {
         public static NimSuggestProc nimsuggest;
         public static NSPackage nspackage;
         public static string nimsettingsini;
-        public static Dictionary<uint, string> menucmds;
+        public static Dictionary<int, string> menucmds;
 
         //public static string UserDataPath;
 
@@ -118,7 +118,7 @@ namespace NimStudio.NimStudio {
             ((IServiceContainer)this).AddService(typeof(VSNLanguageInfo), LangInfo, true);
             #endif
 
-            var menucmds = new Dictionary<uint, string>() { 
+            menucmds = new Dictionary<int, string>() { 
                 { 0x0100, "NSMenuCmdOptionsEdit"},
                 { 0x0101, "NSMenuCmdOptionsLoad"} 
             };
@@ -154,6 +154,7 @@ namespace NimStudio.NimStudio {
             string[] nimexes = { "nim.exe", "nimsuggest.exe" };
             for (int lexe = 0; lexe < 2; lexe++) {
                 if (NSIni.Get("Main", nimexes[lexe]) == "") {
+                    // nim exe not found in INI - try to find it in path, or c:\nim\bin
                     var patharr = new List<string>((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';'));
                     patharr.Add(@"c:\nim\bin");
                     foreach (string spathi in patharr) {
@@ -249,8 +250,17 @@ namespace NimStudio.NimStudio {
 
             MenuCommand menucmd = (MenuCommand)sender;
 
-            string msg = "Command ID: " + menucmd.CommandID.ID.ToString();
-            System.Windows.Forms.MessageBox.Show(msg, "Nim Command", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
+            if (menucmds[menucmd.CommandID.ID] == "NSMenuCmdOptionsEdit") {
+                Process.Start("notepad.exe", NSIni.inifilepath);
+            }
+
+            if (menucmds[menucmd.CommandID.ID] == "NSMenuCmdOptionsLoad") {
+                NSIni.Init(NSIni.inifilepath);
+                System.Windows.Forms.MessageBox.Show("NimStudio INI loaded.", "NimStudio", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
+            }
+
+            //string msg = "Command ID: " + menucmd.CommandID.ID.ToString();
+            //System.Windows.Forms.MessageBox.Show(msg, "Nim Command", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
 
 
 

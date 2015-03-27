@@ -87,7 +87,7 @@ namespace NimStudio.NimStudio {
 
     public class NSIni {
         private static SortedDictionary<string, string> inidct = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        private static string inifilepath;
+        public static string inifilepath;
 
         public static void Init(string inipath) {
             inidct.Clear();
@@ -95,8 +95,9 @@ namespace NimStudio.NimStudio {
             string linestr = null;
             string inisectcurrent = "MAIN";
             string[] keyvalarr = null;
-            inifilepath = inipath;
+            inifilepath = "";
             if (File.Exists(inipath)) {
+                inifilepath=inipath;
                 try {
                     srfile = new StreamReader(inipath);
                     linestr = srfile.ReadLine();
