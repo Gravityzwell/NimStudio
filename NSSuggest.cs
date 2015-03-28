@@ -7,7 +7,6 @@ using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 using con = System.Console;
 
 namespace NimStudio.NimStudio {
@@ -50,8 +49,6 @@ namespace NimStudio.NimStudio {
             /// <summary>help text [7]</summary>
             public const int help = 7;   // 7
         }
-
-
 
         static NimSuggestProc() {
             // static constructor
@@ -120,7 +117,6 @@ namespace NimStudio.NimStudio {
                         sugsplit[Sugspl.help] = sugsplit[Sugspl.help].Trim(new char[] { '"' });
                         if (sugsplit[Sugspl.help] != "")
                             sugsplit[Sugspl.help] = "\n\n" + sugsplit[Sugspl.help];
-                        //sugdct.Add(sugsplit[Sugspl.name], new List<string>(new string[] { sugsplit[Sugspl.kind], sugsplit[Sugspl.type], sugsplit[Sugspl.help] }));
                         sugdct.Add(sugsplit[Sugspl.name], new SortedDictionary<string,string>(){ {"kind",sugsplit[Sugspl.kind]}, {"type",sugsplit[Sugspl.type]}, {"help",sugsplit[Sugspl.help]} });
 
                     } else {
@@ -130,13 +126,11 @@ namespace NimStudio.NimStudio {
                         sugsplit[Sugspl.help] = sugsplit[Sugspl.help].Trim(new char[] { '"' });
                         if (sugsplit[Sugspl.help] != "")
                             sugsplit[Sugspl.help] = "\n\n" + sugsplit[Sugspl.help];
-                        //bool sugexists=false;
                         if (sugdct.ContainsKey(sugsplit[Sugspl.name])) {
-                            //sugdct[qwords[2]][0] = sugdct[qwords[2]][0] + "\n" + qwords[3];
                             if (sugsplit[Sugspl.kind] != "skVar" && sugdct[sugsplit[Sugspl.name]]["type"] != sugsplit[Sugspl.type])
+                                // add overload
                                 sugdct[sugsplit[Sugspl.name]]["type"] += "\n" + sugsplit[Sugspl.type];
                         } else {
-                            //sugdct.Add(sugsplit[Sugspl.name], new List<string>(new string[] { sugsplit[Sugspl.kind], sugsplit[Sugspl.type], sugsplit[Sugspl.help] }));
                             sugdct.Add(sugsplit[Sugspl.name], new SortedDictionary<string, string>() 
                                 { { "kind", sugsplit[Sugspl.kind] }, { "type", sugsplit[Sugspl.type] }, { "help", sugsplit[Sugspl.help] } });
                         }

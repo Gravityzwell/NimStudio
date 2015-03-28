@@ -31,7 +31,8 @@ namespace NimStudio.NimStudio {
                 languageprefs = new LanguagePreferences(this.Site, typeof(NSLangServ).GUID, this.Name);
                 if (this.languageprefs != null)
                     this.languageprefs.Init();
-                this.languageprefs.ParameterInformation = true;
+                languageprefs.ParameterInformation = true;
+                languageprefs.EnableQuickInfo = true;
             }
             return this.languageprefs;
         }
@@ -57,14 +58,14 @@ namespace NimStudio.NimStudio {
             base.OnActiveViewChanged(textview);
         }
 
-
         public override string Name {
             get { return NSConst.LangName; }
         }
 
         public override AuthoringScope ParseSource(ParseRequest req) {
-            var c1 = 1;
-            return req.Scope;
+            //var c1 = 1;
+            return new NSAuthoringScope(req, "", "");
+            //return req.Scope;
         }
 
     }

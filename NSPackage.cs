@@ -97,6 +97,7 @@ namespace NimStudio.NimStudio {
         private uint m_ComponentID;
         public static NimSuggestProc nimsuggest;
         public static NSPackage nspackage;
+        public static bool quickinfo=false;
         public static string nimsettingsini;
         public static Dictionary<int, string> menucmds;
 

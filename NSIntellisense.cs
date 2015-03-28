@@ -124,11 +124,11 @@ namespace NimStudio.NimStudio {
         void ICompletionSource.AugmentCompletionSession(ICompletionSession session, IList<CompletionSet> completionSets) {
             List<string> strList = new List<string>();
 
-            int caretlineline2, caretcol2;
-            NSLangServ.textview_current.GetCaretPos(out caretlineline2, out caretcol2);
-            caretlineline2++;
-            int caretline = NSCompletionCommandHandler.caretline;
-            int caretcol = NSCompletionCommandHandler.caretcol;
+            int caretline, caretcol;
+            NSLangServ.textview_current.GetCaretPos(out caretline, out caretcol);
+            caretline++;
+            //int caretline = NSCompletionCommandHandler.caretline;
+            //int caretcol = NSCompletionCommandHandler.caretcol;
             //textview.GetCaretPos(out line, out idx);
 
             //String nimsugcmd = String.Format("sug htmlarc.nim:{0}:{1}",caretline,caretcol);
@@ -146,15 +146,6 @@ namespace NimStudio.NimStudio {
                 else
                     m_compList.Add(new Completion(skey, skey, sugdct["type"] + sugdct["help"], null, "icon text"));
             }
-
-
-            //foreach (List<string> sugglst in NSPackage.nimsuggest.sugs) {
-            //    //m_compList.Add(new Completion(str[0], str[0], str[1], m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupConstant, StandardGlyphItem.GlyphItemPublic), "icon text"));
-            //    if (m_glyphdct.ContainsKey(sugglst[1]))
-            //        m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[1] + sugglst[2], m_glyphdct[sugglst[1]], "icon text"));
-            //    else
-            //        m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[1] + sugglst[2], null, "icon text"));
-            //}
 
             SnapshotPoint currentPoint = (session.TextView.Caret.Position.BufferPosition) - 1;
             ITextStructureNavigator navigator = m_sourceProvider.NavigatorService.GetTextStructureNavigator(m_textBuffer);
@@ -269,8 +260,9 @@ namespace NimStudio.NimStudio {
             };
             textView.Properties.GetOrCreateSingletonProperty(createCommandHandler);
         }
-
     }
+
+
 
     internal class NSCompletionCommandHandler: IOleCommandTarget {
         private IOleCommandTarget m_nextCommandHandler;
@@ -326,6 +318,7 @@ namespace NimStudio.NimStudio {
                         break;
                     case VSConstants.VSStd2KCmdID.QUICKINFO:
                         Debug.Print("QUICKINFO");
+                        NSPackage.quickinfo=true;
                         break;
                     default:
                         //Debug.Print("Cancel");
