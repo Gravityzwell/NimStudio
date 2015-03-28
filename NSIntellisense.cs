@@ -139,20 +139,20 @@ namespace NimStudio.NimStudio {
 
             foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
                 var suglst = NSPackage.nimsuggest.sugdct[skey];
-                if (m_glyphdct.ContainsKey(suglst[0]))
-                    m_compList.Add(new Completion(suglst[1], suglst[1], suglst[2] + suglst[3], m_glyphdct[sugglst[1]], "icon text"));
+                if (m_glyphdct.ContainsKey(suglst[1]))
+                    m_compList.Add(new Completion(skey, skey, suglst[1] + suglst[2], m_glyphdct[suglst[1]], "icon text"));
                 else
-                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[1] + sugglst[2], null, "icon text"));
+                    m_compList.Add(new Completion(skey, skey, suglst[1] + suglst[2], null, "icon text"));
             }
 
 
-            foreach (List<string> sugglst in NSPackage.nimsuggest.sugs) {
-                //m_compList.Add(new Completion(str[0], str[0], str[1], m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupConstant, StandardGlyphItem.GlyphItemPublic), "icon text"));
-                if (m_glyphdct.ContainsKey(sugglst[1]))
-                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[1] + sugglst[2], m_glyphdct[sugglst[1]], "icon text"));
-                else
-                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[1] + sugglst[2], null, "icon text"));
-            }
+            //foreach (List<string> sugglst in NSPackage.nimsuggest.sugs) {
+            //    //m_compList.Add(new Completion(str[0], str[0], str[1], m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupConstant, StandardGlyphItem.GlyphItemPublic), "icon text"));
+            //    if (m_glyphdct.ContainsKey(sugglst[1]))
+            //        m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[1] + sugglst[2], m_glyphdct[sugglst[1]], "icon text"));
+            //    else
+            //        m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[1] + sugglst[2], null, "icon text"));
+            //}
 
             SnapshotPoint currentPoint = (session.TextView.Caret.Position.BufferPosition) - 1;
             ITextStructureNavigator navigator = m_sourceProvider.NavigatorService.GetTextStructureNavigator(m_textBuffer);

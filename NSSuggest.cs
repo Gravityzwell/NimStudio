@@ -60,6 +60,7 @@ namespace NimStudio.NimStudio {
             filepath_prev=fstr;
             conout.Clear();
             sugs.Clear();
+            sugdct.Clear();
             queryfinished = false;
             string qstr = qtype.ToString() + " " + fstr + ".nim:" + qline.ToString() + ":" + qcol.ToString();
             NSUtil.DebugPrint("NimStudio - query:" + qstr);
@@ -107,9 +108,10 @@ namespace NimStudio.NimStudio {
                         //bool sugexists=false;
                         if (sugdct.ContainsKey(qwords[2])) {
                             //sugdct[qwords[2]][0] = sugdct[qwords[2]][0] + "\n" + qwords[3];
-                            sugdct[qwords[2]][0] += "\n" + qwords[3];
+                            if (qwords[1] != "skVar" && sugdct[qwords[2]][1] != qwords[3])
+                                sugdct[qwords[2]][1] += "\n" + qwords[3];
                         } else {
-                            sugdct.Add(qwords[2], new List<string>(new string[] { qwords[3], qwords[7] }) );
+                            sugdct.Add(qwords[2], new List<string>(new string[] { qwords[1], qwords[3], qwords[7] }));
                         }
                         //for (int sugloop = 0; sugloop < sugs.Count; sugloop++) {
                         //    if (sugs[sugloop][0] == qwords[2]) {
