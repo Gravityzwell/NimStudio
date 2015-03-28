@@ -133,16 +133,18 @@ namespace NimStudio.NimStudio {
 
             //String nimsugcmd = String.Format("sug htmlarc.nim:{0}:{1}",caretline,caretcol);
             //NimStudioPackage.nimsuggest.conwrite(nimsugcmd);
-            NSPackage.nimsuggest.Query(NimSuggestProc.qtype_enum.sug, caretline, caretcol);
+            NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.sug, caretline, caretcol);
 
             m_compList = new List<Completion>();
 
+            //foreach (SortedDictionary<string, string> def in NSPackage.nimsuggest.sugdct.Values) {
+
             foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
-                var suglst = NSPackage.nimsuggest.sugdct[skey];
-                if (m_glyphdct.ContainsKey(suglst[1]))
-                    m_compList.Add(new Completion(skey, skey, suglst[1] + suglst[2], m_glyphdct[suglst[1]], "icon text"));
+                var sugdct = NSPackage.nimsuggest.sugdct[skey];
+                if (m_glyphdct.ContainsKey(sugdct["type"]))
+                    m_compList.Add(new Completion(skey, skey, sugdct["type"] + sugdct["help"], m_glyphdct[sugdct["type"]], "icon text"));
                 else
-                    m_compList.Add(new Completion(skey, skey, suglst[1] + suglst[2], null, "icon text"));
+                    m_compList.Add(new Completion(skey, skey, sugdct["type"] + sugdct["help"], null, "icon text"));
             }
 
 

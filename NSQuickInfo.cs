@@ -54,18 +54,18 @@ namespace NimStudio.NimStudio {
                 return;
             } 
 
-            NSPackage.nimsuggest.Query(NimSuggestProc.qtype_enum.def, caretline, caretcol);
+            NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.def, caretline, caretcol);
 
             _curSession = session;
             _curSession.Dismissed += CurSessionDismissed;
 
             //List<List<string>> defs = new List<List<string>>();
             string qinfostr = "";
-            foreach (List<string> def in NSPackage.nimsuggest.sugs) {
-                if (def[0] == "skVar") {
-                    qinfostr = def[1] + " " + def[2];
-                } else if (def[0] == "skProc") {
-                    qinfostr = def[1] + "\n" + def[2] + def[3];
+            foreach (SortedDictionary<string, string> def in NSPackage.nimsuggest.sugdct.Values) {
+                if (def["kind"] == "skVar") {
+                    qinfostr = def["type"] + " " + def["help"];
+                } else if (def["kind"] == "skProc") {
+                    qinfostr = def["type"] + "\n" + def["type"] + def["help"];
                 }
                 //qinfostr = def[0] + " " + def[1] + def[2] + "-" + caretline.ToString() + ":" + caretcol.ToString();
                 quickInfoContent.Add(qinfostr);

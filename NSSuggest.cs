@@ -15,18 +15,43 @@ namespace NimStudio.NimStudio {
     public class NimSuggestProc {
         private Process proc = null;
         private List<string> conout = new List<string>();
-        public List<List<string>> sugs = new List<List<string>>();
-        public SortedDictionary<string, List<string>> sugdct = new SortedDictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        //public List<List<string>> sugs = new List<List<string>>();
+        //public SortedDictionary<string, List<string>> sugdct = new SortedDictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        public SortedDictionary<string, SortedDictionary<string, string>> sugdct = new SortedDictionary<string, SortedDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
         //private Thread thread = null;
         private bool queryfinished = false;
         private HashSet<string> filelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private string filepath_prev="";
-        public enum qtype_enum {
-            sug,
-            def,
-            con
+        public static class Qtype {
+            /// <summary>nimsuggest sug</summary>
+            public const string sug = "sug";
+            /// <summary>nimsuggest def</summary>
+            public const string def = "def";
+            /// <summary>nimsuggest con</summary>
+            public const string con = "con";
         }
+
+        private static class Sugspl {
+            /// <summary>query type: sug|def|con [0]</summary>
+            public const int qtype = 0;
+            /// <summary>symbol kind: skProc|skVar|skIterator [1]</summary>
+            public const int kind = 1;
+            /// <summary>symbol name: os.walkFile|module1.thisproc [2]</summary>
+            public const int name = 2;
+            /// <summary>symbol definition/type: int|string|proc (string,string) [3]</summary>
+            public const int type = 3;
+            /// <summary>code file path [4]</summary>
+            public const int path = 4;
+            /// <summary>[5]</summary>
+            public const int line = 5;
+            /// <summary>[6]</summary>
+            public const int col = 6;
+            /// <summary>help text [7]</summary>
+            public const int help = 7;   // 7
+        }
+
+
 
         static NimSuggestProc() {
             // static constructor
@@ -37,7 +62,8 @@ namespace NimStudio.NimStudio {
         }
 
 
-        public void Query(qtype_enum qtype, int qline, int qcol) {
+        /// <summary>Queries nimsuggest</summary><param name='qtype'>use qtype class constants</param><param name='qline'>code line number</param><param name='qcol'>code column number</param>
+        public void Query(string qtype, int qline, int qcol) {
             string fstr = Path.GetFileNameWithoutExtension(NSLangServ.codefile_path_current);
             NSUtil.SaveIfDirty(NSLangServ.codefile_path_current);
             //if (fstr != filepath_prev) {
@@ -59,10 +85,9 @@ namespace NimStudio.NimStudio {
             }
             filepath_prev=fstr;
             conout.Clear();
-            sugs.Clear();
             sugdct.Clear();
             queryfinished = false;
-            string qstr = qtype.ToString() + " " + fstr + ".nim:" + qline.ToString() + ":" + qcol.ToString();
+            string qstr = qtype + " " + fstr + ".nim:" + qline.ToString() + ":" + qcol.ToString();
             NSUtil.DebugPrint("NimStudio - query:" + qstr);
             proc.StandardInput.WriteLine(qstr);
             int waitcount = 0;
@@ -82,89 +107,82 @@ namespace NimStudio.NimStudio {
             foreach (string cstr in conout) {
                 if (cstr==null) continue;
                 NSUtil.DebugPrint("NimStudio - conout:" + cstr);
-                string[] qwords = cstr.Split(new char[] { '\t' });
-                if (qwords.Length < 2) continue;
-                if (qwords[1] == "skProc" || qwords[1] == "skVar") {
-                    //new List<string>(new string[]{"G","H","I"})
-                    if (qtype == qtype_enum.def) {
-                        if (qwords[1] == "skVar")
-                            qwords[3] = "(" + qwords[3] + ")";
-                        qwords[3] = Regex.Replace(qwords[3], @"{.*?}","");
-                        qwords[2] = qwords[2].Replace(fnamestrip, "");
-                        qwords[7] = qwords[7].Replace(@"\x0D\x0A", "\n");
-                        qwords[7] = qwords[7].Trim(new char[] { '"' });
-                        if (qwords[7] != "")
-                            qwords[7] = "\n\n" + qwords[7];
-                        sugs.Add(new List<string>(new string[] { qwords[1], qwords[2], qwords[3], qwords[7] }));
-                        sugdct.Add(qwords[2], new List<string>(new string[] { qwords[1], qwords[3], qwords[7] }));
+                string[] sugsplit = cstr.Split(new char[] { '\t' });
+                if (sugsplit.Length < 2) continue;
+                if (sugsplit[Sugspl.kind] == "skProc" || sugsplit[Sugspl.kind] == "skVar") {
+
+                    if (qtype == Qtype.def) {
+                        if (sugsplit[Sugspl.kind] == "skVar")
+                            sugsplit[Sugspl.type] = "(" + sugsplit[Sugspl.type] + ")";
+                        sugsplit[Sugspl.type] = Regex.Replace(sugsplit[Sugspl.type], @"{.*?}", "");
+                        sugsplit[Sugspl.name] = sugsplit[Sugspl.name].Replace(fnamestrip, "");
+                        sugsplit[Sugspl.help] = sugsplit[Sugspl.help].Replace(@"\x0D\x0A", "\n");
+                        sugsplit[Sugspl.help] = sugsplit[Sugspl.help].Trim(new char[] { '"' });
+                        if (sugsplit[Sugspl.help] != "")
+                            sugsplit[Sugspl.help] = "\n\n" + sugsplit[Sugspl.help];
+                        //sugdct.Add(sugsplit[Sugspl.name], new List<string>(new string[] { sugsplit[Sugspl.kind], sugsplit[Sugspl.type], sugsplit[Sugspl.help] }));
+                        sugdct.Add(sugsplit[Sugspl.name], new SortedDictionary<string,string>(){ {"kind",sugsplit[Sugspl.kind]}, {"type",sugsplit[Sugspl.type]}, {"help",sugsplit[Sugspl.help]} });
 
                     } else {
-                        qwords[2] = qwords[2].Replace(fnamestrip, "");
-                        qwords[3] = Regex.Replace(qwords[3], @"{.*?}", "");
-                        qwords[7] = qwords[7].Replace(@"\x0D\x0A", "\n");
-                        qwords[7] = qwords[7].Trim(new char[] { '"' });
-                        if (qwords[7] != "")
-                            qwords[7] = "\n\n" + qwords[7];
+                        sugsplit[Sugspl.name] = sugsplit[Sugspl.name].Replace(fnamestrip, "");
+                        sugsplit[Sugspl.type] = Regex.Replace(sugsplit[Sugspl.type], @"{.*?}", "");
+                        sugsplit[Sugspl.help] = sugsplit[Sugspl.help].Replace(@"\x0D\x0A", "\n");
+                        sugsplit[Sugspl.help] = sugsplit[Sugspl.help].Trim(new char[] { '"' });
+                        if (sugsplit[Sugspl.help] != "")
+                            sugsplit[Sugspl.help] = "\n\n" + sugsplit[Sugspl.help];
                         //bool sugexists=false;
-                        if (sugdct.ContainsKey(qwords[2])) {
+                        if (sugdct.ContainsKey(sugsplit[Sugspl.name])) {
                             //sugdct[qwords[2]][0] = sugdct[qwords[2]][0] + "\n" + qwords[3];
-                            if (qwords[1] != "skVar" && sugdct[qwords[2]][1] != qwords[3])
-                                sugdct[qwords[2]][1] += "\n" + qwords[3];
+                            if (sugsplit[Sugspl.kind] != "skVar" && sugdct[sugsplit[Sugspl.name]]["type"] != sugsplit[Sugspl.type])
+                                sugdct[sugsplit[Sugspl.name]]["type"] += "\n" + sugsplit[Sugspl.type];
                         } else {
-                            sugdct.Add(qwords[2], new List<string>(new string[] { qwords[1], qwords[3], qwords[7] }));
+                            //sugdct.Add(sugsplit[Sugspl.name], new List<string>(new string[] { sugsplit[Sugspl.kind], sugsplit[Sugspl.type], sugsplit[Sugspl.help] }));
+                            sugdct.Add(sugsplit[Sugspl.name], new SortedDictionary<string, string>() 
+                                { { "kind", sugsplit[Sugspl.kind] }, { "type", sugsplit[Sugspl.type] }, { "help", sugsplit[Sugspl.help] } });
                         }
-                        //for (int sugloop = 0; sugloop < sugs.Count; sugloop++) {
-                        //    if (sugs[sugloop][0] == qwords[2]) {
-                        //        sugs[sugloop][1] = sugs[sugloop][1] + "\n" + qwords[3];
-                        //        sugexists=true;
-                        //        break;
-                        //    }
-                        //}
-                        //if (!sugexists)
-                        //    sugs.Add(new List<string>(new string[] { qwords[2], qwords[3], qwords[7] }));
                     }
 
                 }
             }
-            NSUtil.DebugPrint("NimStudio - suggs count:" + sugs.Count.ToString());
+            NSUtil.DebugPrint("NimStudio - suggs count:" + sugdct.Count.ToString());
 
         }
 
-        public void conwriteold(string str) {
-            conout.Clear();
-            sugs.Clear();
-            queryfinished=false;
-            proc.StandardInput.WriteLine(str);
-            int waitcount=0;
-            while (!queryfinished) {
-                if (proc == null || proc.HasExited) break;
-                Thread.Sleep(50);
-                waitcount++;
-                if (waitcount > 100) // 5 second wait cap
-                    break;
-            }
-            queryfinished = true;
-            if (proc == null || proc.HasExited) {
-                proc=null;
-                filepath_prev="";
-                return;
-            }
-            foreach (string qstr in conout) {
-                string[] qwords = qstr.Split(new char[] { '\t' });
-                if (qwords.Length < 2) break;
-                if (qwords[1] == "skProc" || qwords[1] == "skVar") {
-                    //new List<string>(new string[]{"G","H","I"})
-                    qwords[2] = qwords[2].Replace("htmlarc.","");
-                    qwords[7] = qwords[7].Replace(@"\x0D\x0A", "\n");
-                    qwords[7] = qwords[7].Trim(new char[]{'"'});
-                    if (qwords[7] != "")
-                        qwords[7] = "\n\n" + qwords[7];
-                    sugs.Add(new List<string>(new string[] { qwords[2], qwords[3] + qwords[7] }));
-                }
-            }
-            sugs.Add(new List<string>(new string[] { "func1", "func1 help" }));
-            NSUtil.DebugPrint("NimStudio - suggs count:" + sugs.Count.ToString());
-        }
+        //public void conwriteold(string str) {
+        //    conout.Clear();
+        //    sugs.Clear();
+        //    queryfinished=false;
+        //    proc.StandardInput.WriteLine(str);
+        //    int waitcount=0;
+        //    while (!queryfinished) {
+        //        if (proc == null || proc.HasExited) break;
+        //        Thread.Sleep(50);
+        //        waitcount++;
+        //        if (waitcount > 100) // 5 second wait cap
+        //            break;
+        //    }
+        //    queryfinished = true;
+        //    if (proc == null || proc.HasExited) {
+        //        proc=null;
+        //        filepath_prev="";
+        //        return;
+        //    }
+        //    foreach (string qstr in conout) {
+        //        string[] qwords = qstr.Split(new char[] { '\t' });
+        //        if (qwords.Length < 2) break;
+        //        if (qwords[1] == "skProc" || qwords[1] == "skVar") {
+        //            //new List<string>(new string[]{"G","H","I"})
+        //            qwords[2] = qwords[2].Replace("htmlarc.","");
+        //            qwords[7] = qwords[7].Replace(@"\x0D\x0A", "\n");
+        //            qwords[7] = qwords[7].Trim(new char[]{'"'});
+        //            if (qwords[7] != "")
+        //                qwords[7] = "\n\n" + qwords[7];
+        //            sugs.Add(new List<string>(new string[] { qwords[2], qwords[3] + qwords[7] }));
+        //        }
+        //    }
+        //    sugs.Add(new List<string>(new string[] { "func1", "func1 help" }));
+        //    NSUtil.DebugPrint("NimStudio - suggs count:" + sugs.Count.ToString());
+        //}
 
         public void Close() {
             NSUtil.DebugPrint("NimStudio - Nimsuggest close:");
