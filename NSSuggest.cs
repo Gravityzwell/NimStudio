@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using con = System.Console;
 
 namespace NimStudio.NimStudio {
@@ -15,6 +16,8 @@ namespace NimStudio.NimStudio {
         private Process proc = null;
         private List<string> conout = new List<string>();
         public List<List<string>> sugs = new List<List<string>>();
+        public SortedDictionary<string, List<string>> sugdct = new SortedDictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
         //private Thread thread = null;
         private bool queryfinished = false;
         private HashSet<string> filelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -42,6 +45,8 @@ namespace NimStudio.NimStudio {
             //    Init();
             //}
             if (!filelist.Contains(fstr)) {
+                // create or update nimstudio_base.nim, which contains: import openfile1, openfile2, ..
+                // nimstudio_base.nim is the initial file passed to nimsuggest
                 filelist.Add(fstr);
                 string basefile = "import " + string.Join(",", filelist);
                 StreamWriter sw1 = new StreamWriter(Path.GetDirectoryName(NSLangServ.codefile_path_current) + @"\nimstudio_base.nim");
@@ -80,15 +85,45 @@ namespace NimStudio.NimStudio {
                 if (qwords.Length < 2) continue;
                 if (qwords[1] == "skProc" || qwords[1] == "skVar") {
                     //new List<string>(new string[]{"G","H","I"})
-                    qwords[2] = qwords[2].Replace(fnamestrip, "");
-                    qwords[7] = qwords[7].Replace(@"\x0D\x0A", "\n");
-                    qwords[7] = qwords[7].Trim(new char[] { '"' });
-                    if (qwords[7] != "")
-                        qwords[7] = "\n\n" + qwords[7];
-                    sugs.Add(new List<string>(new string[] { qwords[2], qwords[3], qwords[3] + qwords[7] }));
+                    if (qtype == qtype_enum.def) {
+                        if (qwords[1] == "skVar")
+                            qwords[3] = "(" + qwords[3] + ")";
+                        qwords[3] = Regex.Replace(qwords[3], @"{.*?}","");
+                        qwords[2] = qwords[2].Replace(fnamestrip, "");
+                        qwords[7] = qwords[7].Replace(@"\x0D\x0A", "\n");
+                        qwords[7] = qwords[7].Trim(new char[] { '"' });
+                        if (qwords[7] != "")
+                            qwords[7] = "\n\n" + qwords[7];
+                        sugs.Add(new List<string>(new string[] { qwords[1], qwords[2], qwords[3], qwords[7] }));
+                        sugdct.Add(qwords[2], new List<string>(new string[] { qwords[1], qwords[3], qwords[7] }));
+
+                    } else {
+                        qwords[2] = qwords[2].Replace(fnamestrip, "");
+                        qwords[3] = Regex.Replace(qwords[3], @"{.*?}", "");
+                        qwords[7] = qwords[7].Replace(@"\x0D\x0A", "\n");
+                        qwords[7] = qwords[7].Trim(new char[] { '"' });
+                        if (qwords[7] != "")
+                            qwords[7] = "\n\n" + qwords[7];
+                        //bool sugexists=false;
+                        if (sugdct.ContainsKey(qwords[2])) {
+                            //sugdct[qwords[2]][0] = sugdct[qwords[2]][0] + "\n" + qwords[3];
+                            sugdct[qwords[2]][0] += "\n" + qwords[3];
+                        } else {
+                            sugdct.Add(qwords[2], new List<string>(new string[] { qwords[3], qwords[7] }) );
+                        }
+                        //for (int sugloop = 0; sugloop < sugs.Count; sugloop++) {
+                        //    if (sugs[sugloop][0] == qwords[2]) {
+                        //        sugs[sugloop][1] = sugs[sugloop][1] + "\n" + qwords[3];
+                        //        sugexists=true;
+                        //        break;
+                        //    }
+                        //}
+                        //if (!sugexists)
+                        //    sugs.Add(new List<string>(new string[] { qwords[2], qwords[3], qwords[7] }));
+                    }
+
                 }
             }
-            sugs.Add(new List<string>(new string[] { "func1", "proc", "func1 help" }));
             NSUtil.DebugPrint("NimStudio - suggs count:" + sugs.Count.ToString());
 
         }

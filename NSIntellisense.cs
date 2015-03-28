@@ -124,7 +124,6 @@ namespace NimStudio.NimStudio {
         void ICompletionSource.AugmentCompletionSession(ICompletionSession session, IList<CompletionSet> completionSets) {
             List<string> strList = new List<string>();
 
-            // should pull this from VSNimLangServ.textview_current
             int caretlineline2, caretcol2;
             NSLangServ.textview_current.GetCaretPos(out caretlineline2, out caretcol2);
             caretlineline2++;
@@ -136,17 +135,23 @@ namespace NimStudio.NimStudio {
             //NimStudioPackage.nimsuggest.conwrite(nimsugcmd);
             NSPackage.nimsuggest.Query(NimSuggestProc.qtype_enum.sug, caretline, caretcol);
 
-            //strList.Add("addition");
-            //strList.Add("adaptation");
-            //strList.Add("subtraction");
-            //strList.Add("summation");
             m_compList = new List<Completion>();
+
+            foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
+                var suglst = NSPackage.nimsuggest.sugdct[skey];
+                if (m_glyphdct.ContainsKey(suglst[0]))
+                    m_compList.Add(new Completion(suglst[1], suglst[1], suglst[2] + suglst[3], m_glyphdct[sugglst[1]], "icon text"));
+                else
+                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[1] + sugglst[2], null, "icon text"));
+            }
+
+
             foreach (List<string> sugglst in NSPackage.nimsuggest.sugs) {
                 //m_compList.Add(new Completion(str[0], str[0], str[1], m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupConstant, StandardGlyphItem.GlyphItemPublic), "icon text"));
                 if (m_glyphdct.ContainsKey(sugglst[1]))
-                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[2], m_glyphdct[sugglst[1]], "icon text"));                
+                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[1] + sugglst[2], m_glyphdct[sugglst[1]], "icon text"));
                 else
-                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[2], null, "icon text"));
+                    m_compList.Add(new Completion(sugglst[0], sugglst[0], sugglst[1] + sugglst[2], null, "icon text"));
             }
 
             SnapshotPoint currentPoint = (session.TextView.Caret.Position.BufferPosition) - 1;
@@ -316,6 +321,9 @@ namespace NimStudio.NimStudio {
                         break;
                     case VSConstants.VSStd2KCmdID.SHOWMEMBERLIST:
                         //Debug.Print("Cancel");
+                        break;
+                    case VSConstants.VSStd2KCmdID.QUICKINFO:
+                        Debug.Print("QUICKINFO");
                         break;
                     default:
                         //Debug.Print("Cancel");
