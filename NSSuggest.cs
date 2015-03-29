@@ -62,7 +62,13 @@ namespace NimStudio.NimStudio {
         /// <summary>Queries nimsuggest</summary><param name='qtype'>use qtype class constants</param><param name='qline'>code line number</param><param name='qcol'>code column number</param>
         public void Query(string qtype, int qline, int qcol) {
             string fstr = Path.GetFileNameWithoutExtension(NSLangServ.codefile_path_current);
-            NSUtil.SaveIfDirty(NSLangServ.codefile_path_current);
+
+            if (NSPackage.quickinfo || NSPackage.memberlist) {
+                NSPackage.quickinfo=false;
+                NSPackage.memberlist=false;
+                NSUtil.SaveIfDirty(NSLangServ.codefile_path_current);
+            }
+
             //if (fstr != filepath_prev) {
             //    Close();
             //    Init();
