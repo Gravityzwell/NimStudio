@@ -315,15 +315,15 @@ namespace NimStudio.NimStudio {
                         break;
                     case VSConstants.VSStd2KCmdID.SHOWMEMBERLIST:
                         //Debug.Print("Cancel");
+                        NSPackage.memberlist=true;
                         break;
                     case VSConstants.VSStd2KCmdID.QUICKINFO:
-                        Debug.Print("QUICKINFO");
+                        //Debug.Print("QUICKINFO");
                         NSPackage.quickinfo=true;
                         break;
                     default:
                         //Debug.Print("Cancel");
                         break;
-
                 }
             }
 

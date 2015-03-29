@@ -36,7 +36,6 @@ namespace NimStudio.NimStudio {
 
             string qinfostr = "";
             if (NSPackage.quickinfo == true) {
-                NSPackage.quickinfo=false;
                 span.iStartLine = line - 1;
                 span.iEndLine = line;
                 span.iStartIndex = col - 1;
@@ -53,13 +52,6 @@ namespace NimStudio.NimStudio {
                     }
                 }
 
-                //foreach (SortedDictionary<string, string> def in NSPackage.nimsuggest.sugdct.Values) {
-                //    if (def["kind"] == "skVar") {
-                //        qinfostr += def["type"] + " " + def["help"];
-                //    } else if (def["kind"] == "skProc") {
-                //        qinfostr += def["type"] + "\n" + def["type"] + def["help"];
-                //    }
-                //}
             }
             //System.Diagnostics.Debug.Print("GetDataTipNext");
             return qinfostr;
