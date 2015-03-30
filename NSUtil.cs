@@ -34,6 +34,10 @@ namespace NimStudio.NimStudio {
             }
         }
 
+        public static void DebugPrintAlways(string debugmsg, params object[] args) {
+                System.Diagnostics.Debug.Print(string.Format(debugmsg, args));
+        }
+
         public static void DebugPrint(string debugmsg, params object[] args) {
             if (debug)
                 System.Diagnostics.Debug.Print(string.Format(debugmsg, args));

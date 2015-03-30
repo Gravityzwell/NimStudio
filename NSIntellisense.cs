@@ -75,329 +75,6 @@ namespace NimStudio.NimStudio {
     //    }
     //}
 
-
-
-
-
-
-
-
-
-    internal class NSCompletionSource: ICompletionSource {
-
-        private NSCompletionSourceProvider m_sourceProvider;
-        private ITextBuffer m_textBuffer;
-        private List<Completion> m_compList;
-        private bool m_isDisposed;
-        private IGlyphService m_glyphservice;
-        private static Dictionary<string, BitmapImage> m_glyphdct = new Dictionary<string, BitmapImage>();
-
-
-        // IVsTextView textViewAdapter
-        // textView  = adapterFactory.CreateVsTextViewAdapter(GetService(typeof(IOleServiceProvider)) as IOleServiceProvider);
-        public NSCompletionSource(NSCompletionSourceProvider sourceProvider, ITextBuffer textBuffer, IGlyphService glyphService){ 
-            m_sourceProvider = sourceProvider;
-            m_textBuffer = textBuffer;
-            m_glyphservice = glyphService;
-            GlyphAdd("int");
-            GlyphAdd("float");
-            GlyphAdd("string");
-        }
-
-        private void GlyphAdd(string glyph) {
-            if (!m_glyphdct.ContainsKey(glyph)) { 
-                m_glyphdct.Add(glyph, new BitmapImage());
-                m_glyphdct[glyph].BeginInit();
-                m_glyphdct[glyph].UriSource = new Uri("pack://application:,,,/NimStudio;component/Resources/glyph-" + glyph + ".png");
-                m_glyphdct[glyph].EndInit();
-            }
-        }
-
-        private ITrackingSpan FindTokenSpanAtPosition(ITrackingPoint point, ICompletionSession session) {
-            SnapshotPoint currentPoint = (session.TextView.Caret.Position.BufferPosition) - 1;
-            ITextStructureNavigator navigator = m_sourceProvider.NavigatorService.GetTextStructureNavigator(m_textBuffer);
-            TextExtent extent = navigator.GetExtentOfWord(currentPoint);
-            string w1 = currentPoint.Snapshot.GetText(extent.Span);
-            return currentPoint.Snapshot.CreateTrackingSpan(extent.Span, SpanTrackingMode.EdgeInclusive);
-        }
-
-        void ICompletionSource.AugmentCompletionSession(ICompletionSession session, IList<CompletionSet> completionSets) {
-            List<string> strList = new List<string>();
-
-            int caretline, caretcol;
-            NSLangServ.textview_current.GetCaretPos(out caretline, out caretcol);
-            caretline++;
-            //int caretline = NSCompletionCommandHandler.caretline;
-            //int caretcol = NSCompletionCommandHandler.caretcol;
-            //textview.GetCaretPos(out line, out idx);
-
-            //String nimsugcmd = String.Format("sug htmlarc.nim:{0}:{1}",caretline,caretcol);
-            //NimStudioPackage.nimsuggest.conwrite(nimsugcmd);
-            NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.sug, caretline, caretcol);
-
-            m_compList = new List<Completion>();
-
-            //foreach (SortedDictionary<string, string> def in NSPackage.nimsuggest.sugdct.Values) {
-
-            foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
-                var sugdct = NSPackage.nimsuggest.sugdct[skey];
-                if (m_glyphdct.ContainsKey(sugdct["type"]))
-                    m_compList.Add(new Completion(skey, skey, sugdct["type"] + sugdct["help"], m_glyphdct[sugdct["type"]], "icon text"));
-                else
-                    m_compList.Add(new Completion(skey, skey, sugdct["type"] + sugdct["help"], null, "icon text"));
-            }
-
-            SnapshotPoint currentPoint = (session.TextView.Caret.Position.BufferPosition) - 1;
-            ITextStructureNavigator navigator = m_sourceProvider.NavigatorService.GetTextStructureNavigator(m_textBuffer);
-            TextExtent extent = navigator.GetExtentOfWord(currentPoint);
-            string w1 = currentPoint.Snapshot.GetText(extent.Span);
-            var startpoint = session.GetTriggerPoint(session.TextView.TextBuffer).GetPosition(currentPoint.Snapshot);
-
-            ITrackingSpan applicableTo;
-            if (w1==".")
-                applicableTo = currentPoint.Snapshot.CreateTrackingSpan(startpoint, 0, SpanTrackingMode.EdgeInclusive);
-            else
-                applicableTo = currentPoint.Snapshot.CreateTrackingSpan(extent.Span, SpanTrackingMode.EdgeInclusive);
-
-
-            //var applicableTo = m_textBuffer.CurrentSnapshot.CreateTrackingSpan(session.GetTriggerPoint(session.TextView.TextBuffer).GetPosition(currentPoint.Snapshot), 0, SpanTrackingMode.EdgeInclusive);
-
-            //completionSets.Add(new CompletionSet("Tokens", "Tokens", applicableTo, m_compList, null));
-            completionSets.Add(new CompletionSet("Tokens", "Tokens", applicableTo, m_compList, null));
-            //completionSets.Add(new CompletionSet(m_compList));
-
-            //completionSets.Add(new CompletionSet("Tokens", "Tokens", FindTokenSpanAtPosition(session.GetTriggerPoint(m_textBuffer), session), m_compList, null));
-        }
-
-        private enum TokenType {
-            Struct,
-            Module,
-            Function,
-            Crate,
-            Let,
-            StructField,
-            Impl,
-            Enum,
-            EnumVariant,
-            Type,
-            FnArg,
-            Trait,
-            Static,
-        }
-
-        private ImageSource GetCompletionIcon(TokenType elType) {
-            switch (elType) {
-                case TokenType.Struct:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupStruct, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.Module:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphAssembly, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.Function:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphExtensionMethod, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.Crate:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphAssembly, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.Let:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupConstant, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.StructField:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupField, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.Impl:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupTypedef, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.Enum:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupEnum, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.EnumVariant:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupEnumMember, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.Type:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupTypedef, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.Trait:
-                    return m_glyphservice.GetGlyph(StandardGlyphGroup.GlyphGroupInterface, StandardGlyphItem.GlyphItemPublic);
-                case TokenType.Static:
-                    return null;
-                case TokenType.FnArg:
-                    return null;
-                default:
-                    NSUtil.DebugPrint("Completion type not found: {0}", elType);
-                    return null;
-            }
-        }
-
-
-
-        public void Dispose() {
-            if (!m_isDisposed) {
-                GC.SuppressFinalize(this);
-                m_isDisposed = true;
-            }
-        }
-    }
-
-    [Export(typeof(ICompletionSourceProvider))]
-    [ContentType(NSConst.LangName)]
-    [Name("nim completion")]
-    internal class NSCompletionSourceProvider: ICompletionSourceProvider {
-        [Import] internal ITextStructureNavigatorSelectorService NavigatorService { get; set; }
-        [Import] private IGlyphService GlyphService { get; set; }
-
-        public ICompletionSource TryCreateCompletionSource(ITextBuffer textBuffer) {
-            return new NSCompletionSource(this, textBuffer, GlyphService);
-        }
-    }
-
-    [Export(typeof(IVsTextViewCreationListener))]
-    [Name("nim completion handler")]
-    [ContentType(NSConst.LangName)]
-    [TextViewRole(PredefinedTextViewRoles.Editable)]
-    internal class NSCompletionHandlerProvider: IVsTextViewCreationListener {
-        [Import] internal IVsEditorAdaptersFactoryService AdapterService = null;
-        [Import] internal ICompletionBroker CompletionBroker { get; set; }
-        [Import] internal SVsServiceProvider ServiceProvider { get; set; }
-
-        public void VsTextViewCreated(IVsTextView textViewAdapter) {
-            ITextView textView = AdapterService.GetWpfTextView(textViewAdapter);
-            if (textView == null)
-                return;
-
-            Func<NSCompletionCommandHandler> createCommandHandler = delegate() { 
-                return new NSCompletionCommandHandler(textViewAdapter, textView, this);
-            };
-            textView.Properties.GetOrCreateSingletonProperty(createCommandHandler);
-        }
-    }
-
-
-
-    internal class NSCompletionCommandHandler: IOleCommandTarget {
-        private IOleCommandTarget m_nextCommandHandler;
-        private ITextView m_textView;
-        private IVsTextView m_textViewAdapter;
-        private NSCompletionHandlerProvider m_provider;
-        private ICompletionSession m_session;
-        public static int caretline=0;
-        public static int caretcol=0;
-
-        internal NSCompletionCommandHandler(IVsTextView textViewAdapter, ITextView textView, NSCompletionHandlerProvider provider) {
-            this.m_textView = textView;
-            this.m_provider = provider;
-            this.m_textViewAdapter = textViewAdapter;
-            //add the command to the command chain
-            textViewAdapter.AddCommandFilter(this, out m_nextCommandHandler);
-        }
-
-        public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
-            return m_nextCommandHandler.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
-        }
-
-        public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
-            if (VsShellUtilities.IsInAutomationFunction(m_provider.ServiceProvider)) {
-                return m_nextCommandHandler.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
-            }
-            uint commandID = nCmdID;
-            char typedChar = char.MinValue;
-            // test input is a char
-            if (pguidCmdGroup == VSConstants.VSStd2K && nCmdID == (uint)VSConstants.VSStd2KCmdID.TYPECHAR) {
-                typedChar = (char)(ushort)Marshal.GetObjectForNativeVariant(pvaIn);
-            }
-
-            if (pguidCmdGroup == VSConstants.VSStd2K) {
-                switch ((VSConstants.VSStd2KCmdID)nCmdID) {
-                    case VSConstants.VSStd2KCmdID.AUTOCOMPLETE:
-                        //Debug.Print("Cancel");
-                        break;
-                    case VSConstants.VSStd2KCmdID.COMPLETEWORD:
-                        //Debug.Print("Cancel");
-                        break;
-                    case VSConstants.VSStd2KCmdID.RETURN:
-                        //Debug.Print("Cancel");
-                        break;
-                    case VSConstants.VSStd2KCmdID.TAB:
-                        //Debug.Print("Cancel");
-                        break;
-                    case VSConstants.VSStd2KCmdID.CANCEL:
-                        //Debug.Print("Cancel");
-                        break;
-                    case VSConstants.VSStd2KCmdID.SHOWMEMBERLIST:
-                        //Debug.Print("Cancel");
-                        NSPackage.memberlist=true;
-                        break;
-                    case VSConstants.VSStd2KCmdID.PARAMINFO:
-                        Debug.Print("PARAMINFO");
-                        break;
-                    case VSConstants.VSStd2KCmdID.QUICKINFO:
-                        //Debug.Print("QUICKINFO");
-                        NSPackage.quickinfo=true;
-                        break;
-                    default:
-                        //Debug.Print("Cancel");
-                        break;
-                }
-            }
-
-
-            // check for a commit character 
-            if (nCmdID == (uint)VSConstants.VSStd2KCmdID.RETURN || nCmdID == (uint)VSConstants.VSStd2KCmdID.TAB || (char.IsWhiteSpace(typedChar) || char.IsPunctuation(typedChar))) {
-                if (m_session != null && !m_session.IsDismissed) {
-                    // if selection is fully selected, commit
-                    if (m_session.SelectedCompletionSet.SelectionStatus.IsSelected) {
-                        m_session.Commit();
-                        // don't add to the buffer 
-                        return VSConstants.S_OK;
-                    } else {
-                        // no selection, dismiss
-                        m_session.Dismiss();
-                    }
-                }
-            }
-
-            int retVal = m_nextCommandHandler.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut); // add to buffer
-            bool handled = false;
-            if ( (VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.SHOWMEMBERLIST || 
-                    (!typedChar.Equals(char.MinValue) && char.IsLetterOrDigit(typedChar)) ) {
-                if (m_session == null || m_session.IsDismissed) {
-                    this.TriggerCompletion();
-                    if (m_session == null) {
-                        handled = false;
-                        Debug.Print("NimStudio - Completion session not created.");
-                    } else {
-                        Debug.Print("NimStudio - Completion session created. Tot:" + m_session.CompletionSets.Count.ToString());
-                        m_session.Filter();
-                        handled = true;
-                    }
-                } else {
-                    m_session.Filter(); // session active
-                    handled = true;
-                }
-            } else if (commandID == (uint)VSConstants.VSStd2KCmdID.BACKSPACE || commandID == (uint)VSConstants.VSStd2KCmdID.DELETE) {
-                // redo the filter if there is a deletion
-                if (m_session != null && !m_session.IsDismissed)
-                    m_session.Filter();
-                handled = true;
-            }
-            if (handled) return VSConstants.S_OK;
-            return retVal;
-        }
-
-        private bool TriggerCompletion() {
-            // test caret is in a projection location
-            SnapshotPoint? caretPoint = m_textView.Caret.Position.Point.GetPoint(textBuffer => (!textBuffer.ContentType.IsOfType("projection")), PositionAffinity.Predecessor);
-            CaretPosition curPosition = m_textView.Caret.Position;
-            var curTrackPoint = m_textView.TextSnapshot.CreateTrackingPoint(curPosition.BufferPosition.Position, Microsoft.VisualStudio.Text.PointTrackingMode.Positive);
-            //int line, idx;
-            m_textViewAdapter.GetCaretPos(out caretline, out caretcol);
-            caretline++;
-            if (!caretPoint.HasValue)
-                return false;
-            //m_session = m_provider.CompletionBroker.CreateCompletionSession(m_textView, caretPoint.Value.Snapshot.CreateTrackingPoint(caretPoint.Value.Position, PointTrackingMode.Positive), true);
-            m_session = m_provider.CompletionBroker.CreateCompletionSession(m_textView, caretPoint.Value.Snapshot.CreateTrackingPoint(caretPoint.Value.Position, PointTrackingMode.Positive), false);
-            m_session.Dismissed += this.OnSessionDismissed;  //subscribe to dismissed event
-            m_session.Start();
-            return true;
-        }
-
-        private void OnSessionDismissed(object sender, EventArgs e) {
-            m_session.Dismissed -= this.OnSessionDismissed;
-            m_session = null;
-            Debug.Print("NimStudio - Completion session dismissed.");
-        }
-    }
-
     [Export(typeof(IIntellisenseControllerProvider))]
     [Name("NimStudio Intellisense Controller")]
     [ContentType(NSConst.LangName)]
@@ -405,6 +82,14 @@ namespace NimStudio.NimStudio {
 
         [Import] internal ISignatureHelpBroker SignatureHelpBroker { get; set; }
         [Import] internal ITextDocumentFactoryService TextDocumentFactoryService = null;
+        [Import] internal ICompletionBroker _CompletionBroker = null;
+        internal System.IServiceProvider _serviceprovider;
+
+        [ImportingConstructor]
+        public NSIntellisenseControllerProvider([Import(typeof(SVsServiceProvider))] System.IServiceProvider serviceProvider) {
+            _serviceprovider = serviceProvider;
+            //PythonService = serviceProvider.GetPythonToolsService();
+        }
 
         public IIntellisenseController TryCreateIntellisenseController(ITextView textView, IList<ITextBuffer> subjectBuffers) {
             ITextDocument textDocument;
@@ -415,43 +100,43 @@ namespace NimStudio.NimStudio {
             if (!textView.Roles.Contains(PredefinedTextViewRoles.Document)) {
                 return null;
             }
-            return new NSIntellisenseController(textView, textDocument, this);
+            return new NSIntellisenseController(textView, textDocument, this, _serviceprovider);
         }
     }
 
-    internal class NSIntellisenseController: IIntellisenseController {
-        readonly ITextView textView;
-        readonly ITextDocument textDocument;
-        readonly NSIntellisenseControllerProvider provider;
+    internal class NSIntellisenseController: IIntellisenseController, IOleCommandTarget {
+        readonly ITextView _textview;
+        readonly ITextDocument _textdocument;
+        readonly NSIntellisenseControllerProvider _isprovider;
         ISignatureHelpSession session;
 
-        public NSIntellisenseController(ITextView textView, ITextDocument textDocument, NSIntellisenseControllerProvider provider) {
-            this.textView = textView;
-            this.textDocument = textDocument;
-            this.provider = provider;
+        public NSIntellisenseController(ITextView textview, ITextDocument textDocument, NSIntellisenseControllerProvider provider, System.IServiceProvider serviceProvider) {
+            _textview = textview;
+            _textdocument = textDocument;
+            _isprovider = provider;
 
             textDocument.DirtyStateChanged += OnDocumentDirtyStateChanged;
         }
 
         void OnDocumentDirtyStateChanged(object sender, EventArgs e) {
-            if (!textDocument.IsDirty) {
-                DisplayEncouragement();
-            }
+            //if (!textDocument.IsDirty) {
+                TriggerSignatureHelp();
+            //}
         }
 
-        void DisplayEncouragement() {
-            var point = textView.Caret.Position.BufferPosition;
+        void TriggerSignatureHelp() {
+            var point = _textview.Caret.Position.BufferPosition;
             var triggerPoint = point.Snapshot.CreateTrackingPoint(point.Position, PointTrackingMode.Positive);
-            if (!provider.SignatureHelpBroker.IsSignatureHelpActive(textView)) {
+            if (!_isprovider.SignatureHelpBroker.IsSignatureHelpActive(_textview)) {
                 //textView.Properties.AddProperty(NSSigSource.SessionKey, null);
-                session = provider.SignatureHelpBroker.TriggerSignatureHelp(textView, triggerPoint, true);
+                session = _isprovider.SignatureHelpBroker.TriggerSignatureHelp(_textview, triggerPoint, true);
                 //textView.Properties.RemoveProperty(NSSigSource.SessionKey);
             }
         }
 
-        public void Detach(ITextView detacedTextView) {
-            if (textView == detacedTextView) {
-                textDocument.DirtyStateChanged -= OnDocumentDirtyStateChanged;
+        public void Detach(ITextView tview) {
+            if (_textview == tview) {
+                _textdocument.DirtyStateChanged -= OnDocumentDirtyStateChanged;
             }
         }
 

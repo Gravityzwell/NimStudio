@@ -125,7 +125,7 @@ namespace NimStudio.NimStudio {
             var currentSnapshot = subjectTriggerPoint.Value.Snapshot;
             var querySpan = new SnapshotSpan(subjectTriggerPoint.Value, 0);
             var applicableToSpan = currentSnapshot.CreateTrackingSpan(querySpan.Start.Position, 0, SpanTrackingMode.EdgeInclusive);
-
+            NSUtil.DebugPrintAlways("Sighelp");
             string sighelp = "hey1";
             if (sighelp != null) {
                 var signature = new Signature(applicableToSpan, sighelp, "", "");

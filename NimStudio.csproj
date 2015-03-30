@@ -144,6 +144,7 @@
     <Compile Include="Guids.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="NSAuthoringScope.cs" />
+    <Compile Include="NSCompletion.cs" />
     <Compile Include="NSPackage.cs">
       <SubType>Component</SubType>
     </Compile>
