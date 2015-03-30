@@ -57,7 +57,6 @@ namespace NimStudio.NimStudio {
             return qinfostr;
         }
 
-
         public override Declarations GetDeclarations(IVsTextView view, int line, int col, TokenInfo info, ParseReason reason) {
             return null;
         }

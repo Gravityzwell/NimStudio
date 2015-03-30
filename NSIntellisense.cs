@@ -317,6 +317,9 @@ namespace NimStudio.NimStudio {
                         //Debug.Print("Cancel");
                         NSPackage.memberlist=true;
                         break;
+                    case VSConstants.VSStd2KCmdID.PARAMINFO:
+                        Debug.Print("PARAMINFO");
+                        break;
                     case VSConstants.VSStd2KCmdID.QUICKINFO:
                         //Debug.Print("QUICKINFO");
                         NSPackage.quickinfo=true;
@@ -394,4 +397,70 @@ namespace NimStudio.NimStudio {
             Debug.Print("NimStudio - Completion session dismissed.");
         }
     }
+
+    [Export(typeof(IIntellisenseControllerProvider))]
+    [Name("NimStudio Intellisense Controller")]
+    [ContentType(NSConst.LangName)]
+    internal class NSIntellisenseControllerProvider: IIntellisenseControllerProvider {
+
+        [Import] internal ISignatureHelpBroker SignatureHelpBroker { get; set; }
+        [Import] internal ITextDocumentFactoryService TextDocumentFactoryService = null;
+
+        public IIntellisenseController TryCreateIntellisenseController(ITextView textView, IList<ITextBuffer> subjectBuffers) {
+            ITextDocument textDocument;
+            if (!TextDocumentFactoryService.TryGetTextDocument(textView.TextDataModel.DocumentBuffer, out textDocument)) {
+                return null;
+            }
+
+            if (!textView.Roles.Contains(PredefinedTextViewRoles.Document)) {
+                return null;
+            }
+            return new NSIntellisenseController(textView, textDocument, this);
+        }
+    }
+
+    internal class NSIntellisenseController: IIntellisenseController {
+        readonly ITextView textView;
+        readonly ITextDocument textDocument;
+        readonly NSIntellisenseControllerProvider provider;
+        ISignatureHelpSession session;
+
+        public NSIntellisenseController(ITextView textView, ITextDocument textDocument, NSIntellisenseControllerProvider provider) {
+            this.textView = textView;
+            this.textDocument = textDocument;
+            this.provider = provider;
+
+            textDocument.DirtyStateChanged += OnDocumentDirtyStateChanged;
+        }
+
+        void OnDocumentDirtyStateChanged(object sender, EventArgs e) {
+            if (!textDocument.IsDirty) {
+                DisplayEncouragement();
+            }
+        }
+
+        void DisplayEncouragement() {
+            var point = textView.Caret.Position.BufferPosition;
+            var triggerPoint = point.Snapshot.CreateTrackingPoint(point.Position, PointTrackingMode.Positive);
+            if (!provider.SignatureHelpBroker.IsSignatureHelpActive(textView)) {
+                //textView.Properties.AddProperty(NSSigSource.SessionKey, null);
+                session = provider.SignatureHelpBroker.TriggerSignatureHelp(textView, triggerPoint, true);
+                //textView.Properties.RemoveProperty(NSSigSource.SessionKey);
+            }
+        }
+
+        public void Detach(ITextView detacedTextView) {
+            if (textView == detacedTextView) {
+                textDocument.DirtyStateChanged -= OnDocumentDirtyStateChanged;
+            }
+        }
+
+        public void ConnectSubjectBuffer(ITextBuffer subjectBuffer) {
+        }
+
+        public void DisconnectSubjectBuffer(ITextBuffer subjectBuffer) {
+        }
+    }
+
+
 }

@@ -148,6 +148,8 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="NSQuickInfo.cs" />
+    <None Include="NSSource.cs" />
+    <Compile Include="NSSig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PkgCmdID.cs" />
     <Compile Include="NSUtil.cs" />
