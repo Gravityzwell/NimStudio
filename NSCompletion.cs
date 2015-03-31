@@ -186,6 +186,7 @@ namespace NimStudio.NimStudio {
         }
     }
 
+    /*
     [Export(typeof(IVsTextViewCreationListener))]
     [Name("nim completion handler")]
     [ContentType(NSConst.LangName)]
@@ -209,9 +210,9 @@ namespace NimStudio.NimStudio {
             textView.Properties.GetOrCreateSingletonProperty(createCommandHandler);
         }
     }
+    */
 
-
-
+    /*
     internal class NSCompletionCommandHandler: IOleCommandTarget {
         private IOleCommandTarget m_nextCommandHandler;
         private ITextView m_textView;
@@ -345,5 +346,5 @@ namespace NimStudio.NimStudio {
             Debug.Print("NimStudio - Completion session dismissed.");
         }
     }
-
+    */
 }
