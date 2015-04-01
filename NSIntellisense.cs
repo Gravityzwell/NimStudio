@@ -332,8 +332,8 @@ namespace NimStudio.NimStudio {
 
             int retVal = m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
             bool handled = false;
-            if ((VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.SHOWMEMBERLIST ||
-                    (!typedChar.Equals(char.MinValue) && char.IsLetterOrDigit(typedChar))) {
+            //if ((VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.SHOWMEMBERLIST || (!typedChar.Equals(char.MinValue) && char.IsLetterOrDigit(typedChar))) {
+            if ((VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.SHOWMEMBERLIST) {
                 if (_session_completion == null || _session_completion.IsDismissed) {
                     this.TriggerCompletion();
                     if (_session_completion == null) {
@@ -361,14 +361,14 @@ namespace NimStudio.NimStudio {
         }
 
         private bool TriggerCompletion() {
-            //SnapshotPoint? caretPoint = _textview.Caret.Position.Point.GetPoint(textBuffer => (!textBuffer.ContentType.IsOfType("projection")), PositionAffinity.Predecessor);
-            //CaretPosition curPosition = _textview.Caret.Position;
-            //var curTrackPoint = _textview.TextSnapshot.CreateTrackingPoint(curPosition.BufferPosition.Position, Microsoft.VisualStudio.Text.PointTrackingMode.Positive);
-            //if (!caretPoint.HasValue)
-            //    return false;
-            //_session_completion = _nsicprovider._completionbroker.CreateCompletionSession(_textview, caretPoint.Value.Snapshot.CreateTrackingPoint(caretPoint.Value.Position, PointTrackingMode.Positive), false);
-            //_session_completion.Dismissed += this.OnSessionDismissed;  //subscribe to dismissed event
-            //_session_completion.Start();
+            SnapshotPoint? caretPoint = _textview.Caret.Position.Point.GetPoint(textBuffer => (!textBuffer.ContentType.IsOfType("projection")), PositionAffinity.Predecessor);
+            CaretPosition curPosition = _textview.Caret.Position;
+            var curTrackPoint = _textview.TextSnapshot.CreateTrackingPoint(curPosition.BufferPosition.Position, Microsoft.VisualStudio.Text.PointTrackingMode.Positive);
+            if (!caretPoint.HasValue)
+                return false;
+            _session_completion = _nsicprovider._completionbroker.CreateCompletionSession(_textview, caretPoint.Value.Snapshot.CreateTrackingPoint(caretPoint.Value.Position, PointTrackingMode.Positive), false);
+            _session_completion.Dismissed += this.OnSessionDismissed;  //subscribe to dismissed event
+            _session_completion.Start();
             return true;
         }
 
