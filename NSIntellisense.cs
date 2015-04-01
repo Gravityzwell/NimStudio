@@ -105,7 +105,9 @@ namespace NimStudio.NimStudio {
             //    () => new NSIntellisenseController(nsicp, textview );
             //textview.Properties.GetOrCreateSingletonProperty(createCommandHandler);
             NSIntellisenseController controller;
-            textview.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out controller);
+            if (textview.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out controller)) {
+                controller.AttachKeyboardFilter();
+            };
             Debug.Print("1");
             //textview.Properties.GetOrCreateSingletonProperty(() =>new NSIntellisenseController(nsicp(
             //    _serviceprovider_vs
@@ -148,12 +150,13 @@ namespace NimStudio.NimStudio {
 
         internal ISignatureHelpBroker _signaturehelpbroker = null;
         //internal ITextDocumentFactoryService _textdocumentfactoryservice = null;
-        //internal IEditorOperationsFactoryService _editoperationsfactory = null;
+        internal IEditorOperationsFactoryService _editoperationsfactory = null;
         internal ICompletionBroker _completionbroker = null;
         internal IVsEditorAdaptersFactoryService _adaptersfactory = null;
         internal IQuickInfoBroker _quickinfobroker = null;
         //internal System.IServiceProvider _serviceprovider_sys = null;
         internal SVsServiceProvider _serviceprovider_vs = null;
+        internal IEditorOperations _editops = null;
 
         [ImportingConstructor]
         //public NSIntellisenseControllerProvider([Import(typeof(SVsServiceProvider))] SVsServiceProvider serviceProvider) {
@@ -162,7 +165,8 @@ namespace NimStudio.NimStudio {
             ICompletionBroker icb, 
             IQuickInfoBroker iqib, 
             ISignatureHelpBroker ish,
-            IVsEditorAdaptersFactoryService ieafs
+            IVsEditorAdaptersFactoryService ieafs,
+            IEditorOperationsFactoryService ieofs
             ) {
 
 
@@ -181,7 +185,7 @@ namespace NimStudio.NimStudio {
             _serviceprovider_vs = serviceProvider;
             //_serviceprovider_sys = NSLangServ._serviceprovider_sys;
             //_serviceprovider_sys = serviceProvider;
-            //_editoperationsfactory = ieofs;
+            _editoperationsfactory = ieofs;
             _signaturehelpbroker = ish;
             //_textdocumentfactoryservice = itdfs;
             _completionbroker = icb;
@@ -196,6 +200,7 @@ namespace NimStudio.NimStudio {
             NSIntellisenseController nsiscontroller;
             if (!textView.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out nsiscontroller)) {
                 nsiscontroller = new NSIntellisenseController(this, textView);
+                //nsiscontroller.AttachKeyboardFilter();
             }
 
             return nsiscontroller;
@@ -232,6 +237,7 @@ namespace NimStudio.NimStudio {
         private ISignatureHelpSession _session_sighelp;
         private IQuickInfoSession _session_quickinfo;
         public IOleCommandTarget m_commandhandler_next;
+        internal IEditorOperationsFactoryService _editoperationsfactory;
         private IEditorOperations _editops;
         private ISignatureHelpSession session;
 
@@ -241,9 +247,19 @@ namespace NimStudio.NimStudio {
             _serviceprovider = nsicprovider._serviceprovider_vs;
             _textview = textview;
             _ivstextview = _nsicprovider._adaptersfactory.GetViewAdapter(_textview);
-            //_editops = nsicprovider._editoperationsfactory.GetEditorOperations(textview);
+            _editops = nsicprovider._editoperationsfactory.GetEditorOperations(textview);
             //nsicprovider._textdocumentfactoryservice.TryGetTextDocument(_textview.TextDataModel.DocumentBuffer, out _textdocument);
-            _ivstextview.AddCommandFilter(this, out m_commandhandler_next);
+            _textview.Properties.AddProperty(typeof(NSIntellisenseController), this);  
+            //_ivstextview.AddCommandFilter(this, out m_commandhandler_next);
+        }
+
+       internal void AttachKeyboardFilter() {
+            if (m_commandhandler_next == null) {
+                if (_ivstextview != null) {
+                    ErrorHandler.ThrowOnFailure(_ivstextview.AddCommandFilter(this, out m_commandhandler_next));
+                    Debug.Print("ATTACHED");
+                }
+            }
         }
 
         public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
@@ -260,33 +276,37 @@ namespace NimStudio.NimStudio {
             if (pguidCmdGroup == VSConstants.VSStd2K && nCmdID == (uint)VSConstants.VSStd2KCmdID.TYPECHAR) {
                 typedChar = (char)(ushort)Marshal.GetObjectForNativeVariant(pvaIn);
             }
+            if (typedChar != char.MinValue)
+                Debug.Print("EXEC {0}", typedChar);
+            else
+                Debug.Print("EXEC");
 
             if (pguidCmdGroup == VSConstants.VSStd2K) {
                 switch ((VSConstants.VSStd2KCmdID)nCmdID) {
                     case VSConstants.VSStd2KCmdID.AUTOCOMPLETE:
-                        //Debug.Print("Cancel");
+                        Debug.Print("AUTOCOMPLETE");
                         break;
                     case VSConstants.VSStd2KCmdID.COMPLETEWORD:
-                        //Debug.Print("Cancel");
+                        Debug.Print("COMPLETEWORD");
                         break;
                     case VSConstants.VSStd2KCmdID.RETURN:
-                        //Debug.Print("Cancel");
+                        Debug.Print("RETURN");
                         break;
                     case VSConstants.VSStd2KCmdID.TAB:
-                        //Debug.Print("Cancel");
+                        Debug.Print("TAB");
                         break;
                     case VSConstants.VSStd2KCmdID.CANCEL:
-                        //Debug.Print("Cancel");
+                        Debug.Print("CANCEL");
                         break;
                     case VSConstants.VSStd2KCmdID.SHOWMEMBERLIST:
-                        //Debug.Print("Cancel");
+                        Debug.Print("SHOWMEMBERLIST");
                         NSPackage.memberlist = true;
                         break;
                     case VSConstants.VSStd2KCmdID.PARAMINFO:
                         Debug.Print("PARAMINFO");
                         break;
                     case VSConstants.VSStd2KCmdID.QUICKINFO:
-                        //Debug.Print("QUICKINFO");
+                        Debug.Print("QUICKINFO");
                         NSPackage.quickinfo = true;
                         break;
                     default:
@@ -334,7 +354,8 @@ namespace NimStudio.NimStudio {
                     _session_completion.Filter();
                 handled = true;
             }
-            if (handled) return VSConstants.S_OK;
+            if (handled) 
+                return VSConstants.S_OK;
             return retVal;
 
         }
