@@ -113,6 +113,9 @@ namespace NimStudio.NimStudio {
             //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
             base.Initialize();
             nspackage = this;
+
+
+
             //System.Windows.Media.Imaging.BitmapImage img = new System.Windows.Media.Imaging.BitmapImage();
             //imgicon = new System.Windows.Media.Imaging.BitmapImage();
             #if ivslang

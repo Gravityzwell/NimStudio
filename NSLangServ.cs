@@ -21,12 +21,19 @@ namespace NimStudio.NimStudio {
         private LanguagePreferences languageprefs;
         public static IVsTextView textview_current;
         public static string codefile_path_current;
+        public static System.IServiceProvider _serviceprovider_sys;
 
         public override string GetFormatFilterList() {
             return "Nim file(*.nim)";
         }
 
         public override LanguagePreferences GetLanguagePreferences() {
+            _serviceprovider_sys = this.Site; // getting this here as it doesn't work in constructor
+            //IVsShell shell = _serviceprovider_sys.GetService(typeof(SVsShell)) as IVsShell;
+            //if (shell == null) {
+            //    throw new InvalidOperationException();
+            //}
+
             if (languageprefs == null) {
                 languageprefs = new LanguagePreferences(this.Site, typeof(NSLangServ).GUID, this.Name);
                 if (this.languageprefs != null)

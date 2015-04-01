@@ -23,6 +23,8 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.StandardClassification;
 using Microsoft.VisualStudio.Utilities;
+using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
+
 
 namespace NimStudio.NimStudio {
 
@@ -75,32 +77,96 @@ namespace NimStudio.NimStudio {
     //    }
     //}
 
+    [Export(typeof(IVsTextViewCreationListener))]
+    [Name("NimStudio TextViewCreation Listener")]
+    [ContentType(NSConst.LangName)]
+    [TextViewRole(PredefinedTextViewRoles.Editable)]
+    internal class NSTextViewCreationListener: IVsTextViewCreationListener {
+        [Import] internal ISignatureHelpBroker _signaturehelpbroker = null;
+        [Import] internal ITextDocumentFactoryService _textdocumentfactoryservice = null;
+        [Import] internal IEditorOperationsFactoryService _editoperationsfactory = null;
+        [Import] internal ICompletionBroker _completionbroker = null;
+        [Import] internal IVsEditorAdaptersFactoryService _adaptersfactory = null;
+        [Import] internal SVsServiceProvider _serviceprovider_vs = null;
+        [Import] internal IQuickInfoBroker _quickinfobroker = null;
+
+        public void VsTextViewCreated(IVsTextView textviewadapter) {
+
+
+            ITextView textview = _adaptersfactory.GetWpfTextView(textviewadapter);
+            if (textview == null) {
+                return;
+            }
+
+            textview.Properties.GetOrCreateSingletonProperty(() =>new NSIntellisenseController(new NSIntellisenseControllerProvider(
+                _serviceprovider_vs, 
+                _signaturehelpbroker,
+                _textdocumentfactoryservice,
+                _editoperationsfactory,
+                _completionbroker,
+                _adaptersfactory,
+                _quickinfobroker
+                ), textview));
+
+            //NSIntellisenseController nsintillisensectrl = new NSIntellisenseController(new NSIntellisenseControllerProvider(this, _serviceprovider_vs), textview);
+            //IOleCommandTarget next;
+            //textviewadapter.AddCommandFilter(nsintillisensectrl, out next);
+            //nsintillisensectrl.m_commandhandler_next = next;
+
+        }
+    }
+
+
+
     [Export(typeof(IIntellisenseControllerProvider))]
-    //[Export(typeof(IVsTextViewCreationListener))]
-    //[Name("NimStudio Command Filter")]
     [Name("NimStudio Intellisense Controller")]
     [ContentType(NSConst.LangName)]
-    //[TextViewRole(PredefinedTextViewRoles.Editable)]
     internal class NSIntellisenseControllerProvider: IIntellisenseControllerProvider  {
 
-        //[Import] internal ITextDocumentFactoryService _textdocumentfactoryservice { get; set; }
-        [Import] internal ISignatureHelpBroker _signaturehelpbroker = null; // set via MEF
-        [Import] internal ITextDocumentFactoryService _textdocumentfactoryservice = null;
-        [Import] internal IEditorOperationsFactoryService _editoperationsfactory = null; // Set via MEF
-        [Import] internal ICompletionBroker _completionbroker = null; // Set via MEF
-        [Import] internal IVsEditorAdaptersFactoryService _adaptersfactory = null;
-        //[Import] internal Microsoft.VisualStudio.OLE.Interop.IServiceProvider _serviceprovider = null;
-        [Import] internal SVsServiceProvider _serviceprovider_vs = null;
-        [Import] internal IQuickInfoBroker _quickinfobroker = null; // Set via MEF
-        //[ImportMany] internal SVsServiceProvider ServiceProvider { get; set; }
 
-        public NSIntellisenseControllerProvider(SVsServiceProvider serviceProvider) {
+
+        //[Import] internal ISignatureHelpBroker _signaturehelpbroker = null;
+        //[Import] internal ITextDocumentFactoryService _textdocumentfactoryservice = null;
+        //[Import] internal IEditorOperationsFactoryService _editoperationsfactory = null;
+        //[Import] internal ICompletionBroker _completionbroker = null;
+        //[Import] internal IVsEditorAdaptersFactoryService _adaptersfactory = null;
+        //[Import] internal IQuickInfoBroker _quickinfobroker = null;
+        //[Import] internal SVsServiceProvider _serviceprovider_vs = null;
+        //internal System.IServiceProvider _serviceprovider_sys = null;
+
+        internal ISignatureHelpBroker _signaturehelpbroker = null;
+        internal ITextDocumentFactoryService _textdocumentfactoryservice = null;
+        internal IEditorOperationsFactoryService _editoperationsfactory = null;
+        internal ICompletionBroker _completionbroker = null;
+        internal IVsEditorAdaptersFactoryService _adaptersfactory = null;
+        internal IQuickInfoBroker _quickinfobroker = null;
+        internal SVsServiceProvider _serviceprovider_vs = null;
+        internal System.IServiceProvider _serviceprovider_sys = null;
+
+        public NSIntellisenseControllerProvider(
+                SVsServiceProvider serviceProvider, 
+                ISignatureHelpBroker ish,
+                ITextDocumentFactoryService itdfs,
+                IEditorOperationsFactoryService ieofs,
+                ICompletionBroker icb,
+                IVsEditorAdaptersFactoryService ieafs,
+                IQuickInfoBroker iqib
+            ) {
+
             _serviceprovider_vs = serviceProvider;
+            _serviceprovider_sys = NSLangServ._serviceprovider_sys;
+            _editoperationsfactory = ieofs;
+            _signaturehelpbroker = ish;
+            _textdocumentfactoryservice = itdfs;
+            _completionbroker = icb;
+            _adaptersfactory = ieafs;
+            _quickinfobroker = iqib;
+
             //PythonService = serviceProvider.GetPythonToolsService();
         }
 
         public IIntellisenseController TryCreateIntellisenseController(ITextView textView, IList<ITextBuffer> subjectBuffers) {
-            //ITextDocument textDocument;
+            //ITextDocument textDocument2;
             NSIntellisenseController nsiscontroller;
             if (!textView.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out nsiscontroller)) {
                 nsiscontroller = new NSIntellisenseController(this, textView);
@@ -109,73 +175,36 @@ namespace NimStudio.NimStudio {
             return nsiscontroller;
         }
 
-        internal NSIntellisenseController GetOrCreateController(System.IServiceProvider serviceProvider, IComponentModel model, ITextView textView ) {
-            NSIntellisenseController controller;
-            if (!textView.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out controller)) {
-                //var intellisenseControllerProvider = (
-                //   from export in model.DefaultExportProvider.GetExports<IIntellisenseControllerProvider>()
-                //   from exportedContentType in export.Metadata.ContentTypes
-                //   where exportedContentType == PythonCoreConstants.ContentType && export.Value.GetType() == typeof(IntellisenseControllerProvider)
-                //   select export.Value
-                //).First();
-                controller = new NSIntellisenseController(this, textView);
-            }
-            return controller;
-        }
-
-        //[Export(typeof(IVsTextViewCreationListener))]
-        //[ContentType(NSConst.LangName)]
-        //[TextViewRole(PredefinedTextViewRoles.Editable)]
-        //[Import] IVsEditorAdaptersFactoryService AdapterService { get; set;}
-        //[Import] internal SVsServiceProvider ServiceProvider { get; set;}
-        //[Import] internal ICompletionBroker CompletionBroker { get; set; }
-        //public void VsTextViewCreated(IVsTextView textViewAdapter) {
-
-        //    ITextView textView = _adaptersfactory.GetWpfTextView(textViewAdapter);
-        //    if (textView == null) {
-        //        return;
+        //internal NSIntellisenseController GetOrCreateController(System.IServiceProvider serviceProvider, IComponentModel model, ITextView textView ) {
+        //    NSIntellisenseController controller;
+        //    if (!textView.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out controller)) {
+        //        //var intellisenseControllerProvider = (
+        //        //   from export in model.DefaultExportProvider.GetExports<IIntellisenseControllerProvider>()
+        //        //   from exportedContentType in export.Metadata.ContentTypes
+        //        //   where exportedContentType == PythonCoreConstants.ContentType && export.Value.GetType() == typeof(IntellisenseControllerProvider)
+        //        //   select export.Value
+        //        //).First();
+        //        controller = new NSIntellisenseController(this, textView);
         //    }
-        //    textView.Properties.GetOrCreateSingletonProperty(() => new NSIntellisenseController(this, textView));
+        //    return controller;
         //}
 
-    }
-
-    [Export(typeof(IVsTextViewCreationListener))]
-    [Name("NimStudio Command Filter")]
-    [ContentType(NSConst.LangName)]
-    [TextViewRole(PredefinedTextViewRoles.Editable)]
-    internal class NSTextViewCreationListener: IVsTextViewCreationListener {
-        [Import] internal IVsEditorAdaptersFactoryService AdapterService = null;
-        [Import] internal ICompletionBroker CompletionBroker = null;
-        //[Import] internal SVsServiceProvider ServiceProvider { get; set; }
-        [Import] internal SVsServiceProvider ServiceProviderVS = null;
-        [Import] internal System.IServiceProvider ServiceProviderSys = null;
-        [Import] internal IEditorOperationsFactoryService Editoperationsfactory = null; // Set via MEF
-
-        public void VsTextViewCreated(IVsTextView textViewAdapter) {
-            ITextView textView = AdapterService.GetWpfTextView(textViewAdapter);
-            IEditorOperationsFactoryService _editoperationsfactory = Editoperationsfactory;
-            if (textView == null) {
-                return;
-            }
-            textView.Properties.GetOrCreateSingletonProperty(() => new NSIntellisenseController(new NSIntellisenseControllerProvider(ServiceProviderVS), textView));
-        }
     }
 
     internal class NSIntellisenseController: IIntellisenseController, IOleCommandTarget {
         readonly ITextView _textview;
         public IVsTextView _ivstextview;
-        readonly ITextDocument _textdocument;
-        readonly NSIntellisenseControllerProvider _nsicprovider;
+        private ITextDocument _textdocument;
+        private NSIntellisenseControllerProvider _nsicprovider;
         //private readonly System.IServiceProvider _serviceprovider;
-        private readonly SVsServiceProvider _serviceprovider;        
+        private SVsServiceProvider _serviceprovider;        
         //private readonly Microsoft.VisualStudio.OLE.Interop.IServiceProvider _serviceprovider;
-        private ICompletionSession _session_completion;
+        internal ICompletionSession _session_completion;
         private ISignatureHelpSession _session_sighelp;
         private IQuickInfoSession _session_quickinfo;
         public IOleCommandTarget m_commandhandler_next;
         private IEditorOperations _editops;
-        ISignatureHelpSession session;
+        private ISignatureHelpSession session;
 
         public NSIntellisenseController(NSIntellisenseControllerProvider nsicprovider, ITextView textview) {
         //public NSIntellisenseController(NSIntellisenseControllerProvider nsicprovider, ITextView textview, System.IServiceProvider servprovider) {
@@ -193,9 +222,9 @@ namespace NimStudio.NimStudio {
         }
 
         public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
-            //if (VsShellUtilities.IsInAutomationFunction(_serviceprovider)) {
-            //    return m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
-            //}
+            if (VsShellUtilities.IsInAutomationFunction(_nsicprovider._serviceprovider_sys)) {
+                return m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+            }
             uint commandID = nCmdID;
             char typedChar = char.MinValue;
             // test input is a char
@@ -317,6 +346,7 @@ namespace NimStudio.NimStudio {
             }
         }
 
+        /*
         internal ICompletionBroker CompletionBroker {
             get {
                 return _nsicprovider._completionbroker;
@@ -334,6 +364,7 @@ namespace NimStudio.NimStudio {
                 return _nsicprovider._signaturehelpbroker;
             }
         }
+        */
 
         public void Detach(ITextView tview) {
             if (_textview == tview) {
