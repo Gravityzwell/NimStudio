@@ -32,33 +32,55 @@ namespace NimStudio.NimStudio {
             m_textBuffer = textBuffer;
         }
 
-        sealed class NSSigParameter: IParameter {
-            readonly Span m_trackingspan;
-            readonly string m_content;
-            readonly string m_prettyprintedcontent;
-            readonly string m_documentation;
-            ISignature m_sig;
+        public class NSSigParameter: IParameter {
+            internal Span m_trackingspan;
+            internal string m_content;
+            internal string m_prettyprintedcontent;
+            internal string m_documentation;
+            internal ISignature m_sig;
+            public Span m_pplocus;
 
             //string documentation, Span locus, string name, ISignature signature
             internal NSSigParameter(Span trackingspan, string content, string prettyprintedcontent, string documentation, ISignature sig) {
+            //public NSSigParameter(string Documentation, Span Locus, string Name, Span PPLocus, ISignature Signature) {
                 m_trackingspan = trackingspan;
                 m_content = content;
                 m_prettyprintedcontent = prettyprintedcontent;
                 m_documentation = documentation;
+                m_pplocus = new Span();
                 m_sig = sig;
+                //m_trackingspan = trackingspan;
+                //m_content = content;
+                //m_prettyprintedcontent = prettyprintedcontent;
+                //m_documentation = documentation;
+                //PrettyPrintedLocus = PPLocus;
+                //m_sig = sig;
             }
+
+            public string Documentation { get { return m_documentation; } }
+            public Span Locus { get { return m_trackingspan; } }
+            public string Name { get { return m_documentation; } }
+            public Span PrettyPrintedLocus { get { return m_pplocus; } }
+            public ISignature Signature { get { return m_sig; } }
+
         }
 
-        sealed class NSSignature: ISignature {
+        public class NSSignature: ISignature {
 
             internal ITextBuffer m_subjectBuffer;
             internal IParameter m_currentParameter;
             internal string m_content;
             internal string m_documentation;
-            internal ITrackingSpan m_applicableToSpan;
+            internal ITrackingSpan m_applicabletospan;
             internal ReadOnlyCollection<IParameter> m_parameters;
             internal string m_printContent;
-            internal event EventHandler<CurrentParameterChangedEventArgs> CurrentParameterChanged;
+            public event EventHandler<CurrentParameterChangedEventArgs> CurrentParameterChanged;
+
+            public string PrettyPrintedContent { get { return m_printContent; } }
+            public ITrackingSpan ApplicableToSpan { get { return m_applicabletospan; } }
+            public string Content { get { return m_content; } }
+            public string Documentation { get { return m_documentation; } }
+            public ReadOnlyCollection<IParameter> Parameters { get { return m_parameters; } }
 
             internal NSSignature(ITextBuffer subjectBuffer, string content, string doc, ReadOnlyCollection<IParameter> parameters) {
                 m_subjectBuffer = subjectBuffer;
@@ -97,7 +119,7 @@ namespace NimStudio.NimStudio {
                 }
 
                 //the number of commas in the string is the index of the current parameter 
-                string sigText = m_applicableToSpan.GetText(m_subjectBuffer.CurrentSnapshot);
+                string sigText = m_applicabletospan.GetText(m_subjectBuffer.CurrentSnapshot);
                 int currentIndex = 0;
                 int commaCount = 0;
                 while (currentIndex < sigText.Length) {
@@ -199,7 +221,7 @@ namespace NimStudio.NimStudio {
             }
 
             sig.m_parameters = new ReadOnlyCollection<IParameter>(paramList);
-            sig.m_applicableToSpan = span;
+            sig.m_applicabletospan = span;
             sig.ComputeCurrentParameter();
             return sig;
         }

@@ -241,36 +241,84 @@ namespace NimStudio.NimStudio {
             }
 
             int retVal = m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
-            bool handled = false;
             //if ((VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.SHOWMEMBERLIST || (!typedChar.Equals(char.MinValue) && char.IsLetterOrDigit(typedChar))) {
             if ((VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.SHOWMEMBERLIST) {
                 if (_session_completion == null || _session_completion.IsDismissed) {
                     this.CompletionTrigger();
                     if (_session_completion == null) {
-                        handled = false;
                         Debug.Print("NimStudio - Completion session not created.");
+                        return retVal;
                     } else {
                         Debug.Print("NimStudio - Completion session created. Tot:" + _session_completion.CompletionSets.Count.ToString());
                         _session_completion.Filter();
-                        handled = true;
+                        return VSConstants.S_OK;
                     }
                 } else {
                     _session_completion.Filter(); // session active
-                    handled = true;
+                    return VSConstants.S_OK;
                 }
-            } else if (commandID == (uint)VSConstants.VSStd2KCmdID.BACKSPACE || commandID == (uint)VSConstants.VSStd2KCmdID.DELETE) {
-                // redo the filter if there is a deletion
-                if (_session_completion != null && !_session_completion.IsDismissed)
+            } 
+
+            if ((VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.PARAMINFO) {
+                if (_session_sighelp == null || _session_sighelp.IsDismissed) {
+                    this.SigHelpTrigger();
+                    if (_session_sighelp == null) {
+                        Debug.Print("NS - _session_sighelp not created.");
+                        return retVal;
+                    } else {
+                        Debug.Print("NS - _session_sighelp created.");
+                        return VSConstants.S_OK;
+                    }
+                } else {
+                    _session_sighelp.Recalculate(); // session active
+                    return VSConstants.S_OK;
+                }
+            } 
+
+            if (commandID == (uint)VSConstants.VSStd2KCmdID.BACKSPACE || commandID == (uint)VSConstants.VSStd2KCmdID.DELETE) {
+                if (_session_completion != null && !_session_completion.IsDismissed) {
+                    // update completion
                     _session_completion.Filter();
-                handled = true;
+                    return VSConstants.S_OK;
+                }
             }
-            if (handled) 
-                return VSConstants.S_OK;
+
             return retVal;
 
         }
 
+        private bool SigHelpTrigger() {
+
+            if (_session_completion != null)
+                _session_completion.Dismiss();
+
+            SnapshotPoint? caretPoint = _textview.Caret.Position.Point.GetPoint(textBuffer => (!textBuffer.ContentType.IsOfType("projection")), PositionAffinity.Predecessor);
+            CaretPosition curPosition = _textview.Caret.Position;
+            var curTrackPoint = _textview.TextSnapshot.CreateTrackingPoint(curPosition.BufferPosition.Position, Microsoft.VisualStudio.Text.PointTrackingMode.Positive);
+            if (!caretPoint.HasValue)
+                return false;
+            _session_sighelp = _nsicprovider._signaturehelpbroker.CreateSignatureHelpSession(_textview, caretPoint.Value.Snapshot.CreateTrackingPoint(caretPoint.Value.Position, PointTrackingMode.Positive), false);
+            _session_sighelp.Dismissed += SigHelpDismiss;
+            _session_sighelp.Start();
+            Debug.Print("NS - SigHelpTrigger");
+            return true;
+        }
+
+        private void SigHelpDismiss(object sender, EventArgs e) {
+            if (_session_sighelp != null) {
+                _session_sighelp.Dismissed -= CompletionDismiss;
+                _session_sighelp = null;
+                Debug.Print("NS - SigHelpDismiss");
+            }
+        }
+
         private bool CompletionTrigger() {
+            if (_session_sighelp != null)
+                _session_sighelp.Dismiss();
+
+            if (_session_completion != null)
+                _session_completion.Dismiss();
+
             SnapshotPoint? caretPoint = _textview.Caret.Position.Point.GetPoint(textBuffer => (!textBuffer.ContentType.IsOfType("projection")), PositionAffinity.Predecessor);
             CaretPosition curPosition = _textview.Caret.Position;
             var curTrackPoint = _textview.TextSnapshot.CreateTrackingPoint(curPosition.BufferPosition.Position, Microsoft.VisualStudio.Text.PointTrackingMode.Positive);
@@ -280,6 +328,7 @@ namespace NimStudio.NimStudio {
             _session_completion.Dismissed += CompletionDismiss;
             _session_completion.Committed += CompletionDismiss;
             _session_completion.Start();
+            Debug.Print("NS - CompletionTrigger");
             return true;
         }
 
@@ -288,7 +337,7 @@ namespace NimStudio.NimStudio {
                 _session_completion.Dismissed -= CompletionDismiss;
                 _session_completion.Committed -= CompletionDismiss;
                 _session_completion = null;
-                Debug.Print("NS - completion dismissed");
+                Debug.Print("NS - CompletionDismiss");
             }
         }
 
