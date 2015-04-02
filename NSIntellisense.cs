@@ -375,7 +375,6 @@ namespace NimStudio.NimStudio {
             }
             //_bufferParser = null;
             //_textdocument.DirtyStateChanged -= OnDocumentDirtyStateChanged;
-            }
         }
 
         public void ConnectSubjectBuffer(ITextBuffer subjectBuffer) {

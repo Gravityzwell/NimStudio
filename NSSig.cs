@@ -37,13 +37,15 @@ namespace NimStudio.NimStudio {
             readonly string m_content;
             readonly string m_prettyprintedcontent;
             readonly string m_documentation;
+            ISignature m_sig;
 
             //string documentation, Span locus, string name, ISignature signature
-            internal NSSigParameter(Span trackingspan, string content, string prettyprintedcontent, string documentation) {
+            internal NSSigParameter(Span trackingspan, string content, string prettyprintedcontent, string documentation, ISignature sig) {
                 m_trackingspan = trackingspan;
                 m_content = content;
                 m_prettyprintedcontent = prettyprintedcontent;
                 m_documentation = documentation;
+                m_sig = sig;
             }
         }
 
@@ -192,7 +194,7 @@ namespace NimStudio.NimStudio {
                 if (locusStart >= 0) {
                     Span locus = new Span(locusStart, param.Length);
                     locusSearchStart = locusStart + param.Length;
-                    paramList.Add(new NSSigParameter(locus, "Documentation for the parameter.", param, sig));
+                    paramList.Add(new NSSigParameter(locus, param, "pp", "Documentation for the parameter.", sig));
                 }
             }
 
