@@ -153,16 +153,16 @@ namespace NimStudio.NimStudio {
             //    return;
             //}
 
-            ITextSnapshot snapshot = m_textBuffer.CurrentSnapshot;
-            int position = session.GetTriggerPoint(m_textBuffer).GetPosition(snapshot);
-            ITrackingSpan applicableToSpan = m_textBuffer.CurrentSnapshot.CreateTrackingSpan(new Span(position, 0), SpanTrackingMode.EdgeInclusive, 0);
+            ITextSnapshot snapshot = subjectBuffer.CurrentSnapshot;
+            int position = session.GetTriggerPoint(subjectBuffer).GetPosition(snapshot);
+            ITrackingSpan applicableToSpan = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(new Span(position, 0), SpanTrackingMode.EdgeInclusive, 0);
 
             //var currentSnapshot = subjectTriggerPoint.Value.Snapshot;
             //var querySpan = new SnapshotSpan(subjectTriggerPoint.Value, 0);
             //var applicableToSpan = currentSnapshot.CreateTrackingSpan(querySpan.Start.Position, 0, SpanTrackingMode.EdgeInclusive);
             NSUtil.DebugPrintAlways("Sighelp");
-            signatures.Add(CreateSignature(m_textBuffer, "add(int firstInt, int secondInt)", "Documentation for adding integers.", applicableToSpan));
-            signatures.Add(CreateSignature(m_textBuffer, "add(double firstDouble, double secondDouble)", "Documentation for adding doubles.", applicableToSpan));
+            signatures.Add(CreateSignature(subjectBuffer, "add(int firstInt, int secondInt)", "Documentation for adding integers.", applicableToSpan));
+            signatures.Add(CreateSignature(subjectBuffer, "add(double firstDouble, double secondDouble)", "Documentation for adding doubles.", applicableToSpan));
 
             //string sighelp = "hey1";
             //if (sighelp != null) {
