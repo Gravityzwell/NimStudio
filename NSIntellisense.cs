@@ -28,55 +28,6 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
 namespace NimStudio.NimStudio {
 
-
-    //internal static class VSNContentType {
-    //    [Export, Name("nim"), BaseDefinition("text")]
-    //    public static ContentTypeDefinition NimContentType = null;
-
-    //    [Export, FileExtension(".nim"), ContentType("nim")]
-    //    public static FileExtensionToContentTypeDefinition NimFileType = null;
-    //}
-
-    //[Export(typeof(IClassifierProvider))]
-    //[ContentType("nim")]
-    //[Name("NimSyntaxProvider")]
-    //internal sealed class MyLangSyntaxProvider: IClassifierProvider {
-    //    [Import]
-    //    internal IClassificationTypeRegistryService ClassificationRegistry = null;
-
-    //    public IClassifier GetClassifier(ITextBuffer buffer) {
-    //        return buffer.Properties.GetOrCreateSingletonProperty(() => new VSNLangSyntax(ClassificationRegistry, buffer));
-    //    }
-    //}
-
-    //internal sealed class VSNLangSyntax: IClassifier {
-    //    private ITextBuffer buffer;
-    //    private IClassificationType identifierType;
-    //    private IClassificationType keywordType;
-
-    //    public event EventHandler<ClassificationChangedEventArgs> ClassificationChanged;
-
-    //    internal VSNLangSyntax(IClassificationTypeRegistryService registry, ITextBuffer buffer) {
-    //        this.identifierType = registry.GetClassificationType(PredefinedClassificationTypeNames.Identifier);
-    //        this.keywordType = registry.GetClassificationType(PredefinedClassificationTypeNames.Keyword);
-    //        this.buffer = buffer;
-    //        this.buffer.Changed += OnBufferChanged;
-    //    }
-
-    //    public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan snapshotSpan) {
-    //        var classifications = new List<ClassificationSpan>();
-    //        string text = snapshotSpan.GetText();
-    //        var span = new SnapshotSpan(snapshotSpan.Snapshot, snapshotSpan.Start.Position, text.Length);
-    //        classifications.Add(new ClassificationSpan(span, keywordType));
-    //        return classifications;
-    //    }
-
-    //    private void OnBufferChanged(object sender, TextContentChangedEventArgs e) {
-    //        foreach (var change in e.Changes)
-    //            ClassificationChanged(this, new ClassificationChangedEventArgs(new SnapshotSpan(e.After, change.NewSpan)));
-    //    }
-    //}
-
     /*  ====================================
             TEXTVIEW CREATION LISTENER
         ==================================== */
@@ -108,20 +59,9 @@ namespace NimStudio.NimStudio {
             if (textview.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out controller)) {
                 controller.AttachKeyboardFilter();
             };
-            Debug.Print("1");
             //textview.Properties.GetOrCreateSingletonProperty(() =>new NSIntellisenseController(nsicp(
             //    _serviceprovider_vs
             //    ), textview));
-
-            //textview.Properties.GetOrCreateSingletonProperty(() =>new NSIntellisenseController(new NSIntellisenseControllerProvider(
-                //_serviceprovider_vs
-                //_signaturehelpbroker,
-                //_textdocumentfactoryservice,
-                //_editoperationsfactory,
-                //_completionbroker,
-                //_adaptersfactory,
-                //_quickinfobroker
-                //), textview));
 
             //NSIntellisenseController nsintillisensectrl = new NSIntellisenseController(new NSIntellisenseControllerProvider(_serviceprovider_vs), textview);
             //IOleCommandTarget next;
@@ -139,14 +79,6 @@ namespace NimStudio.NimStudio {
     [Name("NimStudio Intellisense Controller")]
     [ContentType(NSConst.LangName)]
     internal class NSIntellisenseControllerProvider: IIntellisenseControllerProvider  {
-        //[Import] internal ISignatureHelpBroker _signaturehelpbroker = null;
-        //[Import] internal ITextDocumentFactoryService _textdocumentfactoryservice = null;
-        //[Import] internal IEditorOperationsFactoryService _editoperationsfactory = null;
-        //[Import] internal ICompletionBroker _completionbroker = null;
-        //[Import] internal IVsEditorAdaptersFactoryService _adaptersfactory = null;
-        //[Import] internal IQuickInfoBroker _quickinfobroker = null;
-        //[Import] internal SVsServiceProvider _serviceprovider_vs = null;
-        //internal System.IServiceProvider _serviceprovider_sys = null;
 
         internal ISignatureHelpBroker _signaturehelpbroker = null;
         //internal ITextDocumentFactoryService _textdocumentfactoryservice = null;
@@ -159,50 +91,30 @@ namespace NimStudio.NimStudio {
         internal IEditorOperations _editops = null;
 
         [ImportingConstructor]
-        //public NSIntellisenseControllerProvider([Import(typeof(SVsServiceProvider))] SVsServiceProvider serviceProvider) {
         public NSIntellisenseControllerProvider(
-            [Import(typeof(SVsServiceProvider))]SVsServiceProvider serviceProvider, 
+            [Import(typeof(SVsServiceProvider))]SVsServiceProvider spvs, 
             ICompletionBroker icb, 
             IQuickInfoBroker iqib, 
             ISignatureHelpBroker ish,
             IVsEditorAdaptersFactoryService ieafs,
             IEditorOperationsFactoryService ieofs
             ) {
-
-
-        //public NSIntellisenseControllerProvider(SVsServiceProvider serviceProvider) {
-        // System.IServiceProvider 
-        //public NSIntellisenseControllerProvider(
-        //        SVsServiceProvider serviceProvider
-        //        //ISignatureHelpBroker ish,
-        //        //ITextDocumentFactoryService itdfs,
-        //        //IEditorOperationsFactoryService ieofs,
-        //        //ICompletionBroker icb,
-        //        //IVsEditorAdaptersFactoryService ieafs,
-        //        //IQuickInfoBroker iqib
-        //    ) {
-
-            _serviceprovider_vs = serviceProvider;
-            //_serviceprovider_sys = NSLangServ._serviceprovider_sys;
-            //_serviceprovider_sys = serviceProvider;
-            _editoperationsfactory = ieofs;
-            _signaturehelpbroker = ish;
-            //_textdocumentfactoryservice = itdfs;
-            _completionbroker = icb;
-            _adaptersfactory = ieafs;
-            _quickinfobroker = iqib;
-
-            //PythonService = serviceProvider.GetPythonToolsService();
+                _serviceprovider_vs = spvs;
+                //_serviceprovider_sys = NSLangServ._serviceprovider_sys;
+                //_serviceprovider_sys = serviceProvider;
+                _editoperationsfactory = ieofs;
+                _signaturehelpbroker = ish;
+                //_textdocumentfactoryservice = itdfs;
+                _completionbroker = icb;
+                _adaptersfactory = ieafs;
+                _quickinfobroker = iqib;
         }
 
         public IIntellisenseController TryCreateIntellisenseController(ITextView textView, IList<ITextBuffer> subjectBuffers) {
-            //ITextDocument textDocument2;
             NSIntellisenseController nsiscontroller;
             if (!textView.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out nsiscontroller)) {
                 nsiscontroller = new NSIntellisenseController(this, textView);
-                //nsiscontroller.AttachKeyboardFilter();
             }
-
             return nsiscontroller;
         }
 
@@ -242,7 +154,6 @@ namespace NimStudio.NimStudio {
         private ISignatureHelpSession session;
 
         public NSIntellisenseController(NSIntellisenseControllerProvider nsicprovider, ITextView textview) {
-        //public NSIntellisenseController(NSIntellisenseControllerProvider nsicprovider, ITextView textview, System.IServiceProvider servprovider) {
             _nsicprovider = nsicprovider;
             _serviceprovider = nsicprovider._serviceprovider_vs;
             _textview = textview;
@@ -310,12 +221,11 @@ namespace NimStudio.NimStudio {
                         NSPackage.quickinfo = true;
                         break;
                     default:
-                        //Debug.Print("Cancel");
                         break;
                 }
             }
 
-            // check for a commit character 
+            // completion commit
             if (nCmdID == (uint)VSConstants.VSStd2KCmdID.RETURN || nCmdID == (uint)VSConstants.VSStd2KCmdID.TAB || (char.IsWhiteSpace(typedChar) || char.IsPunctuation(typedChar))) {
                 if (_session_completion != null && !_session_completion.IsDismissed) {
                     // if selection is fully selected, commit
@@ -335,7 +245,7 @@ namespace NimStudio.NimStudio {
             //if ((VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.SHOWMEMBERLIST || (!typedChar.Equals(char.MinValue) && char.IsLetterOrDigit(typedChar))) {
             if ((VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.SHOWMEMBERLIST) {
                 if (_session_completion == null || _session_completion.IsDismissed) {
-                    this.TriggerCompletion();
+                    this.CompletionTrigger();
                     if (_session_completion == null) {
                         handled = false;
                         Debug.Print("NimStudio - Completion session not created.");
@@ -360,22 +270,26 @@ namespace NimStudio.NimStudio {
 
         }
 
-        private bool TriggerCompletion() {
+        private bool CompletionTrigger() {
             SnapshotPoint? caretPoint = _textview.Caret.Position.Point.GetPoint(textBuffer => (!textBuffer.ContentType.IsOfType("projection")), PositionAffinity.Predecessor);
             CaretPosition curPosition = _textview.Caret.Position;
             var curTrackPoint = _textview.TextSnapshot.CreateTrackingPoint(curPosition.BufferPosition.Position, Microsoft.VisualStudio.Text.PointTrackingMode.Positive);
             if (!caretPoint.HasValue)
                 return false;
             _session_completion = _nsicprovider._completionbroker.CreateCompletionSession(_textview, caretPoint.Value.Snapshot.CreateTrackingPoint(caretPoint.Value.Position, PointTrackingMode.Positive), false);
-            _session_completion.Dismissed += this.OnSessionDismissed;  //subscribe to dismissed event
+            _session_completion.Dismissed += CompletionDismiss;
+            _session_completion.Committed += CompletionDismiss;
             _session_completion.Start();
             return true;
         }
 
-        private void OnSessionDismissed(object sender, EventArgs e) {
-            _session_completion.Dismissed -= this.OnSessionDismissed;
-            _session_completion = null;
-            Debug.Print("NimStudio - Completion session dismissed.");
+        private void CompletionDismiss(object sender, EventArgs e) {
+            if (_session_completion != null) {
+                _session_completion.Dismissed -= CompletionDismiss;
+                _session_completion.Committed -= CompletionDismiss;
+                _session_completion = null;
+                Debug.Print("NS - completion dismissed");
+            }
         }
 
         void OnDocumentDirtyStateChanged(object sender, EventArgs e) {
@@ -392,6 +306,36 @@ namespace NimStudio.NimStudio {
             //    session = _nsicprovider._signaturehelpbroker.TriggerSignatureHelp(_textview, triggerPoint, true);
             //    //textView.Properties.RemoveProperty(NSSigSource.SessionKey);
             //}
+            if (_session_completion != null)
+                _session_completion.Dismiss();
+
+            if (_session_sighelp != null)
+                _session_sighelp.Dismiss();
+
+            //_session_completion = _nsicprovider._completionbroker.CreateCompletionSession(_textview, caretPoint.Value.Snapshot.CreateTrackingPoint(caretPoint.Value.Position, PointTrackingMode.Positive), false);
+
+            _session_sighelp = _nsicprovider._signaturehelpbroker.TriggerSignatureHelp(_textview);
+
+            //if (_sigHelpSession != null) {
+            //    _sigHelpSession.Dismiss();
+            //}
+
+            //_sigHelpSession = SignatureBroker.TriggerSignatureHelp(_textView);
+
+            //if (_sigHelpSession != null) {
+            //    _sigHelpSession.Dismissed += OnSignatureSessionDismissed;
+
+            //    ISignature sig;
+            //    if (_sigHelpSession.Properties.TryGetProperty(typeof(PythonSignature), out sig)) {
+            //        _sigHelpSession.SelectedSignature = sig;
+
+            //        IParameter param;
+            //        if (_sigHelpSession.Properties.TryGetProperty(typeof(PythonParameter), out param)) {
+            //            ((PythonSignature)sig).SetCurrentParameter(param);
+            //        }
+            //    }
+            //}
+
         }
 
         /*
@@ -414,9 +358,23 @@ namespace NimStudio.NimStudio {
         }
         */
 
-        public void Detach(ITextView tview) {
-            if (_textview == tview) {
-                //_textdocument.DirtyStateChanged -= OnDocumentDirtyStateChanged;
+        public void Detach(ITextView textView) {
+            if (_textview == null) {
+                throw new InvalidOperationException("Already detached from text view");
+            }
+            if (textView != _textview) {
+                throw new ArgumentException("Not attached to specified text view", "textView");
+            }
+
+            //_textview.MouseHover -= _textview;
+            _textview.Properties.RemoveProperty(typeof(NSIntellisenseController));
+
+            if (m_commandhandler_next != null) {
+                ErrorHandler.ThrowOnFailure(_ivstextview.RemoveCommandFilter(this));
+                m_commandhandler_next = null;
+            }
+            //_bufferParser = null;
+            //_textdocument.DirtyStateChanged -= OnDocumentDirtyStateChanged;
             }
         }
 
@@ -427,71 +385,5 @@ namespace NimStudio.NimStudio {
         }
     }
 
-    /*
-    [Export(typeof(IVsTextViewCreationListener))]
-    [Name("NimStudio TextView Listener")]
-    [ContentType(NSConst.LangName)]
-    [TextViewRole(PredefinedTextViewRoles.Editable)]
-    class NSTextViewListener: IVsTextViewCreationListener {
-        internal readonly IVsEditorAdaptersFactoryService _adaptersFactory;
-
-        [ImportingConstructor]
-        public NSTextViewListener(IVsEditorAdaptersFactoryService adaptersFactory) {
-            _adaptersFactory = adaptersFactory;
-        }
-
-        public void VsTextViewCreated(IVsTextView textViewAdapter) {
-
-            var textView = _adaptersFactory.GetWpfTextView(textViewAdapter);
-            NSIntellisenseControllerProvider nsicp = null;
-            //NSIntellisenseController controller = new NSIntellisenseController(nsicp, textView);
-            NSIntellisenseController controller = new NSIntellisenseController(nsicp, textView);
-            //bool created = textView.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out controller);
-            //var completionController = textView.Properties.GetProperty<NSIntellisenseController>(typeof(NSIntellisenseController));
-
-            Func<NSIntellisenseController> createCommandHandler = delegate() {
-                return new NSIntellisenseController(nsicp, textView);
-            };
-            textView.Properties.GetOrCreateSingletonProperty(createCommandHandler);
-
-
-            //NSIntellisenseController filter = new NSIntellisenseController(view, CompletionBroker);
-
-            IOleCommandTarget next;
-            //var retval = textViewAdapter.AddCommandFilter(controller, out next);
-            //controller.m_commandhandler_next = next;
-
-
-            //Func<NSIntellisenseController> createCommandHandler = delegate() {
-            //    return new NSIntellisenseController(NSIntellisenseControllerProvider, textView, textViewAdapter, this);
-            //};
-            //textView.Properties.GetOrCreateSingletonProperty(createCommandHandler);
-
-            //Func<RustCompletionCommandHandler> createCommandHandler =
-            //    () => new RustCompletionCommandHandler(textViewAdapter, textView, CompletionBroker);
-            //textView.Properties.GetOrCreateSingletonProperty(createCommandHandler);
-
-            //NSIntellisenseController nsic = new NSIntellisenseController()
-            int retval = 1;
-            NSUtil.DebugPrintAlways("Created {0}", retval);
-            NSUtil.DebugPrintAlways("Created {0}", retval);
-            NSUtil.DebugPrintAlways("Created {0}", retval);
-            //var textView = _adaptersFactory.GetWpfTextView(textViewAdapter);
-
-            //Func<NSIntellisenseController> createCommandHandler = delegate() {
-            //    return new NSIntellisenseController(textView, textViewAdapter, this);
-            //};
-            //textView.Properties.GetOrCreateSingletonProperty(createCommandHandler);
-            //NSIntellisenseController controller = new NSIntellisenseController(textView, textViewAdapter, this);
-            //controller._ivstextview = textViewAdapter;
-            //bool tvcontrolleradded = textView.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out controller);
-            //NSUtil.DebugPrintAlways("textview controller added {0}", tvcontrolleradded);
-            //if (textView.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out controller)) {
-            //    controller.AttachKeyboardFilter();
-            //}
-        }
-
-    }
-    */
 
 }

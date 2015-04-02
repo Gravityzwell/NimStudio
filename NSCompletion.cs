@@ -161,9 +161,7 @@ namespace NimStudio.NimStudio {
                     return null;
             }
         }
-
-
-
+        
         public void Dispose() {
             if (!m_isDisposed) {
                 GC.SuppressFinalize(this);
