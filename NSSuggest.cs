@@ -20,7 +20,7 @@ namespace NimStudio.NimStudio {
 
         //private Thread thread = null;
         private bool queryfinished = false;
-        private HashSet<string> filelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        //private HashSet<string> filelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private string filepath_prev="";
         public static class Qtype {
             /// <summary>nimsuggest sug</summary>
@@ -73,15 +73,27 @@ namespace NimStudio.NimStudio {
             //    Close();
             //    Init();
             //}
-            if (!filelist.Contains(fstr)) {
-                // create or update nimstudio_base.nim, which contains: import openfile1, openfile2, ..
-                // nimstudio_base.nim is the initial file passed to nimsuggest
-                filelist.Add(fstr);
-                string basefile = "import " + string.Join(",", filelist);
-                StreamWriter sw1 = new StreamWriter(Path.GetDirectoryName(NSLangServ.codefile_path_current) + @"\nimstudio_base.nim");
-                sw1.WriteLine(basefile);
-                sw1.Close();
-            }
+            //if (!NSLangServ.filelist.ContainsKey(NSLangServ.codefile_path_current)) {
+                
+
+            //    // create or update nimstudio_base.nim, which contains: import openfile1, openfile2, ..
+            //    // nimstudio_base.nim is the initial file passed to nimsuggest
+            //    filelist.Add(fstr);
+            //    string basefile = "import " + string.Join(",", filelist);
+            //    StreamWriter sw1 = new StreamWriter(Path.GetDirectoryName(NSLangServ.codefile_path_current) + @"\nimstudio_base.nim");
+            //    sw1.WriteLine(basefile);
+            //    sw1.Close();
+            //}
+
+            //if (!filelist.Contains(fstr)) {
+            //    // create or update nimstudio_base.nim, which contains: import openfile1, openfile2, ..
+            //    // nimstudio_base.nim is the initial file passed to nimsuggest
+            //    filelist.Add(fstr);
+            //    string basefile = "import " + string.Join(",", filelist);
+            //    StreamWriter sw1 = new StreamWriter(Path.GetDirectoryName(NSLangServ.codefile_path_current) + @"\nimstudio_base.nim");
+            //    sw1.WriteLine(basefile);
+            //    sw1.Close();
+            //}
 
             if (proc == null) {
                 Init();

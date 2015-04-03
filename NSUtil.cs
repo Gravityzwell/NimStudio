@@ -43,6 +43,25 @@ namespace NimStudio.NimStudio {
                 System.Diagnostics.Debug.Print(string.Format(debugmsg, args));
         }
 
+        //public void SaveIfDirty2(IVsTextView view, int line, int col) {
+        //    string text;
+        //    int numLines;
+        //    int lastCol;
+        //    IVsTextLines buf = null;
+        //    var hr = view.GetBuffer(out buf);
+        //    Marshal.ThrowExceptionForHR(hr);
+        //    hr = buf.GetLineCount(out numLines);
+        //    Marshal.ThrowExceptionForHR(hr);
+        //    hr = buf.GetLengthOfLine(numLines - 1, out lastCol);
+        //    Marshal.ThrowExceptionForHR(hr);
+        //    hr = buf.GetLineText(0, 0, numLines - 1, lastCol, out text);
+        //    Marshal.ThrowExceptionForHR(hr);
+        //    File.WriteAllText(m_dirtyname, text, new UTF8Encoding(false));
+        //    var reply = idetoolsfuncs.GetDirtySuggestions(m_dirtyname, m_filename, line + 1, col + 1, m_projectfile);
+        //    decls = new IntelliSense.NimrodDeclarations(reply);
+        //}
+
+
         public static bool SaveIfDirty(string fpath) {
             bool dirty=false;
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace NimStudio.NimStudio {
         public static IVsTextView textview_current;
         public static string codefile_path_current;
         public static System.IServiceProvider _serviceprovider_sys;
+        public static SortedDictionary<string, string> filelist = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public override string GetFormatFilterList() {
             return "Nim file(*.nim)";
@@ -52,10 +54,26 @@ namespace NimStudio.NimStudio {
 
 
         public override void OnActiveViewChanged(IVsTextView textview) {
+            // also called for new textviews
             if (textview != null) {
                 textview_current = textview;
                 var source = GetSource(textview);
                 codefile_path_current = source.GetFilePath();
+                NSUtil.DebugPrintAlways("OnActiveViewChanged:"+codefile_path_current);
+                if (!filelist.ContainsKey(codefile_path_current)) {
+                    //string fstr = Path.GetFileNameWithoutExtension(codefile_path_current);
+                    string fdirtystr = Path.GetTempFileName();
+                    filelist.Add(codefile_path_current,fdirtystr);
+                    string basefile = "import ";
+                    foreach (string fstr in filelist.Keys) {
+                        basefile += Path.GetFileNameWithoutExtension(fstr) + ",";
+                    }
+                    basefile = basefile.TrimEnd(new char[] {','});
+                    StreamWriter sw1 = new StreamWriter(Path.GetDirectoryName(NSLangServ.codefile_path_current) + @"\nimstudio_base.nim");
+                    sw1.WriteLine(basefile);
+                    sw1.Close();
+                }
+
                 //if (source != null) {
                 //    int line, col;
                 //    textview.GetCaretPos(out line, out col);
