@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using Expo = System.Dynamic.ExpandoObject;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel.Composition;
+using dcto = System.Collections.Generic.Dictionary<string, object>;
 
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
@@ -109,15 +108,13 @@ namespace NimStudio.NimStudio {
             //return req.Scope;
         }
 
-        public static Expo CaretPosGet() {
-            dynamic retval = new Expo();
+        public static dcto CaretPosGet() {
             int caretline=0, caretcol=0;
             if (textview_current != null) { 
                 textview_current.GetCaretPos(out caretline, out caretcol);
                 caretline++;
             }
-            retval.col = caretcol;
-            retval.line = caretline;
+            var retval = new dcto(StringComparer.OrdinalIgnoreCase){ {"col",caretcol}, {"line",caretline} };
             return retval;
         }
 

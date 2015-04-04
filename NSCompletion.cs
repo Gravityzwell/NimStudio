@@ -70,8 +70,8 @@ namespace NimStudio.NimStudio {
         void ICompletionSource.AugmentCompletionSession(ICompletionSession session, IList<CompletionSet> completionSets) {
             List<string> strList = new List<string>();
 
-            dynamic caretpos = NSLangServ.CaretPosGet();
-            NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.sug, caretpos.line, caretpos.col);
+            var caretpos = NSLangServ.CaretPosGet();
+            NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.sug, caretpos["line"], caretpos["col"]);
             m_compList = new List<Completion>();
 
             foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {

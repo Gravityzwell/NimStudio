@@ -59,7 +59,7 @@ namespace NimStudio.NimStudio {
 
 
         /// <summary>Queries nimsuggest</summary><param name='qtype'>use qtype class constants</param><param name='qline'>code line number</param><param name='qcol'>code column number</param>
-        public void Query(string qtype, int qline, int qcol) {
+        public void Query(string qtype, object qline, object qcol) {
 
             Microsoft.VisualStudio.TextManager.Interop.IVsTextLines lines;
             NSLangServ.textview_current.GetBuffer(out lines);
