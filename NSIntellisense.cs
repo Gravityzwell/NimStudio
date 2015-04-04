@@ -168,7 +168,6 @@ namespace NimStudio.NimStudio {
             if (m_commandhandler_next == null) {
                 if (_ivstextview != null) {
                     ErrorHandler.ThrowOnFailure(_ivstextview.AddCommandFilter(this, out m_commandhandler_next));
-                    Debug.Print("ATTACHED");
                 }
             }
         }

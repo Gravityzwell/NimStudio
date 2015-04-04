@@ -9,6 +9,9 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Expo = System.Dynamic.ExpandoObject;
+using System.Dynamic;
+//using dy = dynamic;
 
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -67,20 +70,9 @@ namespace NimStudio.NimStudio {
         void ICompletionSource.AugmentCompletionSession(ICompletionSession session, IList<CompletionSet> completionSets) {
             List<string> strList = new List<string>();
 
-            int caretline, caretcol;
-            NSLangServ.textview_current.GetCaretPos(out caretline, out caretcol);
-            caretline++;
-            //int caretline = NSCompletionCommandHandler.caretline;
-            //int caretcol = NSCompletionCommandHandler.caretcol;
-            //textview.GetCaretPos(out line, out idx);
-
-            //String nimsugcmd = String.Format("sug htmlarc.nim:{0}:{1}",caretline,caretcol);
-            //NimStudioPackage.nimsuggest.conwrite(nimsugcmd);
-            NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.sug, caretline, caretcol);
-
+            dynamic caretpos = NSLangServ.CaretPosGet();
+            NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.sug, caretpos.line, caretpos.col);
             m_compList = new List<Completion>();
-
-            //foreach (SortedDictionary<string, string> def in NSPackage.nimsuggest.sugdct.Values) {
 
             foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
                 var sugdct = NSPackage.nimsuggest.sugdct[skey];

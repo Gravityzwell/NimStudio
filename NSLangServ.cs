@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
+using Expo = System.Dynamic.ExpandoObject;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -105,6 +107,18 @@ namespace NimStudio.NimStudio {
             //var c1 = 1;
             return new NSAuthoringScope(req, "", "");
             //return req.Scope;
+        }
+
+        public static Expo CaretPosGet() {
+            dynamic retval = new Expo();
+            int caretline=0, caretcol=0;
+            if (textview_current != null) { 
+                textview_current.GetCaretPos(out caretline, out caretcol);
+                caretline++;
+            }
+            retval.col = caretcol;
+            retval.line = caretline;
+            return retval;
         }
 
     }

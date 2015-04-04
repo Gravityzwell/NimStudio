@@ -146,6 +146,8 @@ namespace NimStudio.NimStudio {
             //    return;
             //}
             signatures.Clear();
+            dynamic caretpos = NSLangServ.CaretPosGet();
+            NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.con, caretpos.line, caretpos.col);
 
             // Map the trigger point down to our buffer.
             //var subjectTriggerPoint = session.GetTriggerPoint(subjectBuffer.CurrentSnapshot);
@@ -169,11 +171,6 @@ namespace NimStudio.NimStudio {
             //}
         }
 
-        /// <summary>
-        ///     This object needs to be added as a key to the property bag of an ITextView where
-        ///     encouragement should be applied.  This prevents encouragement from being
-        ///     introduced in places like signature overload.
-        /// </summary>
         //internal static readonly object SessionKey = new object();
 
         readonly ITextBuffer subjectBuffer;
