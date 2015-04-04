@@ -113,6 +113,7 @@ namespace NimStudio.NimStudio {
             }
 
             internal void ComputeCurrentParameter() {
+                NSUtil.DebugPrintAlways("ComputeCurrentParameter");
                 if (m_parameters.Count == 0) {
                     this.CurrentParameter = null;
                     return;
@@ -133,6 +134,7 @@ namespace NimStudio.NimStudio {
 
                 if (commaCount < m_parameters.Count) {
                     this.CurrentParameter = m_parameters[commaCount];
+                    NSUtil.DebugPrintAlways("ComputeCurrentParameter Current:" + commaCount.ToString());
                 } else {
                     //too many commas, so use the last parameter as the current one. 
                     this.CurrentParameter = m_parameters[m_parameters.Count - 1];
@@ -204,7 +206,11 @@ namespace NimStudio.NimStudio {
             textBuffer.Changed += new EventHandler<TextContentChangedEventArgs>(sig.OnSubjectBufferChanged);
 
             //find the parameters in the method signature (expect methodname(one, two) 
-            string[] pars = methodSig.Split(new char[] { '(', ',', ')' });
+            int parspot = methodSig.LastIndexOf(')');
+            if (parspot == -1) return sig;
+
+            string sigstr = methodSig.Substring(0,parspot+1);
+            string[] pars = sigstr.Split(new char[] { '(', ',', ')' });
             List<IParameter> paramList = new List<IParameter>();
 
             int locusSearchStart = 0;

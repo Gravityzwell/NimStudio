@@ -186,10 +186,6 @@ namespace NimStudio.NimStudio {
             if (pguidCmdGroup == VSConstants.VSStd2K && nCmdID == (uint)VSConstants.VSStd2KCmdID.TYPECHAR) {
                 typedChar = (char)(ushort)Marshal.GetObjectForNativeVariant(pvaIn);
             }
-            if (typedChar != char.MinValue)
-                Debug.Print("EXEC {0}", typedChar);
-            else
-                Debug.Print("EXEC");
 
             if (pguidCmdGroup == VSConstants.VSStd2K) {
                 switch ((VSConstants.VSStd2KCmdID)nCmdID) {
@@ -223,30 +219,66 @@ namespace NimStudio.NimStudio {
                         break;
                 }
             }
-
-            // completion commit
-            if (nCmdID == (uint)VSConstants.VSStd2KCmdID.RETURN || nCmdID == (uint)VSConstants.VSStd2KCmdID.TAB || (char.IsWhiteSpace(typedChar) || char.IsPunctuation(typedChar))) {
-                if (_session_completion != null && !_session_completion.IsDismissed) {
-                    // if selection is fully selected, commit
-                    if (_session_completion.SelectedCompletionSet.SelectionStatus.IsSelected) {
-                        _session_completion.Commit();
-                        // don't add to the buffer 
-                        return VSConstants.S_OK;
-                    } else {
-                        // no selection, dismiss
-                        _session_completion.Dismiss();
+            
+            if (_session_completion != null) {
+                // commit
+                if (nCmdID == (uint)VSConstants.VSStd2KCmdID.RETURN || nCmdID == (uint)VSConstants.VSStd2KCmdID.TAB || (char.IsWhiteSpace(typedChar) || char.IsPunctuation(typedChar))) {
+                    if (_session_completion != null && !_session_completion.IsDismissed) {
+                        // if selection is fully selected, commit
+                        if (_session_completion.SelectedCompletionSet.SelectionStatus.IsSelected) {
+                            _session_completion.Commit();                           
+                            return VSConstants.S_OK; // don't add to buffer 
+                        } else {
+                            // no selection, dismiss
+                            _session_completion.Dismiss();
+                        }
                     }
+                }
+                return m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+            }
+
+            if (_session_sighelp != null) {
+                switch ((VSConstants.VSStd2KCmdID)nCmdID) {
+                    case VSConstants.VSStd2KCmdID.BACKSPACE:
+                        bool fDeleted = Backspace();
+                        if (fDeleted) {
+                            return VSConstants.S_OK;
+                        }
+                        break;
+                    case VSConstants.VSStd2KCmdID.LEFT:
+                        _editops.MoveToPreviousCharacter(false);
+                        SigParameterUpdate();
+                        return VSConstants.S_OK;
+                    case VSConstants.VSStd2KCmdID.RIGHT:
+                        _editops.MoveToNextCharacter(false);
+                        SigParameterUpdate();
+                        return VSConstants.S_OK;
+                    case VSConstants.VSStd2KCmdID.CANCEL:
+                        _session_sighelp.Dismiss();
+                        _session_sighelp = null;
+                        Debug.Print("NS - sighelp dismiss");
+                        break;
+                    case VSConstants.VSStd2KCmdID.HOME:
+                    case VSConstants.VSStd2KCmdID.BOL:
+                    case VSConstants.VSStd2KCmdID.BOL_EXT:
+                    case VSConstants.VSStd2KCmdID.EOL:
+                    case VSConstants.VSStd2KCmdID.EOL_EXT:
+                    case VSConstants.VSStd2KCmdID.END:
+                    case VSConstants.VSStd2KCmdID.WORDPREV:
+                    case VSConstants.VSStd2KCmdID.WORDPREV_EXT:
+                    case VSConstants.VSStd2KCmdID.DELETEWORDLEFT:
+                        _session_sighelp.Dismiss();
+                        _session_sighelp = null;
+                        break;
                 }
             }
 
-            int retVal = m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
             //if ((VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.SHOWMEMBERLIST || (!typedChar.Equals(char.MinValue) && char.IsLetterOrDigit(typedChar))) {
             if ((VSConstants.VSStd2KCmdID)nCmdID == VSConstants.VSStd2KCmdID.SHOWMEMBERLIST) {
                 if (_session_completion == null || _session_completion.IsDismissed) {
                     this.CompletionTrigger();
                     if (_session_completion == null) {
                         Debug.Print("NimStudio - Completion session not created.");
-                        return retVal;
                     } else {
                         Debug.Print("NimStudio - Completion session created. Tot:" + _session_completion.CompletionSets.Count.ToString());
                         _session_completion.Filter();
@@ -263,7 +295,6 @@ namespace NimStudio.NimStudio {
                     this.SigHelpTrigger();
                     if (_session_sighelp == null) {
                         Debug.Print("NS - _session_sighelp not created.");
-                        return retVal;
                     } else {
                         Debug.Print("NS - _session_sighelp created.");
                         return VSConstants.S_OK;
@@ -282,8 +313,108 @@ namespace NimStudio.NimStudio {
                 }
             }
 
-            return retVal;
+            return m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
 
+        }
+
+        private void SigParameterUpdate() {
+            if (_session_sighelp == null) {
+                TriggerSignatureHelp();
+                return;
+            }
+
+            int position = _textview.Caret.Position.BufferPosition.Position;
+
+            NSSigSource.NSSignature sig = _session_sighelp.SelectedSignature as NSSigSource.NSSignature;
+            if (sig != null) {
+                var prevBuffer = sig.ApplicableToSpan.TextBuffer;
+                var textBuffer = _textview.TextBuffer;
+
+                var targetPt = _textview.BufferGraph.MapDownToFirstMatch(
+                    new SnapshotPoint(_textview.TextBuffer.CurrentSnapshot, position),
+                    PointTrackingMode.Positive,
+                    (x) => textBuffer.ContentType.IsOfType(NSConst.LangName),
+                    //(x) => true,
+                    PositionAffinity.Successor
+                );
+
+                if (targetPt == null) {
+                    return;
+                }
+                var span = targetPt.Value.Snapshot.CreateTrackingSpan(targetPt.Value.Position, 0, SpanTrackingMode.EdgeInclusive);
+
+                //var sigs = targetPt.Value.Snapshot.GetSignatures(_serviceprovider, span);
+                bool retrigger = false;
+                //if (sigs.Signatures.Count == _session_sighelp.Signatures.Count) {
+                //    for (int i = 0; i < sigs.Signatures.Count && !retrigger; i++) {
+                //        var leftSig = sigs.Signatures[i];
+                //        var rightSig = _session_sighelp.Signatures[i];
+
+                //        if (leftSig.Parameters.Count == rightSig.Parameters.Count) {
+                //            for (int j = 0; j < leftSig.Parameters.Count; j++) {
+                //                var leftParam = leftSig.Parameters[j];
+                //                var rightParam = rightSig.Parameters[j];
+
+                //                if (leftParam.Name != rightParam.Name || leftParam.Documentation != rightParam.Documentation) {
+                //                    retrigger = true;
+                //                    break;
+                //                }
+                //            }
+                //        }
+
+                //        if (leftSig.Content != rightSig.Content || leftSig.Documentation != rightSig.Documentation) {
+                //            retrigger = true;
+                //        }
+                //    }
+                //} else {
+                //    retrigger = true;
+                //}
+
+                if (retrigger) {
+                    _session_sighelp.Dismiss();
+                    TriggerSignatureHelp();
+                } else {
+                    //CommaFindBestSignature(sigs.ParameterIndex, sigs.LastKeywordArgument);
+                }
+            }
+        }
+
+        private bool Backspace() {
+            //if (_sigHelpSession != null) {
+            //    if (_textView.Selection.IsActive && !_textView.Selection.IsEmpty) {
+            //        // when deleting a selection don't do anything to pop up signature help again
+            //        _sigHelpSession.Dismiss();
+            //        return false;
+            //    }
+
+            //    SnapshotPoint? caretPoint = _textView.BufferGraph.MapDownToFirstMatch(
+            //        _textView.Caret.Position.BufferPosition,
+            //        PointTrackingMode.Positive,
+            //        EditorExtensions.IsPythonContent,
+            //        PositionAffinity.Predecessor
+            //    );
+
+            //    if (caretPoint != null && caretPoint.Value.Position != 0) {
+            //        var deleting = caretPoint.Value.Snapshot[caretPoint.Value.Position - 1];
+            //        if (deleting == ',') {
+            //            caretPoint.Value.Snapshot.TextBuffer.Delete(new Span(caretPoint.Value.Position - 1, 1));
+            //            UpdateCurrentParameter();
+            //            return true;
+            //        } else if (deleting == '(' || deleting == ')') {
+            //            _sigHelpSession.Dismiss();
+            //            // delete the ( before triggering help again
+            //            caretPoint.Value.Snapshot.TextBuffer.Delete(new Span(caretPoint.Value.Position - 1, 1));
+
+            //            // Pop to an outer nesting of signature help
+            //            if (_provider.PythonService.LangPrefs.AutoListParams) {
+            //                TriggerSignatureHelp();
+            //            }
+
+            //            return true;
+            //        }
+            //    }
+            //}
+            return false;
         }
 
         private bool SigHelpTrigger() {
