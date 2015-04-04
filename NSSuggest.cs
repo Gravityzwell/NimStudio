@@ -21,7 +21,6 @@ namespace NimStudio.NimStudio {
         //private Thread thread = null;
         private bool queryfinished = false;
         //private HashSet<string> filelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        private string filepath_prev="";
         public static class Qtype {
             /// <summary>nimsuggest sug</summary>
             public const string sug = "sug";
@@ -61,12 +60,22 @@ namespace NimStudio.NimStudio {
 
         /// <summary>Queries nimsuggest</summary><param name='qtype'>use qtype class constants</param><param name='qline'>code line number</param><param name='qcol'>code column number</param>
         public void Query(string qtype, int qline, int qcol) {
-            string fstr = Path.GetFileNameWithoutExtension(NSLangServ.codefile_path_current);
+
+            Microsoft.VisualStudio.TextManager.Interop.IVsTextLines lines;
+            NSLangServ.textview_current.GetBuffer(out lines);
+            int numlines, column;
+            lines.GetLineCount(out numlines);
+            lines.GetLengthOfLine(numlines - 1, out column);
+            String strbuff;
+            NSLangServ.textview_current.GetTextStream(0, 0, numlines - 1, column, out strbuff);
+            File.WriteAllText(NSLangServ.filelist[NSLangServ.codefile_path_current], strbuff, new UTF8Encoding(false));
+
+            //string fstr = Path.GetFileNameWithoutExtension(NSLangServ.codefile_path_current);
 
             if (NSPackage.quickinfo || NSPackage.memberlist) {
                 NSPackage.quickinfo=false;
                 NSPackage.memberlist=false;
-                NSUtil.SaveIfDirty(NSLangServ.codefile_path_current);
+                //NSUtil.SaveIfDirty(NSLangServ.codefile_path_current);
             }
 
             //if (fstr != filepath_prev) {
@@ -98,12 +107,29 @@ namespace NimStudio.NimStudio {
             if (proc == null) {
                 Init();
             }
-            filepath_prev=fstr;
             conout.Clear();
             sugdct.Clear();
             queryfinished = false;
-            string qstr = qtype + " " + fstr + ".nim:" + qline.ToString() + ":" + qcol.ToString();
-            NSUtil.DebugPrint("NimStudio - query:" + qstr);
+            //string qstr = qtype + " " + fstr + ".nim:" + qline.ToString() + ":" + qcol.ToString();
+            string qstr = 
+                String.Format(@"{0} ""{1}"";""{2}"":{3}:{4}", 
+                    qtype, // 0
+                    NSLangServ.codefile_path_current,  // 1
+                    NSLangServ.filelist[NSLangServ.codefile_path_current], // 2
+                    qline, // 3
+                    qcol // 4
+                    );
+
+            // + NSLangServ.codefile_path_current + ".nim\";" + 
+            //    NSLangServ.filelist[NSLangServ.codefile_path_current]
+             //":" + qline.ToString() + ":" + qcol.ToString();
+
+            //string qstr = qtype + " \"" + NSLangServ.codefile_path_current + ".nim\";" + 
+            //    NSLangServ.filelist[NSLangServ.codefile_path_current]
+            // ":" + qline.ToString() + ":" + qcol.ToString();
+
+            
+            NSUtil.DebugPrintAlways("NimStudio - query:" + qstr);
             proc.StandardInput.WriteLine(qstr);
             int waitcount = 0;
             while (!queryfinished) {

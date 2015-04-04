@@ -52,6 +52,33 @@ namespace NimStudio.NimStudio {
             return m_scanner;
         }
 
+        public override void OnCloseSource(Source source) {
+            string codefile_path = source.GetFilePath();
+            if (filelist.ContainsKey(codefile_path)) {
+                string dirty_file = filelist[codefile_path];
+                filelist.Remove(codefile_path);
+                if (File.Exists(dirty_file)) {
+                    try {
+                        File.Delete(dirty_file);
+                    } catch (Exception ex) {
+                        NSUtil.DebugPrintAlways("Error deleting temp file:" + ex.Message);
+                    }
+                }
+                NimBaseFileCreate();
+            }
+            base.OnCloseSource(source);
+        }
+
+        private void NimBaseFileCreate() {
+            string basefile = "import ";
+            foreach (string fstr in filelist.Keys) {
+                basefile += Path.GetFileNameWithoutExtension(fstr) + ",";
+            }
+            basefile = basefile.TrimEnd(new char[] {','});
+            StreamWriter sw1 = new StreamWriter(Path.GetDirectoryName(NSLangServ.codefile_path_current) + @"\nimstudio_base.nim");
+            sw1.WriteLine(basefile);
+            sw1.Close();
+        }
 
         public override void OnActiveViewChanged(IVsTextView textview) {
             // also called for new textviews
@@ -64,21 +91,8 @@ namespace NimStudio.NimStudio {
                     //string fstr = Path.GetFileNameWithoutExtension(codefile_path_current);
                     string fdirtystr = Path.GetTempFileName();
                     filelist.Add(codefile_path_current,fdirtystr);
-                    string basefile = "import ";
-                    foreach (string fstr in filelist.Keys) {
-                        basefile += Path.GetFileNameWithoutExtension(fstr) + ",";
-                    }
-                    basefile = basefile.TrimEnd(new char[] {','});
-                    StreamWriter sw1 = new StreamWriter(Path.GetDirectoryName(NSLangServ.codefile_path_current) + @"\nimstudio_base.nim");
-                    sw1.WriteLine(basefile);
-                    sw1.Close();
+                    NimBaseFileCreate();
                 }
-
-                //if (source != null) {
-                //    int line, col;
-                //    textview.GetCaretPos(out line, out col);
-                //    System.Diagnostics.Debug.Write("Activated : " + source.GetFilePath());
-                //}
             }
             base.OnActiveViewChanged(textview);
         }
