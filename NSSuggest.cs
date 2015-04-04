@@ -163,6 +163,19 @@ namespace NimStudio.NimStudio {
                             sugsplit[Sugspl.help] = "\n\n" + sugsplit[Sugspl.help];
                         sugdct.Add(sugsplit[Sugspl.name], new SortedDictionary<string,string>(){ {"kind",sugsplit[Sugspl.kind]}, {"type",sugsplit[Sugspl.type]}, {"help",sugsplit[Sugspl.help]} });
 
+                    } else if (qtype == Qtype.con) {
+                        sugsplit[Sugspl.name] = sugsplit[Sugspl.name].Replace(fnamestrip, "");
+                        sugsplit[Sugspl.type] = Regex.Replace(sugsplit[Sugspl.type], @"{.*?}", "");
+                        sugsplit[Sugspl.help] = sugsplit[Sugspl.help].Replace(@"\x0D\x0A", "\n");
+                        sugsplit[Sugspl.help] = sugsplit[Sugspl.help].Trim(new char[] { '"' });
+                        if (sugsplit[Sugspl.help] != "")
+                            sugsplit[Sugspl.help] = "\n\n" + sugsplit[Sugspl.help];
+                        if (sugdct.ContainsKey(sugsplit[Sugspl.type])) {
+                            Debug.Print("Error");
+                        } else {
+                            sugdct.Add(sugsplit[Sugspl.type], new SortedDictionary<string, string>() 
+                                { { "kind", sugsplit[Sugspl.kind] }, { "name", sugsplit[Sugspl.name] }, { "help", sugsplit[Sugspl.help] } });
+                        }
                     } else {
                         sugsplit[Sugspl.name] = sugsplit[Sugspl.name].Replace(fnamestrip, "");
                         sugsplit[Sugspl.type] = Regex.Replace(sugsplit[Sugspl.type], @"{.*?}", "");

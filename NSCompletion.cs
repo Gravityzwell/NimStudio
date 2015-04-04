@@ -9,9 +9,6 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Expo = System.Dynamic.ExpandoObject;
-using System.Dynamic;
-//using dy = dynamic;
 
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;

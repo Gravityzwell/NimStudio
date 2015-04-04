@@ -146,8 +146,8 @@ namespace NimStudio.NimStudio {
             //    return;
             //}
             signatures.Clear();
-            dynamic caretpos = NSLangServ.CaretPosGet();
-            NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.con, caretpos.line, caretpos.col);
+            var caretpos = NSLangServ.CaretPosGet();
+            NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.con, caretpos["line"], caretpos["col"]);
 
             // Map the trigger point down to our buffer.
             //var subjectTriggerPoint = session.GetTriggerPoint(subjectBuffer.CurrentSnapshot);
@@ -159,12 +159,18 @@ namespace NimStudio.NimStudio {
             int position = session.GetTriggerPoint(subjectBuffer).GetPosition(snapshot);
             ITrackingSpan applicableToSpan = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(new Span(position, 0), SpanTrackingMode.EdgeInclusive, 0);
 
+            foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
+                var sigdct = NSPackage.nimsuggest.sugdct[skey];
+                signatures.Add(CreateSignature(subjectBuffer, skey, sigdct["help"], applicableToSpan));
+            }
+
             //var currentSnapshot = subjectTriggerPoint.Value.Snapshot;
             //var querySpan = new SnapshotSpan(subjectTriggerPoint.Value, 0);
             //var applicableToSpan = currentSnapshot.CreateTrackingSpan(querySpan.Start.Position, 0, SpanTrackingMode.EdgeInclusive);
             NSUtil.DebugPrintAlways("Sighelp");
-            signatures.Add(CreateSignature(subjectBuffer, "add(int firstInt, int secondInt)", "Documentation for adding integers.", applicableToSpan));
-            signatures.Add(CreateSignature(subjectBuffer, "add(double firstDouble, double secondDouble)", "Documentation for adding doubles.", applicableToSpan));
+
+            //signatures.Add(CreateSignature(subjectBuffer, "add(int firstInt, int secondInt)", "Documentation for adding integers.", applicableToSpan));
+            //signatures.Add(CreateSignature(subjectBuffer, "add(double firstDouble, double secondDouble)", "Documentation for adding doubles.", applicableToSpan));
 
             //string sighelp = "hey1";
             //if (sighelp != null) {
