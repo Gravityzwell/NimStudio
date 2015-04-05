@@ -74,6 +74,7 @@ namespace NimStudio.NimStudio {
             internal ITrackingSpan m_applicabletospan;
             internal ReadOnlyCollection<IParameter> m_parameters;
             internal string m_printContent;
+            internal ISignatureHelpSession m_session;
             public event EventHandler<CurrentParameterChangedEventArgs> CurrentParameterChanged;
 
             public string PrettyPrintedContent { get { return m_printContent; } }
@@ -119,10 +120,33 @@ namespace NimStudio.NimStudio {
                     return;
                 }
 
-                //the number of commas in the string is the index of the current parameter 
+                SnapshotPoint point_curr = m_session.GetTriggerPoint(m_subjectBuffer).GetPoint(m_subjectBuffer.CurrentSnapshot);
+                SnapshotPoint point_left = m_applicabletospan.GetStartPoint(m_subjectBuffer.CurrentSnapshot);
+                SnapshotPoint point_test = point_curr;
+
                 string sig_str = m_applicabletospan.GetText(m_subjectBuffer.CurrentSnapshot);
-                int sig_idx = 0;
                 int commas_count = 0;
+                int sig_idx = 0;
+                while (true) {
+                    if (point_test <= point_left) {
+                        break;
+                    }
+                    if (point_test.GetChar() == ',') {
+                        commas_count+=1;
+                    }
+                    point_test -= 1;
+                }
+
+                if (commas_count < m_parameters.Count) {
+                    this.CurrentParameter = m_parameters[commas_count];
+                    NSUtil.DebugPrintAlways("ComputeCurrentParameter Current:" + commas_count.ToString() + ":" + point_curr.Position.ToString());
+                } else {
+                    this.CurrentParameter = m_parameters[m_parameters.Count - 1];
+                }
+                return;
+
+                //m_applicabletospan.
+                //int sig_idx = 0;
                 while (sig_idx < sig_str.Length) {
                     int comma_idx = sig_str.IndexOf(',', sig_idx);
                     if (comma_idx == -1) {
@@ -151,50 +175,52 @@ namespace NimStudio.NimStudio {
             var caretpos = NSLangServ.CaretPosGet();
             NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.con, caretpos["line"], caretpos["col"]);
 
-            // Map the trigger point down to our buffer.
-            //var subjectTriggerPoint = session.GetTriggerPoint(subjectBuffer.CurrentSnapshot);
-            //if (!subjectTriggerPoint.HasValue) {
-            //    return;
-            //}
+            SnapshotPoint? point_trigger = session.GetTriggerPoint(subjectBuffer.CurrentSnapshot);
+            if (!point_trigger.HasValue) {
+                return;
+            }
 
-            ITextSnapshot snapshot = subjectBuffer.CurrentSnapshot;
-            int position = session.GetTriggerPoint(subjectBuffer).GetPosition(snapshot);
+            //ITextSnapshot snapshot = subjectBuffer.CurrentSnapshot;
+            //int position = session.GetTriggerPoint(subjectBuffer).GetPosition(subjectBuffer.CurrentSnapshot);
+            int position = point_trigger.Value.Position;
+            
             string text = subjectBuffer.CurrentSnapshot.GetText();
 
-            SnapshotPoint initialPoint = session.GetTriggerPoint(subjectBuffer).GetPoint(snapshot);
-            SnapshotPoint leftPoint = initialPoint;
-            SnapshotPoint rightPoint = initialPoint;
+            SnapshotPoint point_curr = session.GetTriggerPoint(subjectBuffer).GetPoint(subjectBuffer.CurrentSnapshot);
+            point_curr = point_trigger.Value;
+            SnapshotPoint point_left = point_curr;
+            SnapshotPoint point_right = point_curr;
 
-            ITextSnapshotLine line = leftPoint.GetContainingLine();
+            ITextSnapshotLine line = point_left.GetContainingLine();
             string terms = "\n\r\t.:()[]{}?/+-;=*!<>";
             while (true) {
-                if (leftPoint<=line.Start) {
-                    leftPoint=line.Start;
+                if (point_left<=line.Start) {
+                    point_left=line.Start;
                     break;
                 }
-                if (terms.IndexOf(leftPoint.GetChar()) != -1) {
-                    leftPoint += 1;
+                if (terms.IndexOf(point_left.GetChar()) != -1) {
+                    point_left += 1;
                     break;
                 }
-                leftPoint -= 1;
+                point_left -= 1;
             }
             while (true) {
-                if (rightPoint>=line.End) {
-                    rightPoint=line.End;
+                if (point_right>=line.End) {
+                    point_right=line.End;
                     break;
                 }
-                if (terms.IndexOf(rightPoint.GetChar()) != -1) {
-                    rightPoint -= 1;
+                if (terms.IndexOf(point_right.GetChar()) != -1) {
+                    point_right -= 1;
                     break;
                 }
-                rightPoint += 1;
+                point_right += 1;
             }
-            ITrackingSpan applicableToSpan = snapshot.CreateTrackingSpan(leftPoint, rightPoint - leftPoint, SpanTrackingMode.EdgeInclusive);
+            ITrackingSpan applicable_to_span = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(point_left, point_right - point_left, SpanTrackingMode.EdgeInclusive);
             //ITrackingSpan applicableToSpan = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(new Span(position, 0), SpanTrackingMode.EdgeInclusive, 0);
 
             foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
                 var sigdct = NSPackage.nimsuggest.sugdct[skey];
-                signatures.Add(SigAdd(subjectBuffer, skey, sigdct["help"], applicableToSpan));
+                signatures.Add(SigAdd(subjectBuffer, skey, sigdct["help"], applicable_to_span, session));
             }
 
             //var currentSnapshot = subjectTriggerPoint.Value.Snapshot;
@@ -232,7 +258,7 @@ namespace NimStudio.NimStudio {
             return session.Signatures.Count > 0 ? session.Signatures[0] : null;
         }
 
-        private NSSignature SigAdd(ITextBuffer textbuff, string sigstr_passed, string docstr, ITrackingSpan span) {
+        private NSSignature SigAdd(ITextBuffer textbuff, string sigstr_passed, string docstr, ITrackingSpan span, ISignatureHelpSession session) {
 
             int parspot = sigstr_passed.LastIndexOf(')');
             if (parspot == -1) return null;
@@ -261,6 +287,7 @@ namespace NimStudio.NimStudio {
 
             sig.m_parameters = new ReadOnlyCollection<IParameter>(param_lst);
             sig.m_applicabletospan = span;
+            sig.m_session = session;
             sig.ParamCurrentCalc();
             return sig;
         }
