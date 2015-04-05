@@ -247,18 +247,24 @@ namespace NimStudio.NimStudio {
                         break;
                     case VSConstants.VSStd2KCmdID.LEFT:
                         _editops.MoveToPreviousCharacter(false);
-                        _session_sighelp.Recalculate();
+                        //_session_sighelp.Recalculate();
+                        //NSSigSource.NSSignature sig = _session_sighelp.SelectedSignature as NSSigSource.NSSignature;
+                        ((NSSigSource.NSSignature)_session_sighelp.SelectedSignature).ParamCurrentCalc();
+                        //sig.ParamCurrentCalc();
                         //SigParameterUpdate();
                         return VSConstants.S_OK;
                     case VSConstants.VSStd2KCmdID.RIGHT:
                         _editops.MoveToNextCharacter(false);
-                        _session_sighelp.Recalculate();
-                        //SigParameterUpdate();
+                        ((NSSigSource.NSSignature)_session_sighelp.SelectedSignature).ParamCurrentCalc();
                         return VSConstants.S_OK;
+                    case VSConstants.VSStd2KCmdID.DOWN:
+                    case VSConstants.VSStd2KCmdID.UP:
+                        int rval = m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+                        ((NSSigSource.NSSignature)_session_sighelp.SelectedSignature).ParamCurrentCalc();
+                        return rval;
                     case VSConstants.VSStd2KCmdID.CANCEL:
-                        //_session_sighelp.Dismiss();
-                        //_session_sighelp = null;
-                        //Debug.Print("NS - sighelp dismiss");
+                        _session_sighelp.Dismiss();
+                        _session_sighelp = null;
                         break;
                     case VSConstants.VSStd2KCmdID.PAGEDN:
                         _session_sighelp.Dismiss();

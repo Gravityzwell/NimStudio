@@ -110,11 +110,12 @@ namespace NimStudio.NimStudio {
             }
 
             internal void OnSubjectBufferChanged(object sender, TextContentChangedEventArgs e) {
+                NSUtil.DebugPrintAlways("NSSig - OnSubjectBufferChanged");
                 this.ParamCurrentCalc();
             }
 
             internal void ParamCurrentCalc() {
-                NSUtil.DebugPrintAlways("ComputeCurrentParameter");
+                NSUtil.DebugPrintAlways("NSSig - ParamCurrentCalc");
                 if (m_parameters.Count == 0) {
                     this.CurrentParameter = null;
                     return;
@@ -144,7 +145,6 @@ namespace NimStudio.NimStudio {
 
                 if (commas_count < m_parameters.Count) {
                     this.CurrentParameter = m_parameters[commas_count];
-                    NSUtil.DebugPrintAlways("ComputeCurrentParameter Current:" + commas_count.ToString() + ":" + point_curr.Position.ToString() + ":" + currentPoint.Position.ToString());
                 } else {
                     this.CurrentParameter = m_parameters[m_parameters.Count - 1];
                 }
@@ -176,6 +176,8 @@ namespace NimStudio.NimStudio {
             //if (!session.TextView.Properties.ContainsProperty(SessionKey)) {
             //    return;
             //}
+            NSUtil.DebugPrintAlways("NSSig - AugmentSignatureHelpSession");
+
             signatures.Clear();
             var caretpos = NSLangServ.CaretPosGet();
             NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.con, caretpos["line"], caretpos["col"]);
@@ -199,6 +201,7 @@ namespace NimStudio.NimStudio {
             ITextSnapshotLine line = point_left.GetContainingLine();
             string terms = "\n\r\t.:()[]{}?/+-;=*!<>";
             while (true) {
+                point_left -= 1;
                 if (point_left<=line.Start) {
                     point_left=line.Start;
                     break;
@@ -207,7 +210,6 @@ namespace NimStudio.NimStudio {
                     point_left += 1;
                     break;
                 }
-                point_left -= 1;
             }
             while (true) {
                 if (point_right>=line.End) {
@@ -231,7 +233,6 @@ namespace NimStudio.NimStudio {
             //var currentSnapshot = subjectTriggerPoint.Value.Snapshot;
             //var querySpan = new SnapshotSpan(subjectTriggerPoint.Value, 0);
             //var applicableToSpan = currentSnapshot.CreateTrackingSpan(querySpan.Start.Position, 0, SpanTrackingMode.EdgeInclusive);
-            NSUtil.DebugPrintAlways("Sighelp");
 
             //signatures.Add(CreateSignature(subjectBuffer, "add(int firstInt, int secondInt)", "Documentation for adding integers.", applicableToSpan));
             //signatures.Add(CreateSignature(subjectBuffer, "add(double firstDouble, double secondDouble)", "Documentation for adding doubles.", applicableToSpan));
@@ -260,6 +261,7 @@ namespace NimStudio.NimStudio {
 
 
         public ISignature GetBestMatch(ISignatureHelpSession session) {
+            NSUtil.DebugPrintAlways("NSSig - GetBestMatch");
             return session.Signatures.Count > 0 ? session.Signatures[0] : null;
         }
 
