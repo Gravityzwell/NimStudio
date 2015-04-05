@@ -246,14 +246,14 @@ namespace NimStudio.NimStudio {
                         }
                         break;
                     case VSConstants.VSStd2KCmdID.LEFT:
-                        break;
-                        //_editops.MoveToPreviousCharacter(false);
+                        _editops.MoveToPreviousCharacter(false);
+                        _session_sighelp.Recalculate();
                         //SigParameterUpdate();
-                        //return VSConstants.S_OK;
+                        return VSConstants.S_OK;
                     case VSConstants.VSStd2KCmdID.RIGHT:
                         _editops.MoveToNextCharacter(false);
                         _session_sighelp.Recalculate();
-                        SigParameterUpdate();
+                        //SigParameterUpdate();
                         return VSConstants.S_OK;
                     case VSConstants.VSStd2KCmdID.CANCEL:
                         //_session_sighelp.Dismiss();

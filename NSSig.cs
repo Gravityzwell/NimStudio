@@ -120,9 +120,14 @@ namespace NimStudio.NimStudio {
                     return;
                 }
 
-                SnapshotPoint point_curr = m_session.GetTriggerPoint(m_subjectBuffer).GetPoint(m_subjectBuffer.CurrentSnapshot);
+                //SnapshotPoint point_curr = m_session.GetTriggerPoint(m_subjectBuffer).GetPoint(m_subjectBuffer.CurrentSnapshot);
+                SnapshotPoint point_curr = m_session.TextView.Caret.Position.BufferPosition;
                 SnapshotPoint point_left = m_applicabletospan.GetStartPoint(m_subjectBuffer.CurrentSnapshot);
-                SnapshotPoint point_test = point_curr;
+                SnapshotPoint point_test = point_curr-1;
+                //point_curr = m_session.ge
+                //SnapshotPoint currentPoint = new SnapshotPoint(m_subjectBuffer.CurrentSnapshot, m_session.TextView.Caret.Position.Point);
+                SnapshotPoint currentPoint = m_session.TextView.Caret.Position.BufferPosition;
+
 
                 string sig_str = m_applicabletospan.GetText(m_subjectBuffer.CurrentSnapshot);
                 int commas_count = 0;
@@ -139,7 +144,7 @@ namespace NimStudio.NimStudio {
 
                 if (commas_count < m_parameters.Count) {
                     this.CurrentParameter = m_parameters[commas_count];
-                    NSUtil.DebugPrintAlways("ComputeCurrentParameter Current:" + commas_count.ToString() + ":" + point_curr.Position.ToString());
+                    NSUtil.DebugPrintAlways("ComputeCurrentParameter Current:" + commas_count.ToString() + ":" + point_curr.Position.ToString() + ":" + currentPoint.Position.ToString());
                 } else {
                     this.CurrentParameter = m_parameters[m_parameters.Count - 1];
                 }
