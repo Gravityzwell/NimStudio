@@ -246,14 +246,21 @@ namespace NimStudio.NimStudio {
                         }
                         break;
                     case VSConstants.VSStd2KCmdID.LEFT:
-                        _editops.MoveToPreviousCharacter(false);
-                        SigParameterUpdate();
-                        return VSConstants.S_OK;
+                        break;
+                        //_editops.MoveToPreviousCharacter(false);
+                        //SigParameterUpdate();
+                        //return VSConstants.S_OK;
                     case VSConstants.VSStd2KCmdID.RIGHT:
                         _editops.MoveToNextCharacter(false);
+                        _session_sighelp.Recalculate();
                         SigParameterUpdate();
                         return VSConstants.S_OK;
                     case VSConstants.VSStd2KCmdID.CANCEL:
+                        //_session_sighelp.Dismiss();
+                        //_session_sighelp = null;
+                        //Debug.Print("NS - sighelp dismiss");
+                        break;
+                    case VSConstants.VSStd2KCmdID.PAGEDN:
                         _session_sighelp.Dismiss();
                         _session_sighelp = null;
                         Debug.Print("NS - sighelp dismiss");
@@ -436,7 +443,7 @@ namespace NimStudio.NimStudio {
 
         private void SigHelpDismiss(object sender, EventArgs e) {
             if (_session_sighelp != null) {
-                _session_sighelp.Dismissed -= CompletionDismiss;
+                _session_sighelp.Dismissed -= SigHelpDismiss;
                 _session_sighelp = null;
                 Debug.Print("NS - SigHelpDismiss");
             }

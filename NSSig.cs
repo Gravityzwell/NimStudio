@@ -82,8 +82,8 @@ namespace NimStudio.NimStudio {
             public string Documentation { get { return m_documentation; } }
             public ReadOnlyCollection<IParameter> Parameters { get { return m_parameters; } }
 
-            internal NSSignature(ITextBuffer subjectBuffer, string content, string doc, ReadOnlyCollection<IParameter> parameters) {
-                m_subjectBuffer = subjectBuffer;
+            internal NSSignature(ITextBuffer subject_buff, string content, string doc, ReadOnlyCollection<IParameter> parameters) {
+                m_subjectBuffer = subject_buff;
                 m_content = content;
                 m_documentation = doc;
                 m_parameters = parameters;
@@ -101,18 +101,18 @@ namespace NimStudio.NimStudio {
                 }
             }
 
-            private void RaiseCurrentParameterChanged(IParameter prevCurrentParameter, IParameter newCurrentParameter) {
-                EventHandler<CurrentParameterChangedEventArgs> tempHandler = this.CurrentParameterChanged;
-                if (tempHandler != null) {
-                    tempHandler(this, new CurrentParameterChangedEventArgs(prevCurrentParameter, newCurrentParameter));
+            private void RaiseCurrentParameterChanged(IParameter param_curr_prev, IParameter param_curr_new) {
+                EventHandler<CurrentParameterChangedEventArgs> param_handler_temp = this.CurrentParameterChanged;
+                if (param_handler_temp != null) {
+                    param_handler_temp(this, new CurrentParameterChangedEventArgs(param_curr_prev, param_curr_new));
                 }
             }
 
             internal void OnSubjectBufferChanged(object sender, TextContentChangedEventArgs e) {
-                this.ComputeCurrentParameter();
+                this.ParamCurrentCalc();
             }
 
-            internal void ComputeCurrentParameter() {
+            internal void ParamCurrentCalc() {
                 NSUtil.DebugPrintAlways("ComputeCurrentParameter");
                 if (m_parameters.Count == 0) {
                     this.CurrentParameter = null;
@@ -120,21 +120,21 @@ namespace NimStudio.NimStudio {
                 }
 
                 //the number of commas in the string is the index of the current parameter 
-                string sigText = m_applicabletospan.GetText(m_subjectBuffer.CurrentSnapshot);
-                int currentIndex = 0;
-                int commaCount = 0;
-                while (currentIndex < sigText.Length) {
-                    int commaIndex = sigText.IndexOf(',', currentIndex);
-                    if (commaIndex == -1) {
+                string sig_str = m_applicabletospan.GetText(m_subjectBuffer.CurrentSnapshot);
+                int sig_idx = 0;
+                int commas_count = 0;
+                while (sig_idx < sig_str.Length) {
+                    int comma_idx = sig_str.IndexOf(',', sig_idx);
+                    if (comma_idx == -1) {
                         break;
                     }
-                    commaCount++;
-                    currentIndex = commaIndex + 1;
+                    commas_count++;
+                    sig_idx = comma_idx + 1;
                 }
 
-                if (commaCount < m_parameters.Count) {
-                    this.CurrentParameter = m_parameters[commaCount];
-                    NSUtil.DebugPrintAlways("ComputeCurrentParameter Current:" + commaCount.ToString());
+                if (commas_count < m_parameters.Count) {
+                    this.CurrentParameter = m_parameters[commas_count];
+                    NSUtil.DebugPrintAlways("ComputeCurrentParameter Current:" + commas_count.ToString());
                 } else {
                     //too many commas, so use the last parameter as the current one. 
                     this.CurrentParameter = m_parameters[m_parameters.Count - 1];
@@ -159,11 +159,42 @@ namespace NimStudio.NimStudio {
 
             ITextSnapshot snapshot = subjectBuffer.CurrentSnapshot;
             int position = session.GetTriggerPoint(subjectBuffer).GetPosition(snapshot);
-            ITrackingSpan applicableToSpan = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(new Span(position, 0), SpanTrackingMode.EdgeInclusive, 0);
+            string text = subjectBuffer.CurrentSnapshot.GetText();
+
+            SnapshotPoint initialPoint = session.GetTriggerPoint(subjectBuffer).GetPoint(snapshot);
+            SnapshotPoint leftPoint = initialPoint;
+            SnapshotPoint rightPoint = initialPoint;
+
+            ITextSnapshotLine line = leftPoint.GetContainingLine();
+            string terms = "\n\r\t.:()[]{}?/+-;=*!<>";
+            while (true) {
+                if (leftPoint<=line.Start) {
+                    leftPoint=line.Start;
+                    break;
+                }
+                if (terms.IndexOf(leftPoint.GetChar()) != -1) {
+                    leftPoint += 1;
+                    break;
+                }
+                leftPoint -= 1;
+            }
+            while (true) {
+                if (rightPoint>=line.End) {
+                    rightPoint=line.End;
+                    break;
+                }
+                if (terms.IndexOf(rightPoint.GetChar()) != -1) {
+                    rightPoint -= 1;
+                    break;
+                }
+                rightPoint += 1;
+            }
+            ITrackingSpan applicableToSpan = snapshot.CreateTrackingSpan(leftPoint, rightPoint - leftPoint, SpanTrackingMode.EdgeInclusive);
+            //ITrackingSpan applicableToSpan = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(new Span(position, 0), SpanTrackingMode.EdgeInclusive, 0);
 
             foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
                 var sigdct = NSPackage.nimsuggest.sugdct[skey];
-                signatures.Add(CreateSignature(subjectBuffer, skey, sigdct["help"], applicableToSpan));
+                signatures.Add(SigAdd(subjectBuffer, skey, sigdct["help"], applicableToSpan));
             }
 
             //var currentSnapshot = subjectTriggerPoint.Value.Snapshot;
@@ -201,37 +232,36 @@ namespace NimStudio.NimStudio {
             return session.Signatures.Count > 0 ? session.Signatures[0] : null;
         }
 
-        private NSSignature CreateSignature(ITextBuffer textBuffer, string methodSig, string methodDoc, ITrackingSpan span) {
-            NSSignature sig = new NSSignature(textBuffer, methodSig, methodDoc, null);
-            textBuffer.Changed += new EventHandler<TextContentChangedEventArgs>(sig.OnSubjectBufferChanged);
+        private NSSignature SigAdd(ITextBuffer textbuff, string sigstr_passed, string docstr, ITrackingSpan span) {
 
-            //find the parameters in the method signature (expect methodname(one, two) 
-            int parspot = methodSig.LastIndexOf(')');
-            if (parspot == -1) return sig;
+            int parspot = sigstr_passed.LastIndexOf(')');
+            if (parspot == -1) return null;
 
-            string sigstr = methodSig.Substring(0,parspot+1);
-            string[] pars = sigstr.Split(new char[] { '(', ',', ')' });
-            List<IParameter> paramList = new List<IParameter>();
+            NSSignature sig = new NSSignature(textbuff, sigstr_passed, docstr, null);
+            textbuff.Changed += new EventHandler<TextContentChangedEventArgs>(sig.OnSubjectBufferChanged);
 
-            int locusSearchStart = 0;
-            for (int i = 1; i < pars.Length; i++) {
-                string param = pars[i].Trim();
+            string sigstr = sigstr_passed.Substring(0,parspot+1);
+            string[] param_arr = sigstr.Split(new char[] { '(', ',', ')' });
+            List<IParameter> param_lst = new List<IParameter>();
 
-                if (string.IsNullOrEmpty(param))
-                    continue;
+            // loop param array
+            int sigstr_idx = 0;
+            for (int i = 1; i < param_arr.Length; i++) {
+                string param_str = param_arr[i].Trim();
+                if (string.IsNullOrEmpty(param_str)) continue;
 
-                //find where this parameter is located in the method signature 
-                int locusStart = methodSig.IndexOf(param, locusSearchStart);
-                if (locusStart >= 0) {
-                    Span locus = new Span(locusStart, param.Length);
-                    locusSearchStart = locusStart + param.Length;
-                    paramList.Add(new NSSigParameter(locus, param, "pp", "Documentation for the parameter.", sig));
+                // add param to list
+                int param_idx = sigstr.IndexOf(param_str, sigstr_idx);
+                if (param_idx >= 0) {
+                    Span param_span = new Span(param_idx, param_str.Length);
+                    sigstr_idx = param_idx + param_str.Length;
+                    param_lst.Add(new NSSigParameter(param_span, param_str, "pp", "Documentation for the parameter.", sig));
                 }
             }
 
-            sig.m_parameters = new ReadOnlyCollection<IParameter>(paramList);
+            sig.m_parameters = new ReadOnlyCollection<IParameter>(param_lst);
             sig.m_applicabletospan = span;
-            sig.ComputeCurrentParameter();
+            sig.ParamCurrentCalc();
             return sig;
         }
     
