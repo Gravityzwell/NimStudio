@@ -75,6 +75,7 @@ namespace NimStudio.NimStudio {
             internal ReadOnlyCollection<IParameter> m_parameters;
             internal string m_printContent;
             internal ISignatureHelpSession m_session;
+            internal SnapshotPoint m_trigger_point;
             public event EventHandler<CurrentParameterChangedEventArgs> CurrentParameterChanged;
 
             public string PrettyPrintedContent { get { return m_printContent; } }
@@ -121,24 +122,38 @@ namespace NimStudio.NimStudio {
                     return;
                 }
 
-                //SnapshotPoint point_curr = m_session.GetTriggerPoint(m_subjectBuffer).GetPoint(m_subjectBuffer.CurrentSnapshot);
-                SnapshotPoint point_curr = m_session.TextView.Caret.Position.BufferPosition;
+                SnapshotPoint? point_trigger_null = m_session.GetTriggerPoint(m_subjectBuffer.CurrentSnapshot);
+                if (!point_trigger_null.HasValue) return;
+                SnapshotPoint point_trigger = point_trigger_null.Value;
+                var trigger_linenum = m_subjectBuffer.CurrentSnapshot.GetLineNumberFromPosition(point_trigger.Position);
+
+                SnapshotPoint point_curr3 = m_session.TextView.Caret.Position.BufferPosition;
+                SnapshotPoint? point_curr2 = m_session.TextView.BufferGraph.MapUpToBuffer(
+                    point_curr3, PointTrackingMode.Positive, PositionAffinity.Successor, m_subjectBuffer.CurrentSnapshot.TextBuffer);
+                if (!point_curr2.HasValue) return;
+                SnapshotPoint point_curr = point_curr2.Value;
+                var curr_linenum = m_subjectBuffer.CurrentSnapshot.GetLineNumberFromPosition(point_curr.Position);
+                
                 SnapshotPoint point_left = m_applicabletospan.GetStartPoint(m_subjectBuffer.CurrentSnapshot);
                 SnapshotPoint point_test = point_curr-1;
-                //point_curr = m_session.ge
-                //SnapshotPoint currentPoint = new SnapshotPoint(m_subjectBuffer.CurrentSnapshot, m_session.TextView.Caret.Position.Point);
-                SnapshotPoint currentPoint = m_session.TextView.Caret.Position.BufferPosition;
-
 
                 string sig_str = m_applicabletospan.GetText(m_subjectBuffer.CurrentSnapshot);
+                if (curr_linenum != trigger_linenum || point_curr < point_left) {
+                    m_session.Dismiss();
+                    return;
+                }
+
                 int commas_count = 0;
-                int sig_idx = 0;
                 while (true) {
                     if (point_test <= point_left) {
                         break;
                     }
                     if (point_test.GetChar() == ',') {
                         commas_count+=1;
+                    }
+                    if (point_test.GetChar() == ')') {
+                        m_session.Dismiss();
+                        return;
                     }
                     point_test -= 1;
                 }
@@ -150,24 +165,6 @@ namespace NimStudio.NimStudio {
                 }
                 return;
 
-                //m_applicabletospan.
-                //int sig_idx = 0;
-                while (sig_idx < sig_str.Length) {
-                    int comma_idx = sig_str.IndexOf(',', sig_idx);
-                    if (comma_idx == -1) {
-                        break;
-                    }
-                    commas_count++;
-                    sig_idx = comma_idx + 1;
-                }
-
-                if (commas_count < m_parameters.Count) {
-                    this.CurrentParameter = m_parameters[commas_count];
-                    NSUtil.DebugPrintAlways("ComputeCurrentParameter Current:" + commas_count.ToString());
-                } else {
-                    //too many commas, so use the last parameter as the current one. 
-                    this.CurrentParameter = m_parameters[m_parameters.Count - 1];
-                }
             }
 
         }
@@ -222,6 +219,8 @@ namespace NimStudio.NimStudio {
                 }
                 point_right += 1;
             }
+            if (point_left > point_right)
+                point_right=point_left;
             ITrackingSpan applicable_to_span = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(point_left, point_right - point_left, SpanTrackingMode.EdgeInclusive);
             //ITrackingSpan applicableToSpan = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(new Span(position, 0), SpanTrackingMode.EdgeInclusive, 0);
 
@@ -288,7 +287,7 @@ namespace NimStudio.NimStudio {
                 if (param_idx >= 0) {
                     Span param_span = new Span(param_idx, param_str.Length);
                     sigstr_idx = param_idx + param_str.Length;
-                    param_lst.Add(new NSSigParameter(param_span, param_str, "pp", "Documentation for the parameter.", sig));
+                    param_lst.Add(new NSSigParameter(param_span, param_str, "pp", "Doc for param" + i.ToString(), sig));
                 }
             }
 

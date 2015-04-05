@@ -238,6 +238,7 @@ namespace NimStudio.NimStudio {
             }
 
             if (_session_sighelp != null) {
+                int rval=0;
                 switch ((VSConstants.VSStd2KCmdID)nCmdID) {
                     case VSConstants.VSStd2KCmdID.BACKSPACE:
                         bool fDeleted = Backspace();
@@ -246,20 +247,20 @@ namespace NimStudio.NimStudio {
                         }
                         break;
                     case VSConstants.VSStd2KCmdID.LEFT:
-                        _editops.MoveToPreviousCharacter(false);
-                        //_session_sighelp.Recalculate();
-                        //NSSigSource.NSSignature sig = _session_sighelp.SelectedSignature as NSSigSource.NSSignature;
+                        rval = m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+
+                        //_editops.MoveToPreviousCharacter(false);
                         ((NSSigSource.NSSignature)_session_sighelp.SelectedSignature).ParamCurrentCalc();
-                        //sig.ParamCurrentCalc();
-                        //SigParameterUpdate();
+                        return rval;
                         return VSConstants.S_OK;
                     case VSConstants.VSStd2KCmdID.RIGHT:
-                        _editops.MoveToNextCharacter(false);
+                        //_editops.MoveToNextCharacter(false);
+                        rval = m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
                         ((NSSigSource.NSSignature)_session_sighelp.SelectedSignature).ParamCurrentCalc();
-                        return VSConstants.S_OK;
+                        return rval;
                     case VSConstants.VSStd2KCmdID.DOWN:
                     case VSConstants.VSStd2KCmdID.UP:
-                        int rval = m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+                        rval = m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
                         ((NSSigSource.NSSignature)_session_sighelp.SelectedSignature).ParamCurrentCalc();
                         return rval;
                     case VSConstants.VSStd2KCmdID.CANCEL:
