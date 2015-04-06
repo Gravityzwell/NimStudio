@@ -150,8 +150,6 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="NSQuickInfo.cs" />
-    <None Include="ClassDiagram1.cd" />
-    <None Include="ClassDiagram2.cd" />
     <None Include="NSSource.cs" />
     <Compile Include="NSSig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
