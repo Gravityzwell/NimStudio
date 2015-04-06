@@ -111,7 +111,6 @@ namespace NimStudio.NimStudio {
             }
 
             internal void OnSubjectBufferChanged(object sender, TextContentChangedEventArgs e) {
-                NSUtil.DebugPrintAlways("NSSig - OnSubjectBufferChanged");
                 this.ParamCurrentCalc();
             }
 
@@ -240,8 +239,7 @@ namespace NimStudio.NimStudio {
             foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
                 var sigdct = NSPackage.nimsuggest.sugdct[skey];
                 //SortedDictionary<string,string>
-
-                signatures.Add(SigAdd(subjectBuffer, skey, sigdct["help"]=="" ? sig_help_default : sigdct["help"], applicable_to_span, session));
+                signatures.Add(SigAdd(subjectBuffer, skey, sigdct, sig_help_default, applicable_to_span, session));
             }
 
             //var currentSnapshot = subjectTriggerPoint.Value.Snapshot;
@@ -279,15 +277,19 @@ namespace NimStudio.NimStudio {
             return session.Signatures.Count > 0 ? session.Signatures[0] : null;
         }
 
-        private NSSignature SigAdd(ITextBuffer textbuff, string sigstr_passed, string docstr, ITrackingSpan span, ISignatureHelpSession session) {
+        private NSSignature SigAdd(ITextBuffer textbuff, string sig_passed, SortedDictionary<string,string> sigdct_passed, string helpstr, ITrackingSpan span, ISignatureHelpSession session) {
 
-            int parspot = sigstr_passed.LastIndexOf(')');
+            int parspot = sig_passed.LastIndexOf(')');
             if (parspot == -1) return null;
 
-            NSSignature sig = new NSSignature(textbuff, sigstr_passed, docstr, null);
+            if (sig_passed.StartsWith("proc "))
+                sig_passed = sig_passed.Remove(0,5);
+            sig_passed = sigdct_passed["name"] + " " + sig_passed;
+
+            NSSignature sig = new NSSignature(textbuff, sig_passed, helpstr, null);
             textbuff.Changed += new EventHandler<TextContentChangedEventArgs>(sig.OnSubjectBufferChanged);
 
-            string sigstr = sigstr_passed.Substring(0,parspot+1);
+            string sigstr = sig_passed.Substring(0,parspot+1);
             string[] param_arr = sigstr.Split(new char[] { '(', ',', ')' });
             List<IParameter> param_lst = new List<IParameter>();
 
