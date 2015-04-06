@@ -32,7 +32,11 @@ namespace NimStudio.NimStudio {
         }
 
         public override string GetDataTipText(int line, int col, out TextSpan span) {
+
             span = new TextSpan();
+
+            if (NSPackage.nimsuggest==null) return "";
+
 
             string qinfostr = "";
             if (NSPackage.quickinfo == true) {

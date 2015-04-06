@@ -107,6 +107,10 @@ namespace NimStudio.NimStudio {
             if (proc == null) {
                 Init();
             }
+            if (proc == null) {
+                return;
+            }
+
             conout.Clear();
             sugdct.Clear();
             queryfinished = false;

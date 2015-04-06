@@ -154,15 +154,53 @@ namespace NimStudio.NimStudio {
             }
 
             nimsettingsini = System.IO.Path.Combine(UserDataPath, "nimstudio.ini");
-            System.Diagnostics.Debug.Print("NimStudio ini:" + nimsettingsini);
-            if (!File.Exists(nimsettingsini)) {
-                TextWriter tw = new StreamWriter(nimsettingsini);
-                tw.WriteLine("[Main]");
-                tw.WriteLine("nim.exe=");
-                tw.WriteLine("nimsuggest.exe=");
-                tw.Close();
-            }
+            //System.Diagnostics.Debug.Print("NimStudio ini:" + nimsettingsini);
+            //if (!File.Exists(nimsettingsini)) {
+            //    TextWriter tw = new StreamWriter(nimsettingsini);
+            //    tw.WriteLine("[Main]");
+            //    tw.WriteLine("nim.exe=");
+            //    tw.WriteLine("nimsuggest.exe=");
+            //    tw.Close();
+            //}
 
+            NSSugInit(nimsettingsini);
+            //string[] nimexes = { "nim.exe", "nimsuggest.exe" };
+            //for (int lexe = 0; lexe < 2; lexe++) {
+            //    if (NSIni.Get("Main", nimexes[lexe]) == "") {
+            //        // nim exe not found in INI - try to find it in path, or c:\nim\bin
+            //        var patharr = new List<string>((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';'));
+            //        patharr.Add(@"c:\nim\bin");
+            //        foreach (string spathi in patharr) {
+            //            string sfullpath = Path.Combine(spathi.Trim(), nimexes[lexe]);
+            //            if (File.Exists(sfullpath)) {
+            //                NSIni.Add("Main", nimexes[lexe], Path.GetFullPath(sfullpath));
+            //                NSIni.Write();
+            //                break;
+            //            }
+            //        }
+            //    } else {
+            //        if (!File.Exists(NSIni.Get("Main", nimexes[lexe]))) {
+            //            System.Diagnostics.Debug.Print("NimStudio warning:" + nimexes[lexe] + " not found!");
+            //        }
+            //    }
+            //}
+
+            //if (NSIni.Get("Main", nimexes[0]) == "" || NSIni.Get("Main", nimexes[1]) == "") {
+            //    string msg = "";
+            //    if (NSIni.Get("Main", nimexes[0]) == "" && NSIni.Get("Main", nimexes[1]) == "")
+            //        msg = "Path to nim.exe and nimsuggest.exe not found.";
+            //    else
+            //        msg = String.Format("Path to {0} not found.", (NSIni.Get("Main", nimexes[0]) == "") ? nimexes[0] : nimexes[1]);
+                    
+            //    System.Windows.Forms.MessageBox.Show(msg, "NimStudio configuration", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
+            //}
+            //if (NSIni.Get("Main", nimexes[1]) != "") { 
+            //    nimsuggest = new NimSuggestProc();
+            //    //nimsuggest.Init();
+            //}
+        }
+
+        public void NSSugInit(string nimsettingsini) {
             NSIni.Init(nimsettingsini);
             string[] nimexes = { "nim.exe", "nimsuggest.exe" };
             for (int lexe = 0; lexe < 2; lexe++) {
@@ -191,13 +229,25 @@ namespace NimStudio.NimStudio {
                     msg = "Path to nim.exe and nimsuggest.exe not found.";
                 else
                     msg = String.Format("Path to {0} not found.", (NSIni.Get("Main", nimexes[0]) == "") ? nimexes[0] : nimexes[1]);
-                    
-                System.Windows.Forms.MessageBox.Show(msg, "Nim configuration", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
+
+                msg += "\nEnter path(s) via:\n\n";
+                msg += "Tools->NimStudio->Options Edit";
+                msg += "\n   Then\n";
+                msg += "Tools->NimStudio->Options Load";
+
+                // write INI so user can edit
+                NSIni.Add("Main", nimexes[0], "");
+                NSIni.Add("Main", nimexes[1], "");
+                NSIni.Write();
+
+                System.Windows.Forms.MessageBox.Show(msg, "NimStudio configuration", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
             }
             if (NSIni.Get("Main", nimexes[1]) != "") { 
-                nimsuggest = new NimSuggestProc();
+                if (nimsuggest==null)
+                    nimsuggest = new NimSuggestProc();
                 //nimsuggest.Init();
             }
+
         }
 
         public int FDoIdle(uint grfidlef) {
@@ -269,6 +319,7 @@ namespace NimStudio.NimStudio {
 
             if (menucmds[menucmd.CommandID.ID] == "NSMenuCmdOptionsLoad") {
                 NSIni.Init(NSIni.inifilepath);
+                NSSugInit(nimsettingsini);
                 System.Windows.Forms.MessageBox.Show("NimStudio INI loaded.", "NimStudio", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
             }
 

@@ -67,6 +67,8 @@ namespace NimStudio.NimStudio {
         void ICompletionSource.AugmentCompletionSession(ICompletionSession session, IList<CompletionSet> completionSets) {
             List<string> strList = new List<string>();
 
+            if (NSPackage.nimsuggest==null) return;
+
             var caretpos = NSLangServ.CaretPosGet();
             NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.sug, caretpos["line"], caretpos["col"]);
             m_compList = new List<Completion>();

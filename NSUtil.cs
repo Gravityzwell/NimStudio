@@ -118,9 +118,8 @@ namespace NimStudio.NimStudio {
             string linestr = null;
             string inisectcurrent = "MAIN";
             string[] keyvalarr = null;
-            inifilepath = "";
+            inifilepath=inipath;
             if (File.Exists(inipath)) {
-                inifilepath=inipath;
                 try {
                     srfile = new StreamReader(inipath);
                     linestr = srfile.ReadLine();

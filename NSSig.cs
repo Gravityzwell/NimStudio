@@ -180,6 +180,8 @@ namespace NimStudio.NimStudio {
             //}
             NSUtil.DebugPrintAlways("NSSig - AugmentSignatureHelpSession");
 
+            if (NSPackage.nimsuggest == null) return;
+
             signatures.Clear();
             var caretpos = NSLangServ.CaretPosGet();
             NSPackage.nimsuggest.Query(NimSuggestProc.Qtype.con, caretpos["line"], caretpos["col"]);
