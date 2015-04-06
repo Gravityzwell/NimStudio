@@ -155,6 +155,14 @@ namespace NimStudio.NimStudio {
 
             nimsettingsini = System.IO.Path.Combine(UserDataPath, "nimstudio.ini");
             System.Diagnostics.Debug.Print("NimStudio ini:" + nimsettingsini);
+            if (!File.Exists(nimsettingsini)) {
+                TextWriter tw = new StreamWriter(nimsettingsini);
+                tw.WriteLine("[Main]");
+                tw.WriteLine("nim.exe=");
+                tw.WriteLine("nimsuggest.exe=");
+                tw.Close();
+            }
+
             NSIni.Init(nimsettingsini);
             string[] nimexes = { "nim.exe", "nimsuggest.exe" };
             for (int lexe = 0; lexe < 2; lexe++) {
