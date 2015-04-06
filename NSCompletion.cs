@@ -73,10 +73,16 @@ namespace NimStudio.NimStudio {
 
             foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
                 var sugdct = NSPackage.nimsuggest.sugdct[skey];
-                if (m_glyphdct.ContainsKey(sugdct["type"]))
-                    m_compList.Add(new Completion(skey, skey, sugdct["type"] + sugdct["help"], m_glyphdct[sugdct["type"]], "icon text"));
+                string procname = skey;
+                int per_spot = skey.IndexOf(".");
+                if (per_spot != -1)
+                    procname = skey.Substring(per_spot+1,skey.Length-per_spot-1);
                 else
-                    m_compList.Add(new Completion(skey, skey, sugdct["type"] + sugdct["help"], null, "icon text"));
+                    procname = skey;
+                if (m_glyphdct.ContainsKey(sugdct["type"]))
+                    m_compList.Add(new Completion(skey, procname, sugdct["type"] + sugdct["help"], m_glyphdct[sugdct["type"]], "icon text"));
+                else
+                    m_compList.Add(new Completion(skey, procname, sugdct["type"] + sugdct["help"], null, "icon text"));
             }
 
             SnapshotPoint currentPoint = (session.TextView.Caret.Position.BufferPosition) - 1;

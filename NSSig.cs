@@ -116,32 +116,38 @@ namespace NimStudio.NimStudio {
             }
 
             internal void ParamCurrentCalc() {
+
+                if (m_session.IsDismissed == true || m_session == null) {
+                    return;
+                }
+
                 NSUtil.DebugPrintAlways("NSSig - ParamCurrentCalc");
                 if (m_parameters.Count == 0) {
                     this.CurrentParameter = null;
                     return;
                 }
 
-                SnapshotPoint? point_trigger_null = m_session.GetTriggerPoint(m_subjectBuffer.CurrentSnapshot);
-                if (!point_trigger_null.HasValue) return;
-                SnapshotPoint point_trigger = point_trigger_null.Value;
+                //SnapshotPoint? point_trigger_null = m_session.GetTriggerPoint(m_subjectBuffer.CurrentSnapshot);
+                SnapshotPoint point_trigger = (SnapshotPoint)m_session.GetTriggerPoint(m_subjectBuffer.CurrentSnapshot);
+
                 var trigger_linenum = m_subjectBuffer.CurrentSnapshot.GetLineNumberFromPosition(point_trigger.Position);
 
-                SnapshotPoint point_curr3 = m_session.TextView.Caret.Position.BufferPosition;
-                SnapshotPoint? point_curr2 = m_session.TextView.BufferGraph.MapUpToBuffer(
-                    point_curr3, PointTrackingMode.Positive, PositionAffinity.Successor, m_subjectBuffer.CurrentSnapshot.TextBuffer);
-                if (!point_curr2.HasValue) return;
-                SnapshotPoint point_curr = point_curr2.Value;
+                SnapshotPoint point_curr2 = m_session.TextView.Caret.Position.BufferPosition;
+                SnapshotPoint point_curr = (SnapshotPoint)m_session.TextView.BufferGraph.MapUpToBuffer(
+                    point_curr2, PointTrackingMode.Positive, PositionAffinity.Successor, m_subjectBuffer.CurrentSnapshot.TextBuffer);
+                //if (!point_curr2.HasValue) return;
+                //SnapshotPoint point_curr = point_curr2.Value;
                 var curr_linenum = m_subjectBuffer.CurrentSnapshot.GetLineNumberFromPosition(point_curr.Position);
                 
                 SnapshotPoint point_left = m_applicabletospan.GetStartPoint(m_subjectBuffer.CurrentSnapshot);
-                SnapshotPoint point_test = point_curr-1;
 
                 string sig_str = m_applicabletospan.GetText(m_subjectBuffer.CurrentSnapshot);
                 if (curr_linenum != trigger_linenum || point_curr < point_left) {
                     m_session.Dismiss();
                     return;
                 }
+
+                SnapshotPoint point_test = point_curr-1;
 
                 int commas_count = 0;
                 while (true) {
@@ -224,9 +230,18 @@ namespace NimStudio.NimStudio {
             ITrackingSpan applicable_to_span = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(point_left, point_right - point_left, SpanTrackingMode.EdgeInclusive);
             //ITrackingSpan applicableToSpan = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(new Span(position, 0), SpanTrackingMode.EdgeInclusive, 0);
 
+            string sig_help_default="";
             foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
                 var sigdct = NSPackage.nimsuggest.sugdct[skey];
-                signatures.Add(SigAdd(subjectBuffer, skey, sigdct["help"], applicable_to_span, session));
+                if (sigdct["help"].Length > sig_help_default.Length)
+                    sig_help_default = sigdct["help"];
+            }
+            
+            foreach (string skey in NSPackage.nimsuggest.sugdct.Keys) {
+                var sigdct = NSPackage.nimsuggest.sugdct[skey];
+                //SortedDictionary<string,string>
+
+                signatures.Add(SigAdd(subjectBuffer, skey, sigdct["help"]=="" ? sig_help_default : sigdct["help"], applicable_to_span, session));
             }
 
             //var currentSnapshot = subjectTriggerPoint.Value.Snapshot;
@@ -287,7 +302,7 @@ namespace NimStudio.NimStudio {
                 if (param_idx >= 0) {
                     Span param_span = new Span(param_idx, param_str.Length);
                     sigstr_idx = param_idx + param_str.Length;
-                    param_lst.Add(new NSSigParameter(param_span, param_str, "pp", "Doc for param" + i.ToString(), sig));
+                    param_lst.Add(new NSSigParameter(param_span, param_str, "", "", sig));
                 }
             }
 
