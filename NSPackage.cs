@@ -37,6 +37,7 @@ namespace NimStudio.NimStudio {
     [ProvideLanguageService(typeof(NSLangServ), NSConst.LangName,
         106,                          // resource ID of localized language name
         CodeSense = true,             // IntelliSense
+        DefaultToInsertSpaces = true,
         RequestStockColors = false,   // Custom colors
         EnableCommenting = true,
         MatchBraces = true,
