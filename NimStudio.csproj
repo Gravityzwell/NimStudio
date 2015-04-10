@@ -147,7 +147,6 @@
   <ItemGroup>
     <Compile Include="Guids.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="INSSigSource.cs" />
     <Compile Include="NSAuthoringScope.cs" />
     <Compile Include="NSCompletion.cs" />
     <Compile Include="NSPackage.cs">
@@ -184,6 +183,7 @@
   <ItemGroup>
     <VSCTCompile Include="NimStudio.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
+      <SubType>Designer</SubType>
     </VSCTCompile>
   </ItemGroup>
   <ItemGroup>

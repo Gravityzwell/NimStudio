@@ -53,6 +53,11 @@ namespace NimStudio.NimStudio {
             return m_scanner;
         }
 
+        //public override CodeWindowManager CreateCodeWindowManager(IVsCodeWindow codewindow, Source source) {
+        //    NSCodeWindow nscw = new NSCodeWindow(codewindow, source);
+        //    return nscw;
+        //}
+
         public override void OnCloseSource(Source source) {
             string codefile_path = source.GetFilePath();
             if (filelist.ContainsKey(codefile_path)) {
@@ -67,6 +72,16 @@ namespace NimStudio.NimStudio {
                 }
                 NimBaseFileCreate();
             }
+            //base.OnCloseSource(source);
+            //return;
+            CodeWindowManager cwm = GetCodeWindowManagerForSource(source);
+            if (cwm != null) {
+                IVsTextView tv;
+                cwm.CodeWindow.GetLastActiveView(out tv);
+                if (tv != null)
+                    tv.CloseView();
+            }
+            source.Close();
             base.OnCloseSource(source);
         }
 
@@ -83,6 +98,7 @@ namespace NimStudio.NimStudio {
 
         public override void OnActiveViewChanged(IVsTextView textview) {
             // also called for new textviews
+            NSUtil.DebugPrintAlways("OnActiveViewChanged");
             if (textview != null) {
                 textview_current = textview;
                 var source = GetSource(textview);
@@ -94,8 +110,8 @@ namespace NimStudio.NimStudio {
                     filelist.Add(codefile_path_current,fdirtystr);
                     NimBaseFileCreate();
                 }
+                base.OnActiveViewChanged(textview);
             }
-            base.OnActiveViewChanged(textview);
         }
 
         public override string Name {
@@ -104,6 +120,7 @@ namespace NimStudio.NimStudio {
 
         public override AuthoringScope ParseSource(ParseRequest req) {
             //var c1 = 1;
+            NSUtil.DebugPrintAlways("ParseSource:" + req.Reason);
             return new NSAuthoringScope(req, "", "");
             //return req.Scope;
         }

@@ -58,15 +58,19 @@ namespace NimStudio.NimStudio {
 
         public NSScanner(IVsTextBuffer buffer) {
             m_buffer = buffer;
+            Debug.Print("NSScanner");
         }
 
         public void SetSource(string source, int offset) {
+            Debug.Print("SetSource:" + source + ":" + DateTime.Now.Millisecond.ToString());
             m_source = source.Substring(offset);
             m_tokenizer = new NSTokenizer(m_source);
         }
 
         public bool ScanTokenAndProvideInfoAboutIt(TokenInfo tokenInfo, ref int state) {
             NSScannerFlags flags = (NSScannerFlags)state;
+            //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Second.ToString());
+            //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Millisecond.ToString());
             var lastToken = m_tokenizer.Kind;
             switch (m_tokenizer.Kind) {
                 case TTokenClass.gtEof:
@@ -224,6 +228,7 @@ namespace NimStudio.NimStudio {
         public NSTokenizer(string source) {
             inString = TStringTypes.stNone;
             m_source = source;
+            Debug.Print("NSTokenizer:" + source + ":" + DateTime.Now.Millisecond.ToString());
             start = 0;
             end = 0;
             advanceOne(NSScannerFlags.None);

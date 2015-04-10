@@ -333,11 +333,34 @@ namespace NimStudio.NimStudio {
     }
 
     #if ivslang
-    [Guid(GuidList.guidNimStudioPkgString)]
-    internal class VSNLanguageInfo: IVsLanguageInfo {
+    [Guid(GuidList.NSPkgGUIDStr)]
+    internal class NSLanguageInfo: IVsLanguageInfo {
+
+        private readonly System.IServiceProvider _serviceProvider;
+        private readonly IComponentModel _componentModel;
+
+        public NSLanguageInfo(System.IServiceProvider serviceProvider) {
+            _serviceProvider = serviceProvider;
+            _componentModel = serviceProvider.GetService(typeof(SComponentModel)) as IComponentModel;
+        }
+
         public int GetCodeWindowManager(IVsCodeWindow pCodeWin, out IVsCodeWindowManager ppCodeWinMgr) {
             ppCodeWinMgr = null;
             return VSConstants.E_NOTIMPL;
+
+            var model = _serviceProvider.GetService(typeof(SComponentModel)) as IComponentModel;
+            var service = model.GetService<IVsEditorAdaptersFactoryService>();
+            
+            IVsTextView textView;
+            if (ErrorHandler.Succeeded(pCodeWin.GetPrimaryView(out textView))) {
+                ppCodeWinMgr = new CodeWindowManager(_serviceProvider, pCodeWin, service.GetWpfTextView(textView));
+
+                return VSConstants.S_OK;
+            }
+
+            ppCodeWinMgr = null;
+            return VSConstants.E_FAIL;
+
         }
 
         public int GetColorizer(IVsTextLines pBuffer, out IVsColorizer ppColorizer) {
@@ -346,12 +369,12 @@ namespace NimStudio.NimStudio {
         }
 
         public int GetFileExtensions(out string pbstrExtensions) {
-            pbstrExtensions = VSNConst.FileExt;
+            pbstrExtensions = NSConst.FileExt;
             return VSConstants.S_OK;
         }
 
         public int GetLanguageName(out string bstrName) {
-            bstrName = VSNConst.LangName;
+            bstrName = NSConst.LangName;
             return VSConstants.S_OK;
         }
     }

@@ -59,6 +59,7 @@ namespace NimStudio.NimStudio {
             if (textview.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out controller)) {
                 controller.AttachKeyboardFilter();
             };
+            textview.Closed += TextView_Closed;
             //textview.Properties.GetOrCreateSingletonProperty(() =>new NSIntellisenseController(nsicp(
             //    _serviceprovider_vs
             //    ), textview));
@@ -68,6 +69,26 @@ namespace NimStudio.NimStudio {
             //textviewadapter.AddCommandFilter(nsintillisensectrl, out next);
             //nsintillisensectrl.m_commandhandler_next = next;
 
+        }
+
+        void TextView_Closed(object sender, EventArgs args) {
+            var view = (ITextView)sender;
+
+            //view.TextBuffer.Changed -= TextBuffer_Changed;
+            view.Closed -= TextView_Closed;
+
+            //IVsTextView vsTextView = view.ToVsTextView();
+
+            //var filePath = vsTextView.GetFilePath();// vsTextView.ToIVsTextBuffer().GetFilePath();
+            ////Trace.WriteLine("Closed: " + filePath);
+
+            //var langSrv = NemerlePackage.GetGlobalService(typeof(NemerleLanguageService)) as NemerleLanguageService;
+            //if (langSrv == null)
+            //    return;
+            //var source = (NemerleSource)langSrv.GetSource(filePath);
+            //langSrv.OnCloseSource(source);
+
+            //source.Dispose();
         }
     }
 
@@ -152,7 +173,7 @@ namespace NimStudio.NimStudio {
         internal IEditorOperationsFactoryService _editoperationsfactory;
         private IEditorOperations _editops;
         private ISignatureHelpSession session;
-
+        public static Guid VSStd97Cmds = new Guid("5efc7975-14bc-11cf-9b2b-00aa00573819");
         public NSIntellisenseController(NSIntellisenseControllerProvider nsicprovider, ITextView textview) {
             _nsicprovider = nsicprovider;
             _serviceprovider = nsicprovider._serviceprovider_vs;
@@ -219,7 +240,14 @@ namespace NimStudio.NimStudio {
                         break;
                 }
             }
-            
+            if (pguidCmdGroup == VSStd97Cmds) {
+                switch ((VSConstants.VSStd97CmdID)nCmdID) {
+                    case VSConstants.VSStd97CmdID.FileClose:
+                        Debug.Print("Close");
+                        break;
+                }
+            }
+
             if (_session_completion != null) {
                 // commit
                 if (nCmdID == (uint)VSConstants.VSStd2KCmdID.RETURN || nCmdID == (uint)VSConstants.VSStd2KCmdID.TAB || (char.IsWhiteSpace(typedChar) || char.IsPunctuation(typedChar))) {
