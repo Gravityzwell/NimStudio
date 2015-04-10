@@ -15,7 +15,7 @@ namespace NimStudio.NimStudio {
         private string m_dirtyname;
         private string m_projectfile;
         private AuthoringSink m_sink;
-        bool disposed = false;
+        //bool disposed = false;
 
         public NSAuthoringScope(AuthoringSink sink, string filename, string dirtyname, string projectfile) : base() {
             m_sink = sink;

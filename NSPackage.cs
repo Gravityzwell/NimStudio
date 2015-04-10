@@ -42,6 +42,7 @@ namespace NimStudio.NimStudio {
         EnableCommenting = true,
         MatchBraces = true,
         ShowMatchingBrace = true,
+        AutoOutlining = true,
         EnableAsyncCompletion = true  // Background parsing
         )]
 

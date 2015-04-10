@@ -10,26 +10,22 @@ using Microsoft.VisualStudio.Package;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio;
 
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
-using System.Text;
 
 // BUILD = NONE
 
 namespace NimStudio.NimStudio {
     public partial class NSSource : Source {
 
-        public NSSource(NSLangServ service, IVsTextLines textLines, Colorizer colorizer)
-        : base(service, textLines, colorizer) {
-            string path = GetFilePath();
+        public NSSource(NSLangServ service, IVsTextLines textLines, Colorizer colorizer) : base(service, textLines, colorizer) {
 
+            string path = GetFilePath();
             Service = service;
 
             //Scanner = colorizer.Scanner as NSScanner;
+            LastParseTime = 0;
             LastDirtyTime = DateTime.Now;
         }
 
@@ -126,9 +122,6 @@ namespace NimStudio.NimStudio {
                 //else
                 //  LastParseTime = System.DateTime.Now;
             }
-        }
-
-        public override void OnIdle(bool periodic) {
         }
 
         public IVsTextView GetView() {
@@ -318,6 +311,18 @@ namespace NimStudio.NimStudio {
         }
         */
 
+        public override void OnIdle(bool periodic) {
+            // from IronPythonLanguage sample
+            // this appears to be necessary to get a parse request with ParseReason = Check?
+            //Source src = this.GetSource(this.LastActiveTextView);
+            if (LastParseTime >= Int32.MaxValue >> 12) {
+                LastParseTime = 0;
+            }
+            //if (src != null && src.LastParseTime >= Int32.MaxValue >> 12) {
+            //    src.LastParseTime = 0;
+            //}
+            base.OnIdle(periodic);
+        }
 
         public override ParseRequest BeginParse(int line, int idx, TokenInfo info, ParseReason reason, IVsTextView view, ParseResultHandler callback) {
             //return base.BeginParse(line, idx, info, reason, view, callback);
@@ -362,48 +367,50 @@ namespace NimStudio.NimStudio {
 
 
         public override CommentInfo GetCommentFormat() {
-            return new CommentInfo { UseLineComments = true, LineStart = "//", BlockStart = "/*", BlockEnd = "*/" };
+            return new CommentInfo { UseLineComments = true, LineStart = "# ", BlockStart = "discard \"\"\"", BlockEnd = "\"\"\"" };
         }
 
-        public override TextSpan CommentLines(TextSpan span, string lineComment) {
-            // Calculate minimal position of non-space char
-            // at lines in selected span.
-            var minNonEmptyPosition = 0;
+        //public override TextSpan CommentLines(TextSpan span, string lineComment) {
+        //    // Calculate minimal position of non-space char
+        //    // at lines in selected span.
+        //    var minNonEmptyPosition = 0;
 
-            for (var i = span.iStartLine; i <= span.iEndLine; ++i) {
-                var line = base.GetLine(i);
+        //    for (var i = span.iStartLine; i <= span.iEndLine; ++i) {
+        //        var line = base.GetLine(i);
 
-                if (line.Trim().Length <= 0)
-                    continue;
+        //        if (line.Trim().Length <= 0)
+        //            continue;
 
-                var spaceLen = line.Replace(line.TrimStart(), "").Length;
+        //        var spaceLen = line.Replace(line.TrimStart(), "").Length;
+        //        spaceLen = line.Length - line.TrimStart().Length;
+        //        //line.TrimStart();
 
-                if (minNonEmptyPosition == 0 || spaceLen < minNonEmptyPosition)
-                    minNonEmptyPosition = spaceLen;
-            }
+        //        if (minNonEmptyPosition == 0 || spaceLen < minNonEmptyPosition)
+        //            minNonEmptyPosition = spaceLen;
+        //    }
 
-            // insert line comment at calculated position.
-            var editMgr = new EditArray(this, null, true, "CommentLines");
+        //    // insert line comment at calculated position.
+        //    var editMgr = new EditArray(this, null, true, "CommentLines");
 
-            for (var i = span.iStartLine; i <= span.iEndLine; ++i) {
-                var text = base.GetLine(i);
+        //    for (var i = span.iStartLine; i <= span.iEndLine; ++i) {
+        //        var text = base.GetLine(i);
 
-                if (minNonEmptyPosition <= text.Length && text.Trim().Length > 0) {
-                    var commentSpan = new TextSpan();
+        //        if (minNonEmptyPosition <= text.Length && text.Trim().Length > 0) {
+        //            var commentSpan = new TextSpan();
 
-                    commentSpan.iStartLine = commentSpan.iEndLine = i;
-                    commentSpan.iStartIndex = commentSpan.iEndIndex = minNonEmptyPosition;
+        //            commentSpan.iStartLine = commentSpan.iEndLine = i;
+        //            commentSpan.iStartIndex = commentSpan.iEndIndex = minNonEmptyPosition;
 
-                    editMgr.Add(new EditSpan(commentSpan, lineComment));
-                }
-            }
+        //            editMgr.Add(new EditSpan(commentSpan, lineComment));
+        //        }
+        //    }
 
-            editMgr.ApplyEdits();
+        //    editMgr.ApplyEdits();
 
-            // adjust original span to fit comment symbols
-            span.iEndIndex += lineComment.Length;
-            return span;
-        }
+        //    // adjust original span to fit comment symbols
+        //    span.iEndIndex += lineComment.Length;
+        //    return span;
+        //}
 
         public override AuthoringSink CreateAuthoringSink(ParseReason reason, int line, int col) {
             Trace.Assert(false, "We don't using MS infrastructure of background parsing now. This code should not be called!");

@@ -72,17 +72,17 @@ namespace NimStudio.NimStudio {
                 }
                 NimBaseFileCreate();
             }
-            //base.OnCloseSource(source);
-            //return;
-            CodeWindowManager cwm = GetCodeWindowManagerForSource(source);
-            if (cwm != null) {
-                IVsTextView tv;
-                cwm.CodeWindow.GetLastActiveView(out tv);
-                if (tv != null)
-                    tv.CloseView();
-            }
-            source.Close();
             base.OnCloseSource(source);
+            return;
+            //CodeWindowManager cwm = GetCodeWindowManagerForSource(source);
+            //if (cwm != null) {
+            //    IVsTextView tv;
+            //    cwm.CodeWindow.GetLastActiveView(out tv);
+            //    if (tv != null)
+            //        tv.CloseView();
+            //}
+            //source.Close();
+            //base.OnCloseSource(source);
         }
 
         private void NimBaseFileCreate() {
@@ -114,15 +114,19 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        public override string Name {
-            get { return NSConst.LangName; }
+        public override Source CreateSource(IVsTextLines buffer) {
+            return new NSSource(this, buffer, GetColorizer(buffer));
         }
 
         public override AuthoringScope ParseSource(ParseRequest req) {
             //var c1 = 1;
             NSUtil.DebugPrintAlways("ParseSource:" + req.Reason);
-            return new NSAuthoringScope(req, "", "");
+            return new NSAuthoringScope(req, req.FileName, "");
             //return req.Scope;
+        }
+
+        public override string Name {
+            get { return NSConst.LangName; }
         }
 
         public static dcto CaretPosGet() {

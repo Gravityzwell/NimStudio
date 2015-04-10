@@ -62,7 +62,7 @@ namespace NimStudio.NimStudio {
         }
 
         public void SetSource(string source, int offset) {
-            Debug.Print("SetSource:" + source + ":" + DateTime.Now.Millisecond.ToString());
+            //Debug.Print("SetSource:" + source + ":" + DateTime.Now.Millisecond.ToString());
             m_source = source.Substring(offset);
             m_tokenizer = new NSTokenizer(m_source);
         }
@@ -190,8 +190,8 @@ namespace NimStudio.NimStudio {
 
             }
             state = (int)flags;
-            tokenInfo.StartIndex = m_tokenizer.Start;
-            tokenInfo.EndIndex = m_tokenizer.End;
+            tokenInfo.StartIndex = m_tokenizer.m_start;
+            tokenInfo.EndIndex = m_tokenizer.m_end;
             m_tokenizer.advanceOne(flags);
             return true;
         }
@@ -200,21 +200,21 @@ namespace NimStudio.NimStudio {
     class NSTokenizer {
         private TTokenClass kind;
         private string m_source;
-        private int start;
-        private int end;
+        public int m_start;
+        public int m_end;
         private int tokenEnd;
-        private TStringTypes inString;
+        //public TStringTypes inString = TStringTypes.stNone;
         private string nextToken;
-        public int Start {
-            get {
-                return start;
-            }
-        }
-        public int End {
-            get {
-                return tokenEnd - 1;
-            }
-        }
+        //public int Start {
+        //    get {
+        //        return m_start;
+        //    }
+        //}
+        //public int End {
+        //    get {
+        //        return tokenEnd - 1;
+        //    }
+        //}
         public string NextToken {
             get {
                 return nextToken;
@@ -226,11 +226,11 @@ namespace NimStudio.NimStudio {
             }
         }
         public NSTokenizer(string source) {
-            inString = TStringTypes.stNone;
+            //inString = TStringTypes.stNone;
             m_source = source;
-            Debug.Print("NSTokenizer:" + source + ":" + DateTime.Now.Millisecond.ToString());
-            start = 0;
-            end = 0;
+            //Debug.Print("NSTokenizer:" + source + ":" + DateTime.Now.Millisecond.ToString());
+            m_start = 0;
+            m_end = 0;
             advanceOne(NSScannerFlags.None);
         }
         private static int skipChar(string str, char chr, int idx) {
@@ -267,105 +267,105 @@ namespace NimStudio.NimStudio {
                 {
                 Debugger.Break();
                 }*/
-            start = end;
-            if (end >= m_source.Length) {
+            m_start = m_end;
+            if (m_end >= m_source.Length) {
                 kind = TTokenClass.gtEof;
                 return;
             }
-            if (start >= m_source.Length) {
+            if (m_start >= m_source.Length) {
                 kind = TTokenClass.gtEof;
                 return;
             }
-            if (m_source[start] == '#' && flags == NSScannerFlags.None) {
+            if (m_source[m_start] == '#' && flags == NSScannerFlags.None) {
                 kind = TTokenClass.gtComment;
-                end = m_source.Length;
+                m_end = m_source.Length;
                 tokenEnd = m_source.Length;
-            } else if (m_source[start] == '\'') {
+            } else if (m_source[m_start] == '\'') {
                 kind = TTokenClass.gtCharLit;
-                if (start + 2 < m_source.Length && m_source[start + 2] == '\'') {
-                    end = start + 3;
-                    tokenEnd = start + 3;
+                if (m_start + 2 < m_source.Length && m_source[m_start + 2] == '\'') {
+                    m_end = m_start + 3;
+                    tokenEnd = m_start + 3;
                 } else {
-                    end = start + 1;
-                    tokenEnd = start + 1;
+                    m_end = m_start + 1;
+                    tokenEnd = m_start + 1;
                 }
-            } else if (m_source[start] == '"') {
-                if (start + 2 < m_source.Length && m_source.Substring(start, 3) == "\"\"\"") {
-                    end = start + 3;
-                    tokenEnd = start + 3;
+            } else if (m_source[m_start] == '"') {
+                if (m_start + 2 < m_source.Length && m_source.Substring(m_start, 3) == "\"\"\"") {
+                    m_end = m_start + 3;
+                    tokenEnd = m_start + 3;
                     kind = TTokenClass.gtLongStringLit;
                     return;
                 } else {
-                    end = start + 1;
-                    tokenEnd = start + 1;
+                    m_end = m_start + 1;
+                    tokenEnd = m_start + 1;
                     kind = TTokenClass.gtStringLit;
                     return;
                 }
-            } else if (m_source[start] == '{') {
-                if (checkEqual(start + 1, '.') && checkNotEqual(start + 2, '.')) {
-                    end = start + 2;
-                    tokenEnd = start + 2;
+            } else if (m_source[m_start] == '{') {
+                if (checkEqual(m_start + 1, '.') && checkNotEqual(m_start + 2, '.')) {
+                    m_end = m_start + 2;
+                    tokenEnd = m_start + 2;
                     kind = TTokenClass.tkCurlyDorLe;
                 } else {
-                    end = start + 1;
-                    tokenEnd = start + 1;
+                    m_end = m_start + 1;
+                    tokenEnd = m_start + 1;
                     kind = TTokenClass.gtPunctation;
 
                 }
 
-            } else if (m_source[start] == '.') {
-                if (checkEqual(start + 1, '}')) {
-                    end = start + 2;
-                    tokenEnd = start + 2;
+            } else if (m_source[m_start] == '.') {
+                if (checkEqual(m_start + 1, '}')) {
+                    m_end = m_start + 2;
+                    tokenEnd = m_start + 2;
                     kind = TTokenClass.tkCurlyDotRi;
                 } else {
-                    end = start + 1;
-                    tokenEnd = start + 1;
+                    m_end = m_start + 1;
+                    tokenEnd = m_start + 1;
                     kind = TTokenClass.tkDot;
                 }
-            } else if (m_source[start] == '(') {
+            } else if (m_source[m_start] == '(') {
                 kind = TTokenClass.tkParLe;
-                end = start + 1;
-                tokenEnd = start + 1;
-            } else if (m_source[start] == ')') {
+                m_end = m_start + 1;
+                tokenEnd = m_start + 1;
+            } else if (m_source[m_start] == ')') {
                 kind = TTokenClass.tkParRi;
-                end = start + 1;
-                tokenEnd = start + 1;
-            } else if (m_source[start] == ',') {
+                m_end = m_start + 1;
+                tokenEnd = m_start + 1;
+            } else if (m_source[m_start] == ',') {
                 kind = TTokenClass.tkComma;
-                end = start + 1;
-                tokenEnd = start + 1;
-            } else if (m_source[start] == '*') {
+                m_end = m_start + 1;
+                tokenEnd = m_start + 1;
+            } else if (m_source[m_start] == '*') {
                 kind = TTokenClass.gtPunctation;
-                end = start + 1;
-                tokenEnd = start + 1;
-            } else if (m_source[start] == ':') {
+                m_end = m_start + 1;
+                tokenEnd = m_start + 1;
+            } else if (m_source[m_start] == ':') {
                 kind = TTokenClass.gtPunctation;
-                end = start + 1;
-                tokenEnd = start + 1;
-            } else if (m_source[start] == ' ') {
+                m_end = m_start + 1;
+                tokenEnd = m_start + 1;
+            } else if (m_source[m_start] == ' ') {
                 kind = TTokenClass.gtWhitespace;
-                end = start + 1;
-                tokenEnd = start + 1;
-            } else if (m_source[start] == '[') {
+                m_end = m_start + 1;
+                tokenEnd = m_start + 1;
+            } else if (m_source[m_start] == '[') {
                 kind = TTokenClass.tkBracketLe;
-                end = start + 1;
-                tokenEnd = start + 1;
-            } else if (m_source[start] == ']') {
+                m_end = m_start + 1;
+                tokenEnd = m_start + 1;
+            } else if (m_source[m_start] == ']') {
                 kind = TTokenClass.tkBracketRe;
-                end = start + 1;
-                tokenEnd = start + 1;
+                m_end = m_start + 1;
+                tokenEnd = m_start + 1;
             } else {
 
-                if (start >= m_source.Length) {
+                if (m_start >= m_source.Length) {
                     kind = TTokenClass.gtEof;
                     return;
                 }
                 kind = TTokenClass.gtOther;
-                var spaceIdx = m_source.IndexOf(' ', start);
+                var spaceIdx = m_source.IndexOf(' ', m_start);
                 tokenEnd = spaceIdx;
                 spaceIdx = skipChar(m_source, ' ', spaceIdx);
-                var searchStart = start;
+                var searchStart = m_start;
                 var quoteIdx = m_source.IndexOf('"', searchStart);
                 var parenIdx = m_source.IndexOf('(', searchStart);
                 var closeParenIdx = m_source.IndexOf(')', searchStart);
@@ -374,51 +374,51 @@ namespace NimStudio.NimStudio {
                 var dotidx = m_source.IndexOf('.', searchStart);
                 var squareIdx = m_source.IndexOf('[', searchStart);
                 var closeSquareIdx = m_source.IndexOf(']', searchStart);
-                end = spaceIdx;
-                if (end == -1) {
-                    nextToken = m_source.Substring(start);
-                    end = m_source.Length;
+                m_end = spaceIdx;
+                if (m_end == -1) {
+                    nextToken = m_source.Substring(m_start);
+                    m_end = m_source.Length;
                     tokenEnd = m_source.Length;
                 }
-                if (squareIdx != -1 && squareIdx < end) {
-                    end = squareIdx;
+                if (squareIdx != -1 && squareIdx < m_end) {
+                    m_end = squareIdx;
                     tokenEnd = squareIdx;
                 }
-                if (closeSquareIdx != -1 && closeSquareIdx < end) {
-                    end = closeSquareIdx;
+                if (closeSquareIdx != -1 && closeSquareIdx < m_end) {
+                    m_end = closeSquareIdx;
                     tokenEnd = closeSquareIdx;
                 }
-                if (parenIdx != -1 && parenIdx < end) {
+                if (parenIdx != -1 && parenIdx < m_end) {
                     kind = TTokenClass.gtIdentifier;
-                    end = parenIdx;
+                    m_end = parenIdx;
                     tokenEnd = parenIdx;
                 }
-                if (closeParenIdx != -1 && closeParenIdx < end) {
-                    end = closeParenIdx;
+                if (closeParenIdx != -1 && closeParenIdx < m_end) {
+                    m_end = closeParenIdx;
                     tokenEnd = closeParenIdx;
                 }
-                if (starIdx != -1 && starIdx < end) {
-                    end = starIdx;
+                if (starIdx != -1 && starIdx < m_end) {
+                    m_end = starIdx;
                     tokenEnd = starIdx;
                     kind = TTokenClass.gtIdentifier;
                 }
-                if (quoteIdx != -1 && quoteIdx < end) {
-                    end = quoteIdx;
+                if (quoteIdx != -1 && quoteIdx < m_end) {
+                    m_end = quoteIdx;
                     tokenEnd = quoteIdx;
                 }
-                if (colonIdx != -1 && colonIdx < end) {
-                    end = colonIdx;
+                if (colonIdx != -1 && colonIdx < m_end) {
+                    m_end = colonIdx;
                     tokenEnd = colonIdx;
                 }
-                if (dotidx != -1 && dotidx < end) {
-                    end = dotidx;
+                if (dotidx != -1 && dotidx < m_end) {
+                    m_end = dotidx;
                     tokenEnd = dotidx;
                 }
 
                 try {
-                    nextToken = m_source.Substring(start, (end - start));
+                    nextToken = m_source.Substring(m_start, (m_end - m_start));
                 } catch (Exception e) {
-                    Debugger.Break();
+                    Debug.Print(e.Message);
                 }
 
                 if (LanguageConstants.keywords.Contains(nextToken)) {

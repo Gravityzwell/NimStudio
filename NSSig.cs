@@ -73,9 +73,9 @@ namespace NimStudio.NimStudio {
             internal string m_documentation;
             internal ITrackingSpan m_applicabletospan;
             internal ReadOnlyCollection<IParameter> m_parameters;
-            internal string m_printContent;
+            internal string m_printContent = null;
             internal ISignatureHelpSession m_session;
-            internal SnapshotPoint m_trigger_point;
+            //internal SnapshotPoint m_trigger_point = null;
             public event EventHandler<CurrentParameterChangedEventArgs> CurrentParameterChanged;
 
             public string PrettyPrintedContent { get { return m_printContent; } }

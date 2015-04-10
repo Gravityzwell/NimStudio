@@ -59,7 +59,8 @@ namespace NimStudio.NimStudio {
             if (textview.Properties.TryGetProperty<NSIntellisenseController>(typeof(NSIntellisenseController), out controller)) {
                 controller.AttachKeyboardFilter();
             };
-            textview.Closed += TextView_Closed;
+            //textview.Closed += TextView_Closed;
+            
             //textview.Properties.GetOrCreateSingletonProperty(() =>new NSIntellisenseController(nsicp(
             //    _serviceprovider_vs
             //    ), textview));
@@ -161,18 +162,18 @@ namespace NimStudio.NimStudio {
     internal class NSIntellisenseController: IIntellisenseController, IOleCommandTarget {
         readonly ITextView _textview;
         public IVsTextView _ivstextview;
-        private ITextDocument _textdocument;
+        //private ITextDocument _textdocument;
         private NSIntellisenseControllerProvider _nsicprovider;
         //private readonly System.IServiceProvider _serviceprovider;
         private SVsServiceProvider _serviceprovider;
         //private readonly Microsoft.VisualStudio.OLE.Interop.IServiceProvider _serviceprovider;
         internal ICompletionSession _session_completion;
         private ISignatureHelpSession _session_sighelp;
-        private IQuickInfoSession _session_quickinfo;
+        //private IQuickInfoSession _session_quickinfo;
         public IOleCommandTarget m_commandhandler_next;
-        internal IEditorOperationsFactoryService _editoperationsfactory;
+        //internal IEditorOperationsFactoryService _editoperationsfactory;
         private IEditorOperations _editops;
-        private ISignatureHelpSession session;
+        //private ISignatureHelpSession session;
         public static Guid VSStd97Cmds = new Guid("5efc7975-14bc-11cf-9b2b-00aa00573819");
         public NSIntellisenseController(NSIntellisenseControllerProvider nsicprovider, ITextView textview) {
             _nsicprovider = nsicprovider;
@@ -280,7 +281,7 @@ namespace NimStudio.NimStudio {
                         //_editops.MoveToPreviousCharacter(false);
                         ((NSSigSource.NSSignature)_session_sighelp.SelectedSignature).ParamCurrentCalc();
                         return rval;
-                        return VSConstants.S_OK;
+                        //return VSConstants.S_OK;
                     case VSConstants.VSStd2KCmdID.RIGHT:
                         //_editops.MoveToNextCharacter(false);
                         rval = m_commandhandler_next.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);

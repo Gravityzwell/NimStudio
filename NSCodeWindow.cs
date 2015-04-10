@@ -23,7 +23,7 @@ namespace NimStudio.NimStudio {
         private readonly ITextBuffer _textBuffer;
         private IWpfTextView _curView;
         private static readonly HashSet<NSCodeWindow> _windows = new HashSet<NSCodeWindow>();
-        private uint _cookieVsCodeWindowEvents;
+        //private uint _cookieVsCodeWindowEvents;
         private static IVsEditorAdaptersFactoryService _vsEditorAdaptersFactoryService = null;
 
         public NSCodeWindow(IServiceProvider serviceProvider, IVsCodeWindow codeWindow, IWpfTextView textView) {
@@ -123,7 +123,7 @@ namespace NimStudio.NimStudio {
         private readonly ITextView _textView;
         private readonly IEditorOperations _editorOps;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IComponentModel _componentModel;
+        //private readonly IComponentModel _componentModel;
         private IOleCommandTarget _next;
 
         public EditFilter(ITextView textView, IEditorOperations editorOps, IServiceProvider serviceProvider) {
@@ -152,9 +152,10 @@ namespace NimStudio.NimStudio {
         }
 
         private IVsTextView GetViewAdapter() {
-            var adapterFactory = _componentModel.GetService<IVsEditorAdaptersFactoryService>();
-            var viewAdapter = adapterFactory.GetViewAdapter(_textView);
-            return viewAdapter;
+            //var adapterFactory = _componentModel.GetService<IVsEditorAdaptersFactoryService>();
+            //var viewAdapter = adapterFactory.GetViewAdapter(_textView);
+            //return viewAdapter;
+            return null;
         }
 
         private int FindAllReferences() {

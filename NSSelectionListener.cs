@@ -59,7 +59,7 @@ namespace NimStudio.NimStudio {
                     object document;
                     hr = pWindowFrame.GetProperty((int)__VSFPROPID.VSFPROPID_pszMkDocument, out document); // get doc name
                     if (ErrorHandler.Succeeded(hr)) {
-                        uint itemid;
+                        //uint itemid;
                         //IVsHierarchy hier = projMgr as IVsHierarchy;
                         //hr = hier.ParseCanonicalName((string)document, out itemid);
                         //PythonFileNode node = projMgr.NodeFromItemId(itemid) as PythonFileNode;
