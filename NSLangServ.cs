@@ -25,13 +25,31 @@ namespace NimStudio.NimStudio {
         public static string codefile_path_current;
         public static System.IServiceProvider _serviceprovider_sys;
         public static SortedDictionary<string, string> filelist = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<int,IVsColorableItem> m_colorable_items = new Dictionary<int,IVsColorableItem>();
+
+
+        public NSLangServ():base() {
+            m_colorable_items.Add((int)TokenColor.Comment, new ColorableItem("Comment", COLORINDEX.CI_DARKGREEN, COLORINDEX.CI_USERTEXT_BK, false, false));
+            m_colorable_items.Add((int)TokenColor.Identifier, new ColorableItem("Identifier", COLORINDEX.CI_SYSPLAINTEXT_FG, COLORINDEX.CI_USERTEXT_BK, false, false));
+            m_colorable_items.Add((int)TokenColor.Keyword,  new ColorableItem("Keyword",  COLORINDEX.CI_BLUE, COLORINDEX.CI_USERTEXT_BK,  false, false));
+            m_colorable_items.Add((int)TokenColor.Number,  new ColorableItem("Number", COLORINDEX.CI_USERTEXT_FG, COLORINDEX.CI_USERTEXT_BK,  false, false));
+            m_colorable_items.Add((int)TokenColor.String,  new ColorableItem("String", COLORINDEX.CI_BROWN, COLORINDEX.CI_USERTEXT_BK,  false, false));
+            m_colorable_items.Add((int)TokenColor.Text,  new ColorableItem("Text",  COLORINDEX.CI_SYSPLAINTEXT_FG, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
+            m_colorable_items.Add((int)TokenColor.Number+1,  new ColorableItem("NimLang Procedure",  COLORINDEX.CI_RED, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
+            m_colorable_items.Add((int)TokenColor.Number+2,  new ColorableItem("NimLang Sequence2",  COLORINDEX.CI_MAGENTA, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
+        }
+
+        public override void Initialize() {
+            _serviceprovider_sys = this.Site; // getting this here as it doesn't work in constructor
+            IVsFontAndColorCacheManager mgr = this.GetService(typeof(SVsFontAndColorCacheManager)) as IVsFontAndColorCacheManager;
+            mgr.ClearAllCaches();
+        }
 
         public override string GetFormatFilterList() {
             return "Nim file(*.nim)";
         }
 
         public override LanguagePreferences GetLanguagePreferences() {
-            _serviceprovider_sys = this.Site; // getting this here as it doesn't work in constructor
             //IVsShell shell = _serviceprovider_sys.GetService(typeof(SVsShell)) as IVsShell;
             //if (shell == null) {
             //    throw new InvalidOperationException();
@@ -114,8 +132,38 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        public override Source CreateSource(IVsTextLines buffer) {
+        public override Source CreateSource(IVsTextLines buffer) {       
+            //return new NSSource(this, buffer, CreateColorizer(buffer));
             return new NSSource(this, buffer, GetColorizer(buffer));
+        }
+
+
+        public override Colorizer GetColorizer(IVsTextLines buffer) {
+            NSColorizer colorizer;
+            //if (!_colorizers.TryGetValue(buffer, out colorizer)) {
+                colorizer = new NSColorizer(this, buffer, (NSScanner)GetScanner(buffer));
+
+              //  _colorizers.Add(buffer, colorizer);
+            //}
+
+            return colorizer;
+        }
+
+        //public virtual Colorizer CreateColorizer(IVsTextLines buffer) {
+        //    return new NSLineColorizer(this, buffer, (NSScanner)GetScanner(buffer));
+        //}
+
+       //private Dictionary<int,Microsoft.VisualStudio.TextManager.Interop.IVsColorableItem> _colorableItems =
+       //     new Dictionary<int,Microsoft.VisualStudio.TextManager.Interop.IVsColorableItem>();
+
+        public override int GetItemCount(out int count) {
+            count = m_colorable_items.Count;
+            return Microsoft.VisualStudio.VSConstants.S_OK;
+        }
+
+        public override int GetColorableItem(int index, out Microsoft.VisualStudio.TextManager.Interop.IVsColorableItem item) {
+            item = m_colorable_items[index-1];
+            return Microsoft.VisualStudio.VSConstants.S_OK;
         }
 
         public override AuthoringScope ParseSource(ParseRequest req) {
@@ -139,6 +187,38 @@ namespace NimStudio.NimStudio {
             return retval;
         }
 
+        public class ColorableItem: Microsoft.VisualStudio.TextManager.Interop.IVsColorableItem {
+            private string displayName;
+            private COLORINDEX background;
+            private COLORINDEX foreground;
+            private uint fontFlags = (uint)FONTFLAGS.FF_DEFAULT;
+
+            public ColorableItem(string displayName, COLORINDEX foreground, COLORINDEX background, bool bold, bool strikethrough) {
+                this.displayName = displayName;
+                this.background = background;
+                this.foreground = foreground;
+                if (bold)
+                    this.fontFlags = this.fontFlags | (uint)FONTFLAGS.FF_BOLD;
+                if (strikethrough)
+                    this.fontFlags = this.fontFlags | (uint)FONTFLAGS.FF_STRIKETHROUGH;
+            }
+
+            public int GetDefaultColors(COLORINDEX[] piForeground, COLORINDEX[] piBackground) {
+                piForeground[0] = foreground;
+                piBackground[0] = background;
+                return Microsoft.VisualStudio.VSConstants.S_OK;
+            }
+
+            public int GetDefaultFontFlags(out uint pdwFontFlags) {
+                pdwFontFlags = this.fontFlags;
+                return Microsoft.VisualStudio.VSConstants.S_OK;
+            }
+
+            public int GetDisplayName(out string pbstrName) {
+                pbstrName = displayName;
+                return Microsoft.VisualStudio.VSConstants.S_OK;
+            }
+        }
     }
 
 }

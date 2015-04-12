@@ -14,55 +14,38 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
 
-// BUILD = NONE
-
 namespace NimStudio.NimStudio {
     public partial class NSSource : Source {
+
+        public DateTime LastDirtyTime { get; private set; }
+        public NSLangServ Service { get; private set; }
+        public MethodData MethodData { get; private set; }
+        public int TimeStamp { get; private set; }
+        public bool RegionsLoaded { get; set; }
+        public ParseReason m_parse_reason;
+        //public NSScanner m_scanner=null; // { get; set; }
+        private NSScanner m_scanner=null; // { get; set; }
 
         public NSSource(NSLangServ service, IVsTextLines textLines, Colorizer colorizer) : base(service, textLines, colorizer) {
 
             string path = GetFilePath();
             Service = service;
 
+            this.m_scanner = colorizer.Scanner as NSScanner;
+            if (m_scanner != null)
+                m_scanner.m_nssource = this;
+
             //Scanner = colorizer.Scanner as NSScanner;
             LastParseTime = 0;
             LastDirtyTime = DateTime.Now;
         }
 
-        public DateTime LastDirtyTime {
-            get;
-            private set;
-        }
-
-        public NSLangServ Service {
-            get;
-            private set;
-        }
-        //public NSScanner Scanner {
-        //    get;
-        //    private set;
-        //}
-        public MethodData MethodData {
-            get;
-            private set;
-        }
-        public int TimeStamp {
-            get;
-            private set;
-        }
-        public bool RegionsLoaded {
-            get;
-            set;
-        }
-
-        public IVsTextLines TextLines {
-            get {
+        public IVsTextLines TextLines { get {
                 return GetTextLines();
             }
         }
 
         int _fileIndex = -1;
-
 
         public override void OnChangeLineText(TextLineChange[] lineChange, int last) {
             base.OnChangeLineText(lineChange, last);
@@ -115,7 +98,7 @@ namespace NimStudio.NimStudio {
             get {
                 return base.IsDirty;
             } set {
-                Debug.WriteLine("IsDirty = " + value);
+                //Debug.WriteLine("IsDirty = " + value);
                 base.IsDirty = value;
                 if (value)
                     LastDirtyTime = DateTime.Now;
@@ -312,8 +295,6 @@ namespace NimStudio.NimStudio {
         */
 
         public override void OnIdle(bool periodic) {
-            // from IronPythonLanguage sample
-            // this appears to be necessary to get a parse request with ParseReason = Check?
             //Source src = this.GetSource(this.LastActiveTextView);
             if (LastParseTime >= Int32.MaxValue >> 12) {
                 LastParseTime = 0;
@@ -330,7 +311,13 @@ namespace NimStudio.NimStudio {
             case ParseReason.Autos:
                 break;
             case ParseReason.Check:
-                break;
+                Debug.WriteLine("Source.BeginParse.Check");
+                m_parse_reason = ParseReason.Check;
+                Recolorize(1, this.LineCount);
+                return null;
+                //this.
+                //m_scanner
+                //break;
             case ParseReason.CodeSpan:
                 break;
             case ParseReason.CompleteWord:
@@ -357,8 +344,9 @@ namespace NimStudio.NimStudio {
                 break;
             }
 
-            Debug.WriteLine("Soutce.BeginParse: " + reason);
-            return null;
+            Debug.WriteLine("Source.BeginParse: " + reason);
+            return base.BeginParse(line, idx, info, reason, view, callback);
+            //return null;
         }
 
         public override void Dispose() {
@@ -413,14 +401,15 @@ namespace NimStudio.NimStudio {
         //}
 
         public override AuthoringSink CreateAuthoringSink(ParseReason reason, int line, int col) {
-            Trace.Assert(false, "We don't using MS infrastructure of background parsing now. This code should not be called!");
-            throw new NotImplementedException("This should not be heppen!");
+            //throw new NotImplementedException("Ooops");
+            return base.CreateAuthoringSink(reason, line, col);
         }
 
         public override TokenInfo GetTokenInfo(int line, int col) {
             //get current line
-            var info = new TokenInfo();
+            return base.GetTokenInfo(line, col);
             /*
+            var info = new TokenInfo();
             var colorizer = GetColorizer() as NScol;
 
             if (colorizer == null)
@@ -438,13 +427,11 @@ namespace NimStudio.NimStudio {
 
                 GetTokenInfoAt(lineInfo, col, ref info);
             }
-            */
             return info;
+            */
         }
 
         public override void ProcessHiddenRegions(System.Collections.ArrayList hiddenRegions) {
-            // TranslateMe:ss
-            //VladD2: Приходится переписывать реализацию от МС, так как она практически не расширяется как нужно нам.
             throw new NotImplementedException();
         }
 
@@ -477,8 +464,6 @@ namespace NimStudio.NimStudio {
             TokenInfo tokenBeforeCaret = GetTokenInfo(line, idx);
 
             TryHighlightBraces(textView, command, line, idx, tokenBeforeCaret);
-
-            //VladD2: We do not trigger MethodTip on type because it's very slow!
 
             // This code open completion list if user enter '.'.
             if ((tokenBeforeCaret.Trigger & TokenTriggers.MemberSelect) != 0 && (command == VsCommands2K.TYPECHAR)) {
@@ -741,9 +726,7 @@ namespace NimStudio.NimStudio {
 
         public Tuple<int, int> GetLineIndexOfPosition(int pos) {
             int line, col;
-
             base.GetLineIndexOfPosition(pos, out line, out col);
-
             return new Tuple<int, int>(line + 1, col + 1);
         }
 

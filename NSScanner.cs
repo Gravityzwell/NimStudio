@@ -9,17 +9,7 @@ using System.Diagnostics;
 
 namespace NimStudio.NimStudio {
 
-    public enum TTokenClass: int {
-        gtEof, gtNone, gtWhitespace, gtDecNumber, gtBinNumber, gtHexNumber,
-        gtOctNumber, gtFloatNumber, gtIdentifier, gtKeyword, gtStringLit,
-        gtLongStringLit, gtCharLit, gtEscapeSequence,
-        gtOperator, gtPunctation, gtComment, gtLongComment, gtRegularExpression,
-        gtTagStart, gtTagEnd, gtKey, gtValue, gtRawData, gtAssembler,
-        gtPreprocessor, gtDirective, gtCommand, gtRule, gtHyperlink, gtLabel,
-        gtReference, gtOther, tkCurlyDorLe, tkCurlyDotRi, tkDot, tkParLe, tkParRi, tkComma,
-        tkBracketLe, tkBracketRe
-    }
-    static class LanguageConstants {
+    static class LangConstants {
         public static readonly HashSet<string> keywords = new HashSet<string> {
             "addr", "and", "as", "asm", "atomic",
             "bind", "block", "break",
@@ -51,10 +41,80 @@ namespace NimStudio.NimStudio {
         stRaw
     }
 
+    //public interface ILineScanner: IScanner {
+    //    void SetLine(int line);
+    //}
+
+    class NSColorizer : Colorizer, IDisposable {
+        private NSScanner m_scanner;
+
+        public NSColorizer(NSLangServ ls, IVsTextLines buffer, NSScanner scanner): base(ls, buffer, scanner) {
+            m_scanner = scanner;
+        }
+
+        public bool IsClosed { get; private set; }
+
+        public override void CloseColorizer() {
+            base.CloseColorizer();
+            IsClosed = true;
+        }
+
+        void IDisposable.Dispose() {
+            base.Dispose();
+            IsClosed = true;
+        }
+
+        public void SetCurrentLine(int line) {
+            //NSScanner scanner = (NSScanner)Scanner;
+            m_scanner.m_linenum_curr = line;
+        }
+
+        public override int ColorizeLine(int line, int length, IntPtr ptr, int state, uint[] attrs) {
+            //NSScanner scanner = (NSScanner)Scanner;
+            m_scanner.m_linenum_curr = line;
+            int ret;
+            ret = base.ColorizeLine(line, length, ptr, state, attrs);
+            return ret;
+        }
+    }
+
+    /*
+    public class NSLineColorizer: Colorizer {
+        public NSLineColorizer(NSLangServ svc, IVsTextLines buffer, NSScanner scanner): base(svc, buffer, scanner) {
+            Debug.Print("NSLineColorizer constructor");
+        }
+
+        public override int ColorizeLine(int line, int length, IntPtr ptr, int state, uint[] attrs) {
+            Debug.Print("ColorizeLine");
+            if (Scanner is ILineScanner) {
+                ((ILineScanner)Scanner).SetLine(line);
+                Debug.Print("setline");
+            } else {
+                Debug.Print("nosetline");
+            }
+            return base.ColorizeLine(line, length, ptr, state, attrs);
+        }
+
+        public override int GetColorInfo(string line, int length, int state) {
+            Debug.Print("GetColorInfo");
+            return base.GetColorInfo(line, length, state);
+        }
+
+        public override TokenInfo[] GetLineInfo(IVsTextLines buffer, int line, IVsTextColorState colorState) {
+            Debug.Print("GetLineInfo");
+            if (Scanner is ILineScanner)
+                ((ILineScanner)Scanner).SetLine(line);
+            return base.GetLineInfo(buffer, line, colorState);
+        }
+    }
+    */
+
     class NSScanner: IScanner {
         private IVsTextBuffer m_buffer;
-        private string m_source;
+        public NSSource m_nssource;
+        public string m_source_line_str;
         private NSTokenizer m_tokenizer;
+        public int m_linenum_curr;
 
         public NSScanner(IVsTextBuffer buffer) {
             m_buffer = buffer;
@@ -62,149 +122,150 @@ namespace NimStudio.NimStudio {
         }
 
         public void SetSource(string source, int offset) {
-            //Debug.Print("SetSource:" + source + ":" + DateTime.Now.Millisecond.ToString());
-            m_source = source.Substring(offset);
-            m_tokenizer = new NSTokenizer(m_source);
+            // source is a line
+            Debug.Print("SetSource:" + source + ":" + DateTime.Now.Millisecond.ToString());
+            m_source_line_str = source.Substring(offset);
+            m_tokenizer = new NSTokenizer(m_source_line_str);
         }
 
         public bool ScanTokenAndProvideInfoAboutIt(TokenInfo tokenInfo, ref int state) {
-            NSScannerFlags flags = (NSScannerFlags)state;
+            NSScanState flags = (NSScanState)state;
             //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Second.ToString());
             //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Millisecond.ToString());
             var lastToken = m_tokenizer.Kind;
             switch (m_tokenizer.Kind) {
-                case TTokenClass.gtEof:
+                case TkType.Eof:
                     return false;
-                case TTokenClass.gtNone:
+                case TkType.None:
                     tokenInfo.Type = TokenType.Unknown;
                     tokenInfo.Color = TokenColor.Text;
                     break;
-                case TTokenClass.gtWhitespace:
+                case TkType.Space:
                     tokenInfo.Type = TokenType.WhiteSpace;
                     tokenInfo.Color = TokenColor.Text;
                     break;
-                case TTokenClass.gtDecNumber:
-                case TTokenClass.gtBinNumber:
-                case TTokenClass.gtHexNumber:
-                case TTokenClass.gtOctNumber:
-                case TTokenClass.gtFloatNumber:
+                case TkType.NumberInt:
+                case TkType.NumberBin:
+                case TkType.NumberHex:
+                case TkType.NumberOct:
+                case TkType.NumberFloat:
                     tokenInfo.Type = TokenType.Literal;
                     tokenInfo.Color = TokenColor.Number;
                     break;
-                case TTokenClass.gtIdentifier:
+                case TkType.Identifier:
                     tokenInfo.Type = TokenType.Identifier;
                     tokenInfo.Color = TokenColor.Identifier;
 
                     break;
-                case TTokenClass.gtKeyword:
+                case TkType.Keyword:
                     tokenInfo.Type = TokenType.Keyword;
                     tokenInfo.Color = TokenColor.Keyword;
                     break;
-                case TTokenClass.gtStringLit:
+                case TkType.StringLit:
                     tokenInfo.Type = TokenType.String;
                     tokenInfo.Color = TokenColor.String;
-                    if (!flags.HasFlag(NSScannerFlags.RawStringLit)) {
-                        flags ^= NSScannerFlags.NormalStringLit;
+                    if (!flags.HasFlag(NSScanState.RawStringLit)) {
+                        flags ^= NSScanState.NormalStringLit;
                     }
                     break;
-                case TTokenClass.gtLongStringLit:
+                case TkType.StringLitLong:
                     tokenInfo.Type = TokenType.String;
                     tokenInfo.Color = TokenColor.String;
-                    flags ^= NSScannerFlags.RawStringLit;
+                    flags ^= NSScanState.RawStringLit;
                     break;
-                case TTokenClass.gtCharLit:
+                case TkType.CharLit:
                     tokenInfo.Type = TokenType.String;
                     tokenInfo.Color = TokenColor.String;
                     break;
-                case TTokenClass.gtEscapeSequence:
+                case TkType.Escape:
                     tokenInfo.Type = TokenType.Unknown;
                     tokenInfo.Color = TokenColor.Text;
                     break;
-                case TTokenClass.gtOperator:
+                case TkType.Operator:
                     tokenInfo.Type = TokenType.Operator;
                     tokenInfo.Color = TokenColor.Text;
                     break;
-                case TTokenClass.gtPunctation:
+                case TkType.Punctuation:
                     tokenInfo.Type = TokenType.Text;
                     tokenInfo.Color = TokenColor.Text;
                     break;
-                case TTokenClass.gtComment:
+                case TkType.Comment:
                     tokenInfo.Type = TokenType.Comment;
                     tokenInfo.Color = TokenColor.Comment;
                     break;
-                case TTokenClass.gtLongComment:
+                case TkType.CommentLong:
                     tokenInfo.Type = TokenType.LineComment;
                     tokenInfo.Color = TokenColor.Comment;
                     break;
-                case TTokenClass.gtRegularExpression:
-                case TTokenClass.gtTagStart:
-                case TTokenClass.gtTagEnd:
-                case TTokenClass.gtKey:
-                case TTokenClass.gtValue:
-                case TTokenClass.gtRawData:
-                case TTokenClass.gtAssembler:
-                case TTokenClass.gtPreprocessor:
-                case TTokenClass.gtDirective:
-                case TTokenClass.gtCommand:
-                case TTokenClass.gtRule:
-                case TTokenClass.gtHyperlink:
-                case TTokenClass.gtLabel:
-                case TTokenClass.gtReference:
-                case TTokenClass.gtOther:
+                case TkType.RegEx:
+                case TkType.TagStart:
+                case TkType.TagEnd:
+                case TkType.Key:
+                case TkType.Value:
+                case TkType.RawData:
+                case TkType.Assembler:
+                case TkType.Preprocessor:
+                case TkType.Directive:
+                case TkType.Command:
+                case TkType.Rule:
+                case TkType.Hyperlink:
+                case TkType.Label:
+                case TkType.Reference:
+                case TkType.Other:
                     tokenInfo.Type = TokenType.Unknown;
                     tokenInfo.Color = TokenColor.Text;
                     break;
-                case TTokenClass.tkCurlyDorLe:
+                case TkType.CurlyDotLeft:
                     tokenInfo.Type = TokenType.Delimiter;
                     tokenInfo.Color = TokenColor.Text;
                     break;
-                case TTokenClass.tkCurlyDotRi:
+                case TkType.CurlyDotRight:
                     tokenInfo.Type = TokenType.Delimiter;
                     tokenInfo.Color = TokenColor.Text;
                     break;
-                case TTokenClass.tkDot:
+                case TkType.Dot:
                     tokenInfo.Type = TokenType.Operator;
                     tokenInfo.Color = TokenColor.Text;
                     tokenInfo.Trigger = TokenTriggers.MemberSelect;
 
                     break;
-                case TTokenClass.tkParLe:
+                case TkType.ParenLeft:
                     tokenInfo.Type = TokenType.Delimiter;
                     tokenInfo.Color = TokenColor.Text;
                     tokenInfo.Trigger = TokenTriggers.ParameterStart;
                     break;
-                case TTokenClass.tkParRi:
+                case TkType.ParenRight:
                     tokenInfo.Type = TokenType.Delimiter;
                     tokenInfo.Color = TokenColor.Text;
                     tokenInfo.Trigger = TokenTriggers.ParameterEnd;
                     break;
-                case TTokenClass.tkComma:
+                case TkType.Comma:
                     tokenInfo.Type = TokenType.Text;
                     tokenInfo.Color = TokenColor.Text;
                     tokenInfo.Trigger = TokenTriggers.ParameterNext;
                     break;
             }
-            if (flags.HasFlag(NSScannerFlags.NormalStringLit) || flags.HasFlag(NSScannerFlags.RawStringLit)) {
+            if (flags.HasFlag(NSScanState.NormalStringLit) || flags.HasFlag(NSScanState.RawStringLit)) {
                 tokenInfo.Color = TokenColor.String;
                 tokenInfo.Type = TokenType.String;
 
             }
             state = (int)flags;
-            tokenInfo.StartIndex = m_tokenizer.m_start;
-            tokenInfo.EndIndex = m_tokenizer.m_end;
-            m_tokenizer.advanceOne(flags);
+            tokenInfo.StartIndex = m_tokenizer.m_linepos_start;
+            tokenInfo.EndIndex = m_tokenizer.m_linepos_end;
+            m_tokenizer.TokenNext(flags);
             return true;
         }
     }
 
     class NSTokenizer {
-        private TTokenClass kind;
+        private TkType m_token_type; // rename token_kind
         private string m_source;
-        public int m_start;
-        public int m_end;
-        private int tokenEnd;
+        public int m_linepos_start;
+        public int m_linepos_end;
+        private int m_token_pos_end;
         //public TStringTypes inString = TStringTypes.stNone;
-        private string nextToken;
+        private string m_token_next;
         //public int Start {
         //    get {
         //        return m_start;
@@ -217,23 +278,23 @@ namespace NimStudio.NimStudio {
         //}
         public string NextToken {
             get {
-                return nextToken;
+                return m_token_next;
             }
         }
-        public TTokenClass Kind {
+        public TkType Kind {
             get {
-                return kind;
+                return m_token_type;
             }
         }
         public NSTokenizer(string source) {
             //inString = TStringTypes.stNone;
             m_source = source;
             //Debug.Print("NSTokenizer:" + source + ":" + DateTime.Now.Millisecond.ToString());
-            m_start = 0;
-            m_end = 0;
-            advanceOne(NSScannerFlags.None);
+            m_linepos_start = 0;
+            m_linepos_end = 0;
+            TokenNext(NSScanState.None);
         }
-        private static int skipChar(string str, char chr, int idx) {
+        private static int SkipChar(string str, char chr, int idx) {
             if (idx == -1) {
                 return idx;
             }
@@ -246,7 +307,7 @@ namespace NimStudio.NimStudio {
             return idx;
         }
 
-        private bool checkEqual(int position, char chr) {
+        private bool CheckEqual(int position, char chr) {
             if (position >= m_source.Length) {
                 return false;
             } else {
@@ -254,7 +315,7 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        private bool checkNotEqual(int position, char chr) {
+        private bool CheckNotEqual(int position, char chr) {
             if (position >= m_source.Length) {
                 return true;
             } else {
@@ -262,110 +323,119 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        public void advanceOne(NSScannerFlags flags) {
+        private bool Peek(string teststr) {
+            if (m_linepos_start + teststr.Length > m_source.Length)
+                return false;
+            return false;
+            //m_source[m_start
+
+        }
+
+
+        public void TokenNext(NSScanState flags) {
             /*  if (m_source.Contains("else:"))
                 {
                 Debugger.Break();
                 }*/
-            m_start = m_end;
-            if (m_end >= m_source.Length) {
-                kind = TTokenClass.gtEof;
+            m_linepos_start = m_linepos_end;
+            if (m_linepos_end >= m_source.Length) {
+                m_token_type = TkType.Eof;
                 return;
             }
-            if (m_start >= m_source.Length) {
-                kind = TTokenClass.gtEof;
+            if (m_linepos_start >= m_source.Length) {
+                m_token_type = TkType.Eof;
                 return;
             }
-            if (m_source[m_start] == '#' && flags == NSScannerFlags.None) {
-                kind = TTokenClass.gtComment;
-                m_end = m_source.Length;
-                tokenEnd = m_source.Length;
-            } else if (m_source[m_start] == '\'') {
-                kind = TTokenClass.gtCharLit;
-                if (m_start + 2 < m_source.Length && m_source[m_start + 2] == '\'') {
-                    m_end = m_start + 3;
-                    tokenEnd = m_start + 3;
+            if (m_source[m_linepos_start] == '#' && flags == NSScanState.None) {
+                m_token_type = TkType.Comment;
+                m_linepos_end = m_source.Length;
+                m_token_pos_end = m_source.Length;
+            } else if (m_source[m_linepos_start] == '\'') {
+                m_token_type = TkType.CharLit;
+                if (m_linepos_start + 2 < m_source.Length && m_source[m_linepos_start + 2] == '\'') {
+                    m_linepos_end = m_linepos_start + 3;
+                    m_token_pos_end = m_linepos_start + 3;
                 } else {
-                    m_end = m_start + 1;
-                    tokenEnd = m_start + 1;
+                    m_linepos_end = m_linepos_start + 1;
+                    m_token_pos_end = m_linepos_start + 1;
                 }
-            } else if (m_source[m_start] == '"') {
-                if (m_start + 2 < m_source.Length && m_source.Substring(m_start, 3) == "\"\"\"") {
-                    m_end = m_start + 3;
-                    tokenEnd = m_start + 3;
-                    kind = TTokenClass.gtLongStringLit;
+            } else if (m_source[m_linepos_start] == '"') {
+                if (m_linepos_start + 2 < m_source.Length && m_source.Substring(m_linepos_start, 3) == "\"\"\"") {
+                    m_linepos_end = m_linepos_start + 3;
+                    m_token_pos_end = m_linepos_start + 3;
+                    m_token_type = TkType.StringLitLong;
                     return;
                 } else {
-                    m_end = m_start + 1;
-                    tokenEnd = m_start + 1;
-                    kind = TTokenClass.gtStringLit;
+                    m_linepos_end = m_linepos_start + 1;
+                    m_token_pos_end = m_linepos_start + 1;
+                    m_token_type = TkType.StringLit;
                     return;
                 }
-            } else if (m_source[m_start] == '{') {
-                if (checkEqual(m_start + 1, '.') && checkNotEqual(m_start + 2, '.')) {
-                    m_end = m_start + 2;
-                    tokenEnd = m_start + 2;
-                    kind = TTokenClass.tkCurlyDorLe;
+            } else if (m_source[m_linepos_start] == '{') {
+                if (CheckEqual(m_linepos_start + 1, '.') && CheckNotEqual(m_linepos_start + 2, '.')) {
+                    m_linepos_end = m_linepos_start + 2;
+                    m_token_pos_end = m_linepos_start + 2;
+                    m_token_type = TkType.CurlyDotLeft;
                 } else {
-                    m_end = m_start + 1;
-                    tokenEnd = m_start + 1;
-                    kind = TTokenClass.gtPunctation;
+                    m_linepos_end = m_linepos_start + 1;
+                    m_token_pos_end = m_linepos_start + 1;
+                    m_token_type = TkType.Punctuation;
 
                 }
 
-            } else if (m_source[m_start] == '.') {
-                if (checkEqual(m_start + 1, '}')) {
-                    m_end = m_start + 2;
-                    tokenEnd = m_start + 2;
-                    kind = TTokenClass.tkCurlyDotRi;
+            } else if (m_source[m_linepos_start] == '.') {
+                if (CheckEqual(m_linepos_start + 1, '}')) {
+                    m_linepos_end = m_linepos_start + 2;
+                    m_token_pos_end = m_linepos_start + 2;
+                    m_token_type = TkType.CurlyDotRight;
                 } else {
-                    m_end = m_start + 1;
-                    tokenEnd = m_start + 1;
-                    kind = TTokenClass.tkDot;
+                    m_linepos_end = m_linepos_start + 1;
+                    m_token_pos_end = m_linepos_start + 1;
+                    m_token_type = TkType.Dot;
                 }
-            } else if (m_source[m_start] == '(') {
-                kind = TTokenClass.tkParLe;
-                m_end = m_start + 1;
-                tokenEnd = m_start + 1;
-            } else if (m_source[m_start] == ')') {
-                kind = TTokenClass.tkParRi;
-                m_end = m_start + 1;
-                tokenEnd = m_start + 1;
-            } else if (m_source[m_start] == ',') {
-                kind = TTokenClass.tkComma;
-                m_end = m_start + 1;
-                tokenEnd = m_start + 1;
-            } else if (m_source[m_start] == '*') {
-                kind = TTokenClass.gtPunctation;
-                m_end = m_start + 1;
-                tokenEnd = m_start + 1;
-            } else if (m_source[m_start] == ':') {
-                kind = TTokenClass.gtPunctation;
-                m_end = m_start + 1;
-                tokenEnd = m_start + 1;
-            } else if (m_source[m_start] == ' ') {
-                kind = TTokenClass.gtWhitespace;
-                m_end = m_start + 1;
-                tokenEnd = m_start + 1;
-            } else if (m_source[m_start] == '[') {
-                kind = TTokenClass.tkBracketLe;
-                m_end = m_start + 1;
-                tokenEnd = m_start + 1;
-            } else if (m_source[m_start] == ']') {
-                kind = TTokenClass.tkBracketRe;
-                m_end = m_start + 1;
-                tokenEnd = m_start + 1;
+            } else if (m_source[m_linepos_start] == '(') {
+                m_token_type = TkType.ParenLeft;
+                m_linepos_end = m_linepos_start + 1;
+                m_token_pos_end = m_linepos_start + 1;
+            } else if (m_source[m_linepos_start] == ')') {
+                m_token_type = TkType.ParenRight;
+                m_linepos_end = m_linepos_start + 1;
+                m_token_pos_end = m_linepos_start + 1;
+            } else if (m_source[m_linepos_start] == ',') {
+                m_token_type = TkType.Comma;
+                m_linepos_end = m_linepos_start + 1;
+                m_token_pos_end = m_linepos_start + 1;
+            } else if (m_source[m_linepos_start] == '*') {
+                m_token_type = TkType.Punctuation;
+                m_linepos_end = m_linepos_start + 1;
+                m_token_pos_end = m_linepos_start + 1;
+            } else if (m_source[m_linepos_start] == ':') {
+                m_token_type = TkType.Punctuation;
+                m_linepos_end = m_linepos_start + 1;
+                m_token_pos_end = m_linepos_start + 1;
+            } else if (m_source[m_linepos_start] == ' ') {
+                m_token_type = TkType.Space;
+                m_linepos_end = m_linepos_start + 1;
+                m_token_pos_end = m_linepos_start + 1;
+            } else if (m_source[m_linepos_start] == '[') {
+                m_token_type = TkType.BracketLeft;
+                m_linepos_end = m_linepos_start + 1;
+                m_token_pos_end = m_linepos_start + 1;
+            } else if (m_source[m_linepos_start] == ']') {
+                m_token_type = TkType.BracketRight;
+                m_linepos_end = m_linepos_start + 1;
+                m_token_pos_end = m_linepos_start + 1;
             } else {
 
-                if (m_start >= m_source.Length) {
-                    kind = TTokenClass.gtEof;
+                if (m_linepos_start >= m_source.Length) {
+                    m_token_type = TkType.Eof;
                     return;
                 }
-                kind = TTokenClass.gtOther;
-                var spaceIdx = m_source.IndexOf(' ', m_start);
-                tokenEnd = spaceIdx;
-                spaceIdx = skipChar(m_source, ' ', spaceIdx);
-                var searchStart = m_start;
+                m_token_type = TkType.Other;
+                var spaceIdx = m_source.IndexOf(' ', m_linepos_start); // idx of next whitespace after start
+                m_token_pos_end = spaceIdx;
+                spaceIdx = SkipChar(m_source, ' ', spaceIdx); // ????
+                var searchStart = m_linepos_start;
                 var quoteIdx = m_source.IndexOf('"', searchStart);
                 var parenIdx = m_source.IndexOf('(', searchStart);
                 var closeParenIdx = m_source.IndexOf(')', searchStart);
@@ -374,66 +444,263 @@ namespace NimStudio.NimStudio {
                 var dotidx = m_source.IndexOf('.', searchStart);
                 var squareIdx = m_source.IndexOf('[', searchStart);
                 var closeSquareIdx = m_source.IndexOf(']', searchStart);
-                m_end = spaceIdx;
-                if (m_end == -1) {
-                    nextToken = m_source.Substring(m_start);
-                    m_end = m_source.Length;
-                    tokenEnd = m_source.Length;
+                m_linepos_end = spaceIdx;
+                if (m_linepos_end == -1) {
+                    m_token_next = m_source.Substring(m_linepos_start);
+                    m_linepos_end = m_source.Length;
+                    m_token_pos_end = m_source.Length;
                 }
-                if (squareIdx != -1 && squareIdx < m_end) {
-                    m_end = squareIdx;
-                    tokenEnd = squareIdx;
+                if (squareIdx != -1 && squareIdx < m_linepos_end) {
+                    m_linepos_end = squareIdx;
+                    m_token_pos_end = squareIdx;
                 }
-                if (closeSquareIdx != -1 && closeSquareIdx < m_end) {
-                    m_end = closeSquareIdx;
-                    tokenEnd = closeSquareIdx;
+                if (closeSquareIdx != -1 && closeSquareIdx < m_linepos_end) {
+                    m_linepos_end = closeSquareIdx;
+                    m_token_pos_end = closeSquareIdx;
                 }
-                if (parenIdx != -1 && parenIdx < m_end) {
-                    kind = TTokenClass.gtIdentifier;
-                    m_end = parenIdx;
-                    tokenEnd = parenIdx;
+                if (parenIdx != -1 && parenIdx < m_linepos_end) {
+                    m_token_type = TkType.Identifier;
+                    m_linepos_end = parenIdx;
+                    m_token_pos_end = parenIdx;
                 }
-                if (closeParenIdx != -1 && closeParenIdx < m_end) {
-                    m_end = closeParenIdx;
-                    tokenEnd = closeParenIdx;
+                if (closeParenIdx != -1 && closeParenIdx < m_linepos_end) {
+                    m_linepos_end = closeParenIdx;
+                    m_token_pos_end = closeParenIdx;
                 }
-                if (starIdx != -1 && starIdx < m_end) {
-                    m_end = starIdx;
-                    tokenEnd = starIdx;
-                    kind = TTokenClass.gtIdentifier;
+                if (starIdx != -1 && starIdx < m_linepos_end) {
+                    m_linepos_end = starIdx;
+                    m_token_pos_end = starIdx;
+                    m_token_type = TkType.Identifier;
                 }
-                if (quoteIdx != -1 && quoteIdx < m_end) {
-                    m_end = quoteIdx;
-                    tokenEnd = quoteIdx;
+                if (quoteIdx != -1 && quoteIdx < m_linepos_end) {
+                    m_linepos_end = quoteIdx;
+                    m_token_pos_end = quoteIdx;
                 }
-                if (colonIdx != -1 && colonIdx < m_end) {
-                    m_end = colonIdx;
-                    tokenEnd = colonIdx;
+                if (colonIdx != -1 && colonIdx < m_linepos_end) {
+                    m_linepos_end = colonIdx;
+                    m_token_pos_end = colonIdx;
                 }
-                if (dotidx != -1 && dotidx < m_end) {
-                    m_end = dotidx;
-                    tokenEnd = dotidx;
-                }
-
-                try {
-                    nextToken = m_source.Substring(m_start, (m_end - m_start));
-                } catch (Exception e) {
-                    Debug.Print(e.Message);
+                if (dotidx != -1 && dotidx < m_linepos_end) {
+                    m_linepos_end = dotidx;
+                    m_token_pos_end = dotidx;
                 }
 
-                if (LanguageConstants.keywords.Contains(nextToken)) {
-                    kind = TTokenClass.gtKeyword;
+                m_token_next = m_source.Substring(m_linepos_start, (m_linepos_end - m_linepos_start));
+
+                if (LangConstants.keywords.Contains(m_token_next)) {
+                    m_token_type = TkType.Keyword;
                 }
             }
         }
 
     }
     [Flags]
-    enum NSScannerFlags: int {
+    enum NSScanState: int {
         None = 0,
         RawStringLit = 1,
         NormalStringLit = 2,
         Pragma = 4
     }
+
+
+    public enum TkType: int {
+        Assembler,
+        BracketLeft, 
+        BracketRight,
+        CharLit, 
+        Comma,
+        Command, 
+        Comment, 
+        CommentLong, 
+        CurlyDotLeft, 
+        CurlyDotRight, 
+        Directive, 
+        Dot, 
+        Eof, 
+        Escape,
+        Hyperlink, 
+        Identifier, 
+        Key, 
+        Keyword, 
+        Label,
+        None, 
+        NumberBin, 
+        NumberFloat, 
+        NumberHex,
+        NumberInt, 
+        NumberOct, 
+        Operator, 
+        Other, 
+        ParenLeft, 
+        ParenRight,
+        Preprocessor, 
+        Punctuation, 
+        RawData, 
+        Reference, 
+        RegEx,
+        Rule, 
+        Space, 
+        StringLit,
+        StringLitLong, 
+        TagEnd, 
+        TagStart, 
+        Value, 
+    }
+
+    /*
+    tkInvalid, tkEof,
+    tkSymbol, # keywords:
+    tkAddr, tkAnd, tkAs, tkAsm, tkAtomic,
+    tkBind, tkBlock, tkBreak, tkCase, tkCast,
+    tkConst, tkContinue, tkConverter,
+    tkDefer, tkDiscard, tkDistinct, tkDiv, tkDo,
+    tkElif, tkElse, tkEnd, tkEnum, tkExcept, tkExport,
+    tkFinally, tkFor, tkFrom, tkFunc,
+    tkGeneric, tkIf, tkImport, tkIn, tkInclude, tkInterface,
+    tkIs, tkIsnot, tkIterator,
+    tkLet,
+    tkMacro, tkMethod, tkMixin, tkMod, tkNil, tkNot, tkNotin,
+    tkObject, tkOf, tkOr, tkOut,
+    tkProc, tkPtr, tkRaise, tkRef, tkReturn, tkShl, tkShr, tkStatic,
+    tkTemplate,
+    tkTry, tkTuple, tkType, tkUsing,
+    tkVar, tkWhen, tkWhile, tkWith, tkWithout, tkXor,
+    tkYield, # end of keywords
+    tkIntLit, tkInt8Lit, tkInt16Lit, tkInt32Lit, tkInt64Lit,
+    tkUIntLit, tkUInt8Lit, tkUInt16Lit, tkUInt32Lit, tkUInt64Lit,
+    tkFloatLit, tkFloat32Lit, tkFloat64Lit, tkFloat128Lit,
+    tkStrLit, tkRStrLit, tkTripleStrLit,
+    tkGStrLit, tkGTripleStrLit, tkCharLit, tkParLe, tkParRi, tkBracketLe,
+    tkBracketRi, tkCurlyLe, tkCurlyRi,
+    tkBracketDotLe, tkBracketDotRi, # [. and  .]
+    tkCurlyDotLe, tkCurlyDotRi, # {.  and  .}
+    tkParDotLe, tkParDotRi,   # (. and .)
+    tkComma, tkSemiColon,
+    tkColon, tkColonColon, tkEquals, tkDot, tkDotDot,
+    tkOpr, tkComment, tkAccent,
+    tkSpaces, tkInfixOpr, tkPrefixOpr, tkPostfixOpr,
+
+    // sorted
+
+    tkAccent,
+    tkAddr,
+    tkAnd,
+    tkAs,
+    tkAsm,
+    tkAtomic,
+    tkBind,
+    tkBlock,
+    tkBracketDotLe,
+    tkBracketDotRi,
+    tkBracketLe,
+    tkBracketRi,
+    tkBreak,
+    tkCase,
+    tkCast,
+    tkCharLit,
+    tkColon,
+    tkColonColon,
+    tkComma,
+    tkComment,
+    tkConst,
+    tkContinue,
+    tkConverter,
+    tkCurlyDotLe,
+    tkCurlyDotRi,
+    tkCurlyLe,
+    tkCurlyRi,
+    tkDefer,
+    tkDiscard,
+    tkDistinct,
+    tkDiv,
+    tkDo,
+    tkDot,
+    tkDotDot,
+    tkElif,
+    tkElse,
+    tkEnd,
+    tkEnum,
+    tkEof,
+    tkEquals,
+    tkExcept,
+    tkExport,
+    tkFinally,
+    tkFloat128Lit,
+    tkFloat32Lit,
+    tkFloat64Lit,
+    tkFloatLit,
+    tkFor,
+    tkFrom,
+    tkFunc,
+    tkGStrLit,
+    tkGTripleStrLit,
+    tkGeneric,
+    tkIf,
+    tkImport,
+    tkIn,
+    tkInclude,
+    tkInfixOpr,
+    tkInt16Lit,
+    tkInt32Lit,
+    tkInt64Lit,
+    tkInt8Lit,
+    tkIntLit,
+    tkInterface,
+    tkInvalid,
+    tkIs,
+    tkIsnot,
+    tkIterator,
+    tkLet,
+    tkMacro,
+    tkMethod,
+    tkMixin,
+    tkMod,
+    tkNil,
+    tkNot,
+    tkNotin,
+    tkObject,
+    tkOf,
+    tkOpr,
+    tkOr,
+    tkOut,
+    tkParDotLe,
+    tkParDotRi,
+    tkParLe,
+    tkParRi,
+    tkPostfixOpr,
+    tkPrefixOpr,
+    tkProc,
+    tkPtr,
+    tkRStrLit,
+    tkRaise,
+    tkRef,
+    tkReturn,
+    tkSemiColon,
+    tkShl,
+    tkShr,
+    tkSpaces,
+    tkStatic,
+    tkStrLit,
+    tkSymbol,
+    tkTemplate,
+    tkTripleStrLit,
+    tkTry,
+    tkTuple,
+    tkType,
+    tkUInt16Lit,
+    tkUInt32Lit,
+    tkUInt64Lit,
+    tkUInt8Lit,
+    tkUIntLit,
+    tkUsing,
+    tkVar,
+    tkWhen,
+    tkWhile,
+    tkWith,
+    tkWithout,
+    tkXor,
+    tkYield,
+
+     */
 
 }
