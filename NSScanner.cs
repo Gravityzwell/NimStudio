@@ -251,8 +251,8 @@ namespace NimStudio.NimStudio {
 
             }
             state = (int)flags;
-            tokenInfo.StartIndex = m_tokenizer.m_linepos_start;
-            tokenInfo.EndIndex = m_tokenizer.m_linepos_end;
+            tokenInfo.StartIndex = m_tokenizer.m_tokenpos_start;
+            tokenInfo.EndIndex = m_tokenizer.m_tokenpos_start_next;
             m_tokenizer.TokenNext(flags);
             return true;
         }
@@ -261,9 +261,9 @@ namespace NimStudio.NimStudio {
     class NSTokenizer {
         private TkType m_token_type; // rename token_kind
         private string m_source;
-        public int m_linepos_start;
-        public int m_linepos_end;
-        private int m_token_pos_end;
+        public int m_tokenpos_start;
+        public int m_tokenpos_start_next;
+        private int m_tokenpos_end;
         //public TStringTypes inString = TStringTypes.stNone;
         private string m_token_next;
         //public int Start {
@@ -290,8 +290,8 @@ namespace NimStudio.NimStudio {
             //inString = TStringTypes.stNone;
             m_source = source;
             //Debug.Print("NSTokenizer:" + source + ":" + DateTime.Now.Millisecond.ToString());
-            m_linepos_start = 0;
-            m_linepos_end = 0;
+            m_tokenpos_start = 0;
+            m_tokenpos_start_next = 0;
             TokenNext(NSScanState.None);
         }
         private static int SkipChar(string str, char chr, int idx) {
@@ -324,7 +324,7 @@ namespace NimStudio.NimStudio {
         }
 
         private bool Peek(string teststr) {
-            if (m_linepos_start + teststr.Length > m_source.Length)
+            if (m_tokenpos_start + teststr.Length > m_source.Length)
                 return false;
             return false;
             //m_source[m_start
@@ -337,155 +337,157 @@ namespace NimStudio.NimStudio {
                 {
                 Debugger.Break();
                 }*/
-            m_linepos_start = m_linepos_end;
-            if (m_linepos_end >= m_source.Length) {
+            m_tokenpos_start = m_tokenpos_start_next;
+            if (m_tokenpos_start_next >= m_source.Length) {
                 m_token_type = TkType.Eof;
                 return;
             }
-            if (m_linepos_start >= m_source.Length) {
+            if (m_tokenpos_start >= m_source.Length) {
                 m_token_type = TkType.Eof;
                 return;
             }
-            if (m_source[m_linepos_start] == '#' && flags == NSScanState.None) {
+            if (m_source[m_tokenpos_start] == '#' && flags == NSScanState.None) {
                 m_token_type = TkType.Comment;
-                m_linepos_end = m_source.Length;
-                m_token_pos_end = m_source.Length;
-            } else if (m_source[m_linepos_start] == '\'') {
+                m_tokenpos_start_next = m_source.Length;
+                m_tokenpos_end = m_source.Length;
+            } else if (m_source[m_tokenpos_start] == '\'') {
                 m_token_type = TkType.CharLit;
-                if (m_linepos_start + 2 < m_source.Length && m_source[m_linepos_start + 2] == '\'') {
-                    m_linepos_end = m_linepos_start + 3;
-                    m_token_pos_end = m_linepos_start + 3;
+                if (m_tokenpos_start + 2 < m_source.Length && m_source[m_tokenpos_start + 2] == '\'') {
+                    m_tokenpos_start_next = m_tokenpos_start + 3;
+                    m_tokenpos_end = m_tokenpos_start + 3;
                 } else {
-                    m_linepos_end = m_linepos_start + 1;
-                    m_token_pos_end = m_linepos_start + 1;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    m_tokenpos_end = m_tokenpos_start + 1;
                 }
-            } else if (m_source[m_linepos_start] == '"') {
-                if (m_linepos_start + 2 < m_source.Length && m_source.Substring(m_linepos_start, 3) == "\"\"\"") {
-                    m_linepos_end = m_linepos_start + 3;
-                    m_token_pos_end = m_linepos_start + 3;
+            } else if (m_source[m_tokenpos_start] == '"') {
+                if (m_tokenpos_start + 2 < m_source.Length && m_source.Substring(m_tokenpos_start, 3) == "\"\"\"") {
+                    m_tokenpos_start_next = m_tokenpos_start + 3;
+                    m_tokenpos_end = m_tokenpos_start + 3;
                     m_token_type = TkType.StringLitLong;
                     return;
                 } else {
-                    m_linepos_end = m_linepos_start + 1;
-                    m_token_pos_end = m_linepos_start + 1;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    m_tokenpos_end = m_tokenpos_start + 1;
                     m_token_type = TkType.StringLit;
                     return;
                 }
-            } else if (m_source[m_linepos_start] == '{') {
-                if (CheckEqual(m_linepos_start + 1, '.') && CheckNotEqual(m_linepos_start + 2, '.')) {
-                    m_linepos_end = m_linepos_start + 2;
-                    m_token_pos_end = m_linepos_start + 2;
+            } else if (m_source[m_tokenpos_start] == '{') {
+                if (CheckEqual(m_tokenpos_start + 1, '.') && CheckNotEqual(m_tokenpos_start + 2, '.')) {
+                    m_tokenpos_start_next = m_tokenpos_start + 2;
+                    m_tokenpos_end = m_tokenpos_start + 2;
                     m_token_type = TkType.CurlyDotLeft;
                 } else {
-                    m_linepos_end = m_linepos_start + 1;
-                    m_token_pos_end = m_linepos_start + 1;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    m_tokenpos_end = m_tokenpos_start + 1;
                     m_token_type = TkType.Punctuation;
 
                 }
 
-            } else if (m_source[m_linepos_start] == '.') {
-                if (CheckEqual(m_linepos_start + 1, '}')) {
-                    m_linepos_end = m_linepos_start + 2;
-                    m_token_pos_end = m_linepos_start + 2;
+            } else if (m_source[m_tokenpos_start] == '.') {
+                if (CheckEqual(m_tokenpos_start + 1, '}')) {
+                    m_tokenpos_start_next = m_tokenpos_start + 2;
+                    m_tokenpos_end = m_tokenpos_start + 2;
                     m_token_type = TkType.CurlyDotRight;
                 } else {
-                    m_linepos_end = m_linepos_start + 1;
-                    m_token_pos_end = m_linepos_start + 1;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    m_tokenpos_end = m_tokenpos_start + 1;
                     m_token_type = TkType.Dot;
                 }
-            } else if (m_source[m_linepos_start] == '(') {
+            } else if (m_source[m_tokenpos_start] == '(') {
                 m_token_type = TkType.ParenLeft;
-                m_linepos_end = m_linepos_start + 1;
-                m_token_pos_end = m_linepos_start + 1;
-            } else if (m_source[m_linepos_start] == ')') {
+                m_tokenpos_start_next = m_tokenpos_start + 1;
+                m_tokenpos_end = m_tokenpos_start + 1;
+            } else if (m_source[m_tokenpos_start] == ')') {
                 m_token_type = TkType.ParenRight;
-                m_linepos_end = m_linepos_start + 1;
-                m_token_pos_end = m_linepos_start + 1;
-            } else if (m_source[m_linepos_start] == ',') {
+                m_tokenpos_start_next = m_tokenpos_start + 1;
+                m_tokenpos_end = m_tokenpos_start + 1;
+            } else if (m_source[m_tokenpos_start] == ',') {
                 m_token_type = TkType.Comma;
-                m_linepos_end = m_linepos_start + 1;
-                m_token_pos_end = m_linepos_start + 1;
-            } else if (m_source[m_linepos_start] == '*') {
+                m_tokenpos_start_next = m_tokenpos_start + 1;
+                m_tokenpos_end = m_tokenpos_start + 1;
+            } else if (m_source[m_tokenpos_start] == '*') {
                 m_token_type = TkType.Punctuation;
-                m_linepos_end = m_linepos_start + 1;
-                m_token_pos_end = m_linepos_start + 1;
-            } else if (m_source[m_linepos_start] == ':') {
+                m_tokenpos_start_next = m_tokenpos_start + 1;
+                m_tokenpos_end = m_tokenpos_start + 1;
+            } else if (m_source[m_tokenpos_start] == ':') {
                 m_token_type = TkType.Punctuation;
-                m_linepos_end = m_linepos_start + 1;
-                m_token_pos_end = m_linepos_start + 1;
-            } else if (m_source[m_linepos_start] == ' ') {
+                m_tokenpos_start_next = m_tokenpos_start + 1;
+                m_tokenpos_end = m_tokenpos_start + 1;
+            } else if (m_source[m_tokenpos_start] == ' ') {
                 m_token_type = TkType.Space;
-                m_linepos_end = m_linepos_start + 1;
-                m_token_pos_end = m_linepos_start + 1;
-            } else if (m_source[m_linepos_start] == '[') {
+                m_tokenpos_start_next = m_tokenpos_start + 1;
+                m_tokenpos_end = m_tokenpos_start + 1;
+            } else if (m_source[m_tokenpos_start] == '[') {
                 m_token_type = TkType.BracketLeft;
-                m_linepos_end = m_linepos_start + 1;
-                m_token_pos_end = m_linepos_start + 1;
-            } else if (m_source[m_linepos_start] == ']') {
+                m_tokenpos_start_next = m_tokenpos_start + 1;
+                m_tokenpos_end = m_tokenpos_start + 1;
+            } else if (m_source[m_tokenpos_start] == ']') {
                 m_token_type = TkType.BracketRight;
-                m_linepos_end = m_linepos_start + 1;
-                m_token_pos_end = m_linepos_start + 1;
+                m_tokenpos_start_next = m_tokenpos_start + 1;
+                m_tokenpos_end = m_tokenpos_start + 1;
             } else {
 
-                if (m_linepos_start >= m_source.Length) {
+                if (m_tokenpos_start >= m_source.Length) {
                     m_token_type = TkType.Eof;
                     return;
                 }
                 m_token_type = TkType.Other;
-                var spaceIdx = m_source.IndexOf(' ', m_linepos_start); // idx of next whitespace after start
-                m_token_pos_end = spaceIdx;
-                spaceIdx = SkipChar(m_source, ' ', spaceIdx); // ????
-                var searchStart = m_linepos_start;
-                var quoteIdx = m_source.IndexOf('"', searchStart);
-                var parenIdx = m_source.IndexOf('(', searchStart);
-                var closeParenIdx = m_source.IndexOf(')', searchStart);
-                var starIdx = m_source.IndexOf('*', searchStart);
-                var colonIdx = m_source.IndexOf(':', searchStart);
-                var dotidx = m_source.IndexOf('.', searchStart);
-                var squareIdx = m_source.IndexOf('[', searchStart);
-                var closeSquareIdx = m_source.IndexOf(']', searchStart);
-                m_linepos_end = spaceIdx;
-                if (m_linepos_end == -1) {
-                    m_token_next = m_source.Substring(m_linepos_start);
-                    m_linepos_end = m_source.Length;
-                    m_token_pos_end = m_source.Length;
+                m_tokenpos_end = m_source.IndexOf(' ', m_tokenpos_start); // idx of next space
+                m_tokenpos_start_next = m_tokenpos_end;
+                if (m_tokenpos_start_next != -1) { 
+                    while (m_tokenpos_start_next + 1 < m_source.Length && m_source[m_tokenpos_start_next + 1] == ' ')
+                        m_tokenpos_start_next++;
                 }
-                if (squareIdx != -1 && squareIdx < m_linepos_end) {
-                    m_linepos_end = squareIdx;
-                    m_token_pos_end = squareIdx;
+                // check if delimeter before m_tokenpos_start_next
+                var quoteIdx = m_source.IndexOf('"', m_tokenpos_start);
+                var parenIdx = m_source.IndexOf('(', m_tokenpos_start);
+                var closeParenIdx = m_source.IndexOf(')', m_tokenpos_start);
+                var starIdx = m_source.IndexOf('*', m_tokenpos_start);
+                var colonIdx = m_source.IndexOf(':', m_tokenpos_start);
+                var dotidx = m_source.IndexOf('.', m_tokenpos_start);
+                var squareIdx = m_source.IndexOf('[', m_tokenpos_start);
+                var closeSquareIdx = m_source.IndexOf(']', m_tokenpos_start);
+                if (m_tokenpos_start_next == -1) {
+                    m_token_next = m_source.Substring(m_tokenpos_start);
+                    m_tokenpos_start_next = m_source.Length;
+                    m_tokenpos_end = m_source.Length;
                 }
-                if (closeSquareIdx != -1 && closeSquareIdx < m_linepos_end) {
-                    m_linepos_end = closeSquareIdx;
-                    m_token_pos_end = closeSquareIdx;
+                if (squareIdx != -1 && squareIdx < m_tokenpos_start_next) {
+                    m_tokenpos_start_next = squareIdx;
+                    m_tokenpos_end = squareIdx;
                 }
-                if (parenIdx != -1 && parenIdx < m_linepos_end) {
+                if (closeSquareIdx != -1 && closeSquareIdx < m_tokenpos_start_next) {
+                    m_tokenpos_start_next = closeSquareIdx;
+                    m_tokenpos_end = closeSquareIdx;
+                }
+                if (parenIdx != -1 && parenIdx < m_tokenpos_start_next) {
                     m_token_type = TkType.Identifier;
-                    m_linepos_end = parenIdx;
-                    m_token_pos_end = parenIdx;
+                    m_tokenpos_start_next = parenIdx;
+                    m_tokenpos_end = parenIdx;
                 }
-                if (closeParenIdx != -1 && closeParenIdx < m_linepos_end) {
-                    m_linepos_end = closeParenIdx;
-                    m_token_pos_end = closeParenIdx;
+                if (closeParenIdx != -1 && closeParenIdx < m_tokenpos_start_next) {
+                    m_tokenpos_start_next = closeParenIdx;
+                    m_tokenpos_end = closeParenIdx;
                 }
-                if (starIdx != -1 && starIdx < m_linepos_end) {
-                    m_linepos_end = starIdx;
-                    m_token_pos_end = starIdx;
+                if (starIdx != -1 && starIdx < m_tokenpos_start_next) {
+                    m_tokenpos_start_next = starIdx;
+                    m_tokenpos_end = starIdx;
                     m_token_type = TkType.Identifier;
                 }
-                if (quoteIdx != -1 && quoteIdx < m_linepos_end) {
-                    m_linepos_end = quoteIdx;
-                    m_token_pos_end = quoteIdx;
+                if (quoteIdx != -1 && quoteIdx < m_tokenpos_start_next) {
+                    m_tokenpos_start_next = quoteIdx;
+                    m_tokenpos_end = quoteIdx;
                 }
-                if (colonIdx != -1 && colonIdx < m_linepos_end) {
-                    m_linepos_end = colonIdx;
-                    m_token_pos_end = colonIdx;
+                if (colonIdx != -1 && colonIdx < m_tokenpos_start_next) {
+                    m_tokenpos_start_next = colonIdx;
+                    m_tokenpos_end = colonIdx;
                 }
-                if (dotidx != -1 && dotidx < m_linepos_end) {
-                    m_linepos_end = dotidx;
-                    m_token_pos_end = dotidx;
+                if (dotidx != -1 && dotidx < m_tokenpos_start_next) {
+                    m_tokenpos_start_next = dotidx;
+                    m_tokenpos_end = dotidx;
                 }
 
-                m_token_next = m_source.Substring(m_linepos_start, (m_linepos_end - m_linepos_start));
+                m_token_next = m_source.Substring(m_tokenpos_start, (m_tokenpos_start_next - m_tokenpos_start));
 
                 if (LangConstants.keywords.Contains(m_token_next)) {
                     m_token_type = TkType.Keyword;
