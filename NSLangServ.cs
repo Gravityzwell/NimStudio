@@ -37,10 +37,11 @@ namespace NimStudio.NimStudio {
             //m_colorable_items.Add((int)TokenColor.Text,  new ColorableItem("Text",  COLORINDEX.CI_SYSPLAINTEXT_FG, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
             m_colorable_items.Add((int)TokenColor.Number+1,  new ColorableItem("NimLang Procedure",  COLORINDEX.CI_RED, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
             m_colorable_items.Add((int)TokenColor.Number+2,  new ColorableItem("NimLang DataType",  COLORINDEX.CI_BROWN, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
+            m_colorable_items.Add((int)TokenColor.Number+3,  new ColorableItem("NimLang Punctuation",  COLORINDEX.CI_SYSPLAINTEXT_FG, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
         }
 
         public override void Initialize() {
-            _serviceprovider_sys = this.Site; // getting this here as it doesn't work in constructor
+            _serviceprovider_sys = this.Site;
             IVsFontAndColorCacheManager mgr = this.GetService(typeof(SVsFontAndColorCacheManager)) as IVsFontAndColorCacheManager;
             mgr.ClearAllCaches();
         }
@@ -50,11 +51,6 @@ namespace NimStudio.NimStudio {
         }
 
         public override LanguagePreferences GetLanguagePreferences() {
-            //IVsShell shell = _serviceprovider_sys.GetService(typeof(SVsShell)) as IVsShell;
-            //if (shell == null) {
-            //    throw new InvalidOperationException();
-            //}
-
             if (languageprefs == null) {
                 languageprefs = new LanguagePreferences(this.Site, typeof(NSLangServ).GUID, this.Name);
                 if (this.languageprefs != null)
@@ -133,28 +129,15 @@ namespace NimStudio.NimStudio {
         }
 
         public override Source CreateSource(IVsTextLines buffer) {       
-            //return new NSSource(this, buffer, CreateColorizer(buffer));
             return new NSSource(this, buffer, GetColorizer(buffer));
         }
 
 
         public override Colorizer GetColorizer(IVsTextLines buffer) {
             NSColorizer colorizer;
-            //if (!_colorizers.TryGetValue(buffer, out colorizer)) {
-                colorizer = new NSColorizer(this, buffer, (NSScanner)GetScanner(buffer));
-
-              //  _colorizers.Add(buffer, colorizer);
-            //}
-
+            colorizer = new NSColorizer(this, buffer, (NSScanner)GetScanner(buffer));
             return colorizer;
         }
-
-        //public virtual Colorizer CreateColorizer(IVsTextLines buffer) {
-        //    return new NSLineColorizer(this, buffer, (NSScanner)GetScanner(buffer));
-        //}
-
-       //private Dictionary<int,Microsoft.VisualStudio.TextManager.Interop.IVsColorableItem> _colorableItems =
-       //     new Dictionary<int,Microsoft.VisualStudio.TextManager.Interop.IVsColorableItem>();
 
         public override int GetItemCount(out int count) {
             count = m_colorable_items.Count;
@@ -167,7 +150,6 @@ namespace NimStudio.NimStudio {
         }
 
         public override AuthoringScope ParseSource(ParseRequest req) {
-            //var c1 = 1;
             NSUtil.DebugPrintAlways("ParseSource:" + req.Reason);
             return new NSAuthoringScope(req, req.FileName, "");
             //return req.Scope;

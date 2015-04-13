@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Package;
 using Microsoft.VisualStudio.TextManager.Interop;
 using System.Diagnostics;
+using VSTkColor = Microsoft.VisualStudio.Package.TokenColor;
 
 namespace NimStudio.NimStudio {
 
@@ -96,7 +97,8 @@ namespace NimStudio.NimStudio {
         public NSSource m_nssource;
         public string m_source;
         public int m_linenum_curr;
-        public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',', '=', ';' };
+        // lexer.nim OpChars {'+', '-', '*', '/', '\\', '<', '>', '!', '?', '^', '.', '|', '=', '%', '&', '$', '@', '~', ':'}
+        public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',', '=', ';', '+', '-', '/', '<', '>', '!', '?', '^', '|', '%', '&', '$', '@', '~'};
         public static string token_nums = "0123456789xX_'iIuUaAbBcCdDeEfF";
         public int m_tokenpos_start;
         public int m_tokenpos_start_next;
@@ -234,10 +236,8 @@ namespace NimStudio.NimStudio {
                     m_tokenpos_start_next = m_tokenpos_start + 1;
                     return;
 
-                case '*':
-                case ':':
-                case '=':
-                case ';':
+                case '*':  case ':':  case '=':  case ';':  case '/':  case '<': case '>':  case '!':  case '-':  
+                case '^':  case '|':  case '%':  case '&':  case '$':  case '@': case '~':  case '?':  case '+': 
                     m_token_type = TkType.Punctuation;
                     m_tokenpos_start_next = m_tokenpos_start + 1;
                     return;
@@ -339,11 +339,11 @@ namespace NimStudio.NimStudio {
                     return false; // end of line
                 case TkType.None:
                     token_info.Type = TokenType.Unknown;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Text;
                     break;
                 case TkType.Space:
                     token_info.Type = TokenType.WhiteSpace;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Text;
                     break;
                 case TkType.NumberInt:
                 case TkType.NumberBin:
@@ -351,59 +351,59 @@ namespace NimStudio.NimStudio {
                 case TkType.NumberOct:
                 case TkType.NumberFloat:
                     token_info.Type = TokenType.Literal;
-                    token_info.Color = TokenColor.Number;
+                    token_info.Color = (VSTkColor)TokenColor.Number;
                     break;
                 case TkType.Identifier:
                     token_info.Type = TokenType.Identifier;
-                    token_info.Color = TokenColor.Identifier;
+                    token_info.Color = (VSTkColor)TokenColor.Identifier;
                     break;
                 case TkType.Keyword:
                     token_info.Type = TokenType.Keyword;
-                    token_info.Color = TokenColor.Keyword;
+                    token_info.Color = (VSTkColor)TokenColor.Keyword;
                     break;
                 case TkType.DataType:
                     token_info.Type = TokenType.Unknown;
-                    token_info.Color = TokenColor.Number+2;
+                    token_info.Color = (VSTkColor)TokenColor.DataType;
                     break;
                 case TkType.Procedure:
                     token_info.Type = TokenType.Unknown;
-                    token_info.Color = TokenColor.Number+1;
+                    token_info.Color = (VSTkColor)TokenColor.Procedure;
                     break;
                 case TkType.StringLit:
                     token_info.Type = TokenType.String;
-                    token_info.Color = TokenColor.String;
+                    token_info.Color = (VSTkColor)TokenColor.String;
                     if (!flags.HasFlag(NSScanState.StringLitRaw)) {
                         flags ^= NSScanState.StringLit;
                     }
                     break;
                 case TkType.StringLitLong:
                     token_info.Type = TokenType.String;
-                    token_info.Color = TokenColor.String;
+                    token_info.Color = (VSTkColor)TokenColor.String;
                     flags ^= NSScanState.StringLitRaw;
                     break;
                 case TkType.CharLit:
                     token_info.Type = TokenType.String;
-                    token_info.Color = TokenColor.String;
+                    token_info.Color = (VSTkColor)TokenColor.String;
                     break;
                 case TkType.Escape:
                     token_info.Type = TokenType.Unknown;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Text;
                     break;
                 case TkType.Operator:
                     token_info.Type = TokenType.Operator;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Punctuation;
                     break;
                 case TkType.Punctuation:
                     token_info.Type = TokenType.Text;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Punctuation;
                     break;
                 case TkType.Comment:
                     token_info.Type = TokenType.Comment;
-                    token_info.Color = TokenColor.Comment;
+                    token_info.Color = (VSTkColor)TokenColor.Comment;
                     break;
                 case TkType.CommentLong:
                     token_info.Type = TokenType.LineComment;
-                    token_info.Color = TokenColor.Comment;
+                    token_info.Color = (VSTkColor)TokenColor.Comment;
                     break;
                 case TkType.RegEx:
                 case TkType.TagStart:
@@ -421,51 +421,65 @@ namespace NimStudio.NimStudio {
                 case TkType.Reference:
                 case TkType.Other:
                     token_info.Type = TokenType.Unknown;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Text;
                     break;
                 case TkType.CurlyDotLeft:
                 case TkType.CurlyDotRight:
                 case TkType.BracketLeft:
                 case TkType.BracketRight:
                     token_info.Type = TokenType.Delimiter;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Punctuation;
                     break;
                 case TkType.Dot:
                     token_info.Type = TokenType.Operator;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Punctuation;
                     token_info.Trigger = TokenTriggers.MemberSelect;
                     break;
                 case TkType.ParenLeft:
                     token_info.Type = TokenType.Delimiter;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Punctuation;
                     token_info.Trigger = TokenTriggers.ParameterStart;
                     break;
                 case TkType.ParenRight:
                     token_info.Type = TokenType.Delimiter;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Punctuation;
                     token_info.Trigger = TokenTriggers.ParameterEnd;
                     break;
                 case TkType.Comma:
                     token_info.Type = TokenType.Text;
-                    token_info.Color = TokenColor.Text;
+                    token_info.Color = (VSTkColor)TokenColor.Punctuation;
                     token_info.Trigger = TokenTriggers.ParameterNext;
                     break;
             }
             if (flags.HasFlag(NSScanState.StringLit) || flags.HasFlag(NSScanState.StringLitRaw)) {
-                token_info.Color = TokenColor.String;
+                token_info.Color = (VSTkColor)TokenColor.String;
                 token_info.Type = TokenType.String;
 
             }
             state = (int)flags;
             token_info.StartIndex = m_tokenpos_start;
             token_info.EndIndex = m_tokenpos_start_next-1;
-            Debug.WriteLine("$" + m_source.Substring( m_tokenpos_start,m_tokenpos_start_next - 
-                m_tokenpos_start) + "$" + m_token_type);
+            //Debug.WriteLine("$" + m_source.Substring( m_tokenpos_start,m_tokenpos_start_next - 
+                //m_tokenpos_start) + "$" + m_token_type);
             TokenNextGet(flags);
             m_tokens_type.Add(m_token_type);
             return true;
         }
     }
+
+    public enum TokenColor {
+        Text = 0,
+        Keyword = 1,
+        Comment = 2,
+        Identifier = 3,
+        String = 4,
+        Number = 5,
+        Procedure = 6,
+        DataType = 7,
+        Punctuation = 8,
+    }
+    //public static int NSTokenColor_Procedure = 1;
+
 
     [Flags]
     enum NSScanState: int {
