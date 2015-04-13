@@ -96,7 +96,7 @@ namespace NimStudio.NimStudio {
         public NSSource m_nssource;
         public string m_source;
         public int m_linenum_curr;
-        public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',', '=' };
+        public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',', '=', ';' };
         public static string token_nums = "0123456789xX_'iIuUaAbBcCdDeEfF";
         public int m_tokenpos_start;
         public int m_tokenpos_start_next;
@@ -235,16 +235,9 @@ namespace NimStudio.NimStudio {
                     return;
 
                 case '*':
-                    m_token_type = TkType.Punctuation;
-                    m_tokenpos_start_next = m_tokenpos_start + 1;
-                    return;
-
                 case ':':
-                    m_token_type = TkType.Punctuation;
-                    m_tokenpos_start_next = m_tokenpos_start + 1;
-                    return;
-
                 case '=':
+                case ';':
                     m_token_type = TkType.Punctuation;
                     m_tokenpos_start_next = m_tokenpos_start + 1;
                     return;
