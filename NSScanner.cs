@@ -45,6 +45,13 @@ namespace NimStudio.NimStudio {
             "tuple",
             "void",
         };
+
+        // workaround to colorize some system procs that are often used without parens, until import scanner is implemented
+        public static readonly HashSet<string> proctypes = new HashSet<string> {
+            "echo",
+        };
+
+
     }
 
     enum TStringTypes {
@@ -73,12 +80,10 @@ namespace NimStudio.NimStudio {
         }
 
         public void SetCurrentLine(int line) {
-            //NSScanner scanner = (NSScanner)Scanner;
             m_scanner.m_linenum_curr = line;
         }
 
         public override int ColorizeLine(int line, int length, IntPtr ptr, int state, uint[] attrs) {
-            //NSScanner scanner = (NSScanner)Scanner;
             m_scanner.m_linenum_curr = line;
             int ret;
             ret = base.ColorizeLine(line, length, ptr, state, attrs);
@@ -91,11 +96,16 @@ namespace NimStudio.NimStudio {
         public NSSource m_nssource;
         public string m_source;
         public int m_linenum_curr;
-        public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',' };
+        public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',', '=' };
         public static string token_nums = "0123456789xX_'iIuUaAbBcCdDeEfF";
         public int m_tokenpos_start;
         public int m_tokenpos_start_next;
         public TkType m_token_type;
+        public TkType m_token_type_prev;
+        public string m_token_keyword_prev;
+        public char m_token_delim_prev='\0';
+        public List<TkType> m_tokens_type=new List<TkType>();
+        public List<int> m_tokens_delims=new List<int>();
 
         public NSScanner(IVsTextBuffer buffer) {
             m_buffer = buffer;
@@ -111,6 +121,12 @@ namespace NimStudio.NimStudio {
             m_source = source.Substring(offset);
             m_tokenpos_start = 0;
             m_tokenpos_start_next = 0;
+            m_tokens_type.Clear();
+            m_tokens_delims.Clear();
+            for (int lspot=0; lspot < m_source.Length; lspot++) {
+                if (token_delims.Contains(m_source[lspot]))
+                    m_tokens_delims.Add(lspot);
+            }
             TokenNextGet(NSScanState.None);
         }
 
@@ -128,9 +144,19 @@ namespace NimStudio.NimStudio {
             return m_source[m_tokenpos_start+1];
         }
 
+        private char DelimNext(int from_pos) {
+            if (from_pos >= m_source.Length)
+                return '\0';
+            int delimpos = m_source.IndexOfAny(NSScanner.token_delims, from_pos);
+            if (delimpos!=-1)
+                return m_token_delim_prev=m_source[delimpos];
+            else
+                return '\0';
+        }
+
         public void TokenNextGet(NSScanState flags) {
 
-            int m_tokenpos_start = m_tokenpos_start_next;
+            m_tokenpos_start = m_tokenpos_start_next;
             if (m_tokenpos_start_next >= m_source.Length) {
                 m_token_type = TkType.Eof;
                 return;
@@ -218,6 +244,11 @@ namespace NimStudio.NimStudio {
                     m_tokenpos_start_next = m_tokenpos_start + 1;
                     return;
 
+                case '=':
+                    m_token_type = TkType.Punctuation;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    return;
+
                 case ' ':
                     m_token_type = TkType.Space;
                     m_tokenpos_start_next = m_tokenpos_start;
@@ -251,7 +282,11 @@ namespace NimStudio.NimStudio {
 
             m_token_type = TkType.Other;
             m_tokenpos_start_next = m_source.IndexOfAny(NSScanner.token_delims, m_tokenpos_start);
-            
+            //if (m_tokenpos_start_next!=-1)
+            //    m_token_delim_prev=m_source[m_tokenpos_start_next];
+            //else
+            //    m_token_delim_prev='\0';
+
             string token_str;
             if (m_tokenpos_start_next == -1) {
                 token_str = m_source.Substring(m_tokenpos_start);
@@ -262,8 +297,41 @@ namespace NimStudio.NimStudio {
 
             if (LangConst.keywords.Contains(token_str)) {
                 m_token_type = TkType.Keyword;
-            } else if (LangConst.datatypes.Contains(token_str))
+                m_token_keyword_prev = token_str.ToLower();
+                return;
+            }
+
+            if (LangConst.datatypes.Contains(token_str)) {
                 m_token_type = TkType.DataType;
+                return;
+            }
+
+            if (LangConst.proctypes.Contains(token_str)) {
+                m_token_type = TkType.Procedure;
+                return;
+            }
+
+            int delim_idx=0;
+            while (delim_idx < m_tokens_delims.Count && m_tokens_delims[delim_idx]<m_tokenpos_start)
+                delim_idx++;
+
+            while (delim_idx<m_tokens_delims.Count){           
+                if (m_source[m_tokens_delims[delim_idx]]==' ') { delim_idx++; continue; };
+                if (m_source[m_tokens_delims[delim_idx]]=='*') { delim_idx++; continue; };
+                if (m_source[m_tokens_delims[delim_idx]]=='(') { m_token_type = TkType.Procedure; break; };
+                break;
+            }
+
+            //int delim_next_pos = m_source.IndexOfAny(NSScanner.token_delims, m_tokenpos_start_next);
+            //char delim_next_char = '\0';
+            //if (delim_next_pos != -1) {
+            //    delim_next_char = m_source[delim_next_pos];
+            //}
+
+            //if (delim_next_char=='(' || m_token_keyword_prev=="proc") {
+            //    m_token_type = TkType.Procedure;
+            //    return;
+            //}
 
         }
 
@@ -272,7 +340,7 @@ namespace NimStudio.NimStudio {
             NSScanState flags = (NSScanState)state;
             //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Second.ToString());
             //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Millisecond.ToString());
-            var lastToken = m_token_type;
+            m_token_type_prev = m_token_type;
             switch (m_token_type) {
                 case TkType.Eof:
                     return false; // end of line
@@ -295,7 +363,6 @@ namespace NimStudio.NimStudio {
                 case TkType.Identifier:
                     token_info.Type = TokenType.Identifier;
                     token_info.Color = TokenColor.Identifier;
-
                     break;
                 case TkType.Keyword:
                     token_info.Type = TokenType.Keyword;
@@ -304,6 +371,10 @@ namespace NimStudio.NimStudio {
                 case TkType.DataType:
                     token_info.Type = TokenType.Unknown;
                     token_info.Color = TokenColor.Number+2;
+                    break;
+                case TkType.Procedure:
+                    token_info.Type = TokenType.Unknown;
+                    token_info.Color = TokenColor.Number+1;
                     break;
                 case TkType.StringLit:
                     token_info.Type = TokenType.String;
@@ -360,10 +431,9 @@ namespace NimStudio.NimStudio {
                     token_info.Color = TokenColor.Text;
                     break;
                 case TkType.CurlyDotLeft:
-                    token_info.Type = TokenType.Delimiter;
-                    token_info.Color = TokenColor.Text;
-                    break;
                 case TkType.CurlyDotRight:
+                case TkType.BracketLeft:
+                case TkType.BracketRight:
                     token_info.Type = TokenType.Delimiter;
                     token_info.Color = TokenColor.Text;
                     break;
@@ -396,8 +466,10 @@ namespace NimStudio.NimStudio {
             state = (int)flags;
             token_info.StartIndex = m_tokenpos_start;
             token_info.EndIndex = m_tokenpos_start_next-1;
-            Debug.WriteLine("$" + m_source.Substring( token_info.StartIndex,token_info.EndIndex - token_info.StartIndex+1) + "$" + m_token_type);
+            Debug.WriteLine("$" + m_source.Substring( m_tokenpos_start,m_tokenpos_start_next - 
+                m_tokenpos_start) + "$" + m_token_type);
             TokenNextGet(flags);
+            m_tokens_type.Add(m_token_type);
             return true;
         }
     }
@@ -442,6 +514,7 @@ namespace NimStudio.NimStudio {
         ParenLeft, 
         ParenRight,
         Preprocessor, 
+        Procedure,
         Punctuation, 
         RawData, 
         Reference, 

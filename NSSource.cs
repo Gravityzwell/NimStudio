@@ -313,7 +313,7 @@ namespace NimStudio.NimStudio {
             case ParseReason.Check:
                 Debug.WriteLine("Source.BeginParse.Check");
                 m_parse_reason = ParseReason.Check;
-                Recolorize(1, this.LineCount);
+                Recolorize(0, this.LineCount);
                 return null;
                 //this.
                 //m_scanner
