@@ -284,36 +284,13 @@ namespace NimStudio.NimStudio {
         private string m_source;
         public int m_tokenpos_start;
         public int m_tokenpos_start_next;
-        private int m_tokenpos_end;
         private string m_token_next;
         public NSTokenizer(string source) {
-            //inString = TStringTypes.stNone;
             m_source = source;
             //Debug.Print("NSTokenizer:" + source + ":" + DateTime.Now.Millisecond.ToString());
             m_tokenpos_start = 0;
             m_tokenpos_start_next = 0;
             TokenNext(NSScanState.None);
-        }
-        private bool CheckEqual(int position, char chr) {
-            if (position >= m_source.Length) {
-                return false;
-            } else {
-                return m_source[position] == chr;
-            }
-        }
-
-        private bool CheckNotEqual(int position, char chr) {
-            if (position >= m_source.Length) {
-                return true;
-            } else {
-                return m_source[position] != chr;
-            }
-        }
-
-        private char PeekChar(int pos) {
-            if (m_tokenpos_start + pos > m_source.Length)
-                return '\0';
-            return m_source[m_tokenpos_start + pos];
         }
 
         private bool CharNext(char ctest, int pos=1) {
@@ -324,7 +301,6 @@ namespace NimStudio.NimStudio {
             return false;
         }
 
-
         private char CharNext() {
             if (m_tokenpos_start + 1 >= m_source.Length)
                 return '\0';
@@ -332,24 +308,18 @@ namespace NimStudio.NimStudio {
         }
 
         public void TokenNext(NSScanState flags) {
+
             m_tokenpos_start = m_tokenpos_start_next;
             if (m_tokenpos_start_next >= m_source.Length) {
                 m_token_type = TkType.Eof;
                 return;
             }
-            if (m_tokenpos_start >= m_source.Length) {
-                m_token_type = TkType.Eof;
-                return;
-            }
-            char char_curr = m_source[m_tokenpos_start];
 
-
-            switch (char_curr) {
+            switch (m_source[m_tokenpos_start]) {
                 case '#':
                     if (flags == NSScanState.None) {
                         m_token_type = TkType.Comment;
                         m_tokenpos_start_next = m_source.Length;
-                        m_tokenpos_end = m_source.Length;
                         return;
                     }
                     break;
@@ -359,31 +329,24 @@ namespace NimStudio.NimStudio {
                     // 'a', '\"', 'xAA', '\9', '\32', '\255'  ,''=should not compile
                     if (CharNext('\'',2)) { // 'a'
                         m_tokenpos_start_next = m_tokenpos_start + 3;
-                        m_tokenpos_end = m_tokenpos_start + 3;
                     } else if (CharNext('\'',3)){ // '\"'
                         m_tokenpos_start_next = m_tokenpos_start + 4;
-                        m_tokenpos_end = m_tokenpos_start + 4;
                     } else if (CharNext('\'',4)){ // 'xAA'
                         m_tokenpos_start_next = m_tokenpos_start + 5;
-                        m_tokenpos_end = m_tokenpos_start + 5;
                     } else if (CharNext('\'',5)){ // '\255'
                         m_tokenpos_start_next = m_tokenpos_start + 6;
-                        m_tokenpos_end = m_tokenpos_start + 6;
                     } else { // unfinished char literal?
                         m_token_type = TkType.Other;
                         m_tokenpos_start_next = m_tokenpos_start + 1;
-                        m_tokenpos_end = m_tokenpos_start + 1;
                     }
                     return;
 
                 case '"':
                     if (m_tokenpos_start + 2 < m_source.Length && m_source.Substring(m_tokenpos_start, 3) == "\"\"\"") {
                         m_tokenpos_start_next = m_tokenpos_start + 3;
-                        m_tokenpos_end = m_tokenpos_start + 3;
                         m_token_type = TkType.StringLitLong;
                     } else {
                         m_tokenpos_start_next = m_tokenpos_start + 1;
-                        m_tokenpos_end = m_tokenpos_start + 1;
                         m_token_type = TkType.StringLit;
                     }
                     return;
@@ -391,11 +354,9 @@ namespace NimStudio.NimStudio {
                 case '{':
                     if (CharNext('.') && !CharNext('.',2)) {
                         m_tokenpos_start_next = m_tokenpos_start + 2;
-                        m_tokenpos_end = m_tokenpos_start + 2;
                         m_token_type = TkType.CurlyDotLeft;
                     } else {
                         m_tokenpos_start_next = m_tokenpos_start + 1;
-                        m_tokenpos_end = m_tokenpos_start + 1;
                         m_token_type = TkType.Punctuation;
                     }
                     return;
@@ -403,12 +364,10 @@ namespace NimStudio.NimStudio {
                 case '.':
                     if (CharNext('}')) {
                         m_tokenpos_start_next = m_tokenpos_start + 2;
-                        m_tokenpos_end = m_tokenpos_start + 2;
                         m_token_type = TkType.CurlyDotRight;
                     //} else if (CharNext() >= '0' &&  CharNext() <= '9') {
                     } else {
                         m_tokenpos_start_next = m_tokenpos_start + 1;
-                        m_tokenpos_end = m_tokenpos_start + 1;
                         m_token_type = TkType.Dot;
                     }
                     return;
@@ -416,31 +375,26 @@ namespace NimStudio.NimStudio {
                 case '(':
                     m_token_type = TkType.ParenLeft;
                     m_tokenpos_start_next = m_tokenpos_start + 1;
-                    m_tokenpos_end = m_tokenpos_start + 1;
                     return;
 
                 case ')':
                     m_token_type = TkType.ParenRight;
                     m_tokenpos_start_next = m_tokenpos_start + 1;
-                    m_tokenpos_end = m_tokenpos_start + 1;
                     return;
 
                 case ',':
                     m_token_type = TkType.Comma;
                     m_tokenpos_start_next = m_tokenpos_start + 1;
-                    m_tokenpos_end = m_tokenpos_start + 1;
                     return;
 
                 case '*':
                     m_token_type = TkType.Punctuation;
                     m_tokenpos_start_next = m_tokenpos_start + 1;
-                    m_tokenpos_end = m_tokenpos_start + 1;
                     return;
 
                 case ':':
                     m_token_type = TkType.Punctuation;
                     m_tokenpos_start_next = m_tokenpos_start + 1;
-                    m_tokenpos_end = m_tokenpos_start + 1;
                     return;
 
                 case ' ':
@@ -463,20 +417,7 @@ namespace NimStudio.NimStudio {
 
             }
 
-            if (m_tokenpos_start >= m_source.Length) {
-                m_token_type = TkType.Eof;
-                return;
-            }
-
             m_token_type = TkType.Other;
-            //m_tokenpos_end = m_source.IndexOf(' ', m_tokenpos_start); // idx of next space
-            //m_tokenpos_start_next = m_tokenpos_end;
-            //if (m_tokenpos_start_next != -1) { 
-            //    while (m_tokenpos_start_next + 1 < m_source.Length && m_source[m_tokenpos_start_next + 1] == ' ')
-            //        m_tokenpos_start_next++;
-            //}
-            // check if delimeter before m_tokenpos_start_next
-            //var delim_idx = m_source.IndexOfAny(NSScanner.token_delims, m_tokenpos_start);
             m_tokenpos_start_next = m_source.IndexOfAny(NSScanner.token_delims, m_tokenpos_start);
             
             if (m_tokenpos_start_next == -1) {
