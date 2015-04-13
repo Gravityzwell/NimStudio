@@ -9,29 +9,41 @@ using System.Diagnostics;
 
 namespace NimStudio.NimStudio {
 
-    static class LangConstants {
+    static class LangConst {
         public static readonly HashSet<string> keywords = new HashSet<string> {
             "addr", "and", "as", "asm", "atomic",
             "bind", "block", "break",
             "case", "cast", "const", "continue", "converter",
             "discard", "distinct", "div", "do",
-            "elif", "else", "end", "enum", "except", "export",
-            "finally", "for", "float", "float,", "from",
+            "elif", "else", "end", "except", "export",
+            "finally", "for", "from",
             "generic",
-            "if", "import", "in", "include", "int", "int,", "interface", "is", "isnot", "iterator",
+            "if", "import", "in", "include", "interface", "is", "isnot", "iterator",
             "lambda", "let",
             "macro", "method", "mixin", "mod",
             "nil", "not", "notin",
             "object", "of", "or", "out",
             "proc", "ptr",
             "raise", "ref", "return",
-            "shl", "shr", "static", "string", "string,",
+            "shl", "shr", "static",
             "template", "try", "tuple", "type",
             "using",
             "var",
             "when", "while", "with", "without",
             "xor",
             "yield"
+        };
+
+        public static readonly HashSet<string> datatypes = new HashSet<string> {
+            "bool",
+            "char",
+            "enum",
+            "float","float32", "float64",
+            "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64",
+            "seq",
+            "string", "cstring",
+            "tuple",
+            "void",
         };
     }
 
@@ -115,87 +127,96 @@ namespace NimStudio.NimStudio {
         public string m_source_line_str;
         private NSTokenizer m_tokenizer;
         public int m_linenum_curr;
+        public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',' };
+        public static char[] token_para_star = new char[] { '(', '*' };
+        public static string token_nums = "0123456789";
 
         public NSScanner(IVsTextBuffer buffer) {
             m_buffer = buffer;
             Debug.Print("NSScanner");
         }
 
+        // Called first. Calls NSTokenizer, which sets m_ vars. Then ScanTokenAndProvideInfoAboutIt is called, which populates token_info
         public void SetSource(string source, int offset) {
             // source is a line
-            Debug.Print("SetSource:" + source + ":" + DateTime.Now.Millisecond.ToString());
+            //Debug.Print("SetSource:" + source + ":" + DateTime.Now.Millisecond.ToString());
             m_source_line_str = source.Substring(offset);
             m_tokenizer = new NSTokenizer(m_source_line_str);
         }
 
-        public bool ScanTokenAndProvideInfoAboutIt(TokenInfo tokenInfo, ref int state) {
+        // populates token_info using m_ vars set in NSTokenizer
+        public bool ScanTokenAndProvideInfoAboutIt(TokenInfo token_info, ref int state) {
             NSScanState flags = (NSScanState)state;
             //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Second.ToString());
             //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Millisecond.ToString());
-            var lastToken = m_tokenizer.Kind;
-            switch (m_tokenizer.Kind) {
+            var lastToken = m_tokenizer.m_token_type;
+            switch (m_tokenizer.m_token_type) {
                 case TkType.Eof:
                     return false;
                 case TkType.None:
-                    tokenInfo.Type = TokenType.Unknown;
-                    tokenInfo.Color = TokenColor.Text;
+                    token_info.Type = TokenType.Unknown;
+                    token_info.Color = TokenColor.Text;
                     break;
                 case TkType.Space:
-                    tokenInfo.Type = TokenType.WhiteSpace;
-                    tokenInfo.Color = TokenColor.Text;
+                    token_info.Type = TokenType.WhiteSpace;
+                    token_info.Color = TokenColor.Text;
                     break;
                 case TkType.NumberInt:
                 case TkType.NumberBin:
                 case TkType.NumberHex:
                 case TkType.NumberOct:
                 case TkType.NumberFloat:
-                    tokenInfo.Type = TokenType.Literal;
-                    tokenInfo.Color = TokenColor.Number;
+                    token_info.Type = TokenType.Literal;
+                    token_info.Color = TokenColor.Number;
                     break;
                 case TkType.Identifier:
-                    tokenInfo.Type = TokenType.Identifier;
-                    tokenInfo.Color = TokenColor.Identifier;
+                    token_info.Type = TokenType.Identifier;
+                    token_info.Color = TokenColor.Identifier;
 
                     break;
                 case TkType.Keyword:
-                    tokenInfo.Type = TokenType.Keyword;
-                    tokenInfo.Color = TokenColor.Keyword;
+                    token_info.Type = TokenType.Keyword;
+                    token_info.Color = TokenColor.Keyword;
+                    break;
+                case TkType.DataType:
+                    token_info.Type = TokenType.Unknown;
+                    token_info.Color = TokenColor.Number+2;
                     break;
                 case TkType.StringLit:
-                    tokenInfo.Type = TokenType.String;
-                    tokenInfo.Color = TokenColor.String;
-                    if (!flags.HasFlag(NSScanState.RawStringLit)) {
-                        flags ^= NSScanState.NormalStringLit;
+                    token_info.Type = TokenType.String;
+                    token_info.Color = TokenColor.String;
+                    if (!flags.HasFlag(NSScanState.StringLitRaw)) {
+                        flags ^= NSScanState.StringLit;
                     }
                     break;
                 case TkType.StringLitLong:
-                    tokenInfo.Type = TokenType.String;
-                    tokenInfo.Color = TokenColor.String;
-                    flags ^= NSScanState.RawStringLit;
+                    token_info.Type = TokenType.String;
+                    token_info.Color = TokenColor.String;
+                    flags ^= NSScanState.StringLitRaw;
                     break;
                 case TkType.CharLit:
-                    tokenInfo.Type = TokenType.String;
-                    tokenInfo.Color = TokenColor.String;
+                    token_info.Type = TokenType.String;
+                    token_info.Color = TokenColor.String;
                     break;
                 case TkType.Escape:
-                    tokenInfo.Type = TokenType.Unknown;
-                    tokenInfo.Color = TokenColor.Text;
+                    token_info.Type = TokenType.Unknown;
+                    token_info.Color = TokenColor.Text;
                     break;
                 case TkType.Operator:
-                    tokenInfo.Type = TokenType.Operator;
-                    tokenInfo.Color = TokenColor.Text;
+                    token_info.Type = TokenType.Operator;
+                    token_info.Color = TokenColor.Text;
                     break;
                 case TkType.Punctuation:
-                    tokenInfo.Type = TokenType.Text;
-                    tokenInfo.Color = TokenColor.Text;
+                    token_info.Type = TokenType.Text;
+                    token_info.Color = TokenColor.Text;
                     break;
                 case TkType.Comment:
-                    tokenInfo.Type = TokenType.Comment;
-                    tokenInfo.Color = TokenColor.Comment;
+                    token_info.Type = TokenType.Comment;
+                    token_info.Color = TokenColor.Comment;
                     break;
                 case TkType.CommentLong:
-                    tokenInfo.Type = TokenType.LineComment;
-                    tokenInfo.Color = TokenColor.Comment;
+                    token_info.Type = TokenType.LineComment;
+                    token_info.Color = TokenColor.Comment;
                     break;
                 case TkType.RegEx:
                 case TkType.TagStart:
@@ -212,80 +233,59 @@ namespace NimStudio.NimStudio {
                 case TkType.Label:
                 case TkType.Reference:
                 case TkType.Other:
-                    tokenInfo.Type = TokenType.Unknown;
-                    tokenInfo.Color = TokenColor.Text;
+                    token_info.Type = TokenType.Unknown;
+                    token_info.Color = TokenColor.Text;
                     break;
                 case TkType.CurlyDotLeft:
-                    tokenInfo.Type = TokenType.Delimiter;
-                    tokenInfo.Color = TokenColor.Text;
+                    token_info.Type = TokenType.Delimiter;
+                    token_info.Color = TokenColor.Text;
                     break;
                 case TkType.CurlyDotRight:
-                    tokenInfo.Type = TokenType.Delimiter;
-                    tokenInfo.Color = TokenColor.Text;
+                    token_info.Type = TokenType.Delimiter;
+                    token_info.Color = TokenColor.Text;
                     break;
                 case TkType.Dot:
-                    tokenInfo.Type = TokenType.Operator;
-                    tokenInfo.Color = TokenColor.Text;
-                    tokenInfo.Trigger = TokenTriggers.MemberSelect;
-
+                    token_info.Type = TokenType.Operator;
+                    token_info.Color = TokenColor.Text;
+                    token_info.Trigger = TokenTriggers.MemberSelect;
                     break;
                 case TkType.ParenLeft:
-                    tokenInfo.Type = TokenType.Delimiter;
-                    tokenInfo.Color = TokenColor.Text;
-                    tokenInfo.Trigger = TokenTriggers.ParameterStart;
+                    token_info.Type = TokenType.Delimiter;
+                    token_info.Color = TokenColor.Text;
+                    token_info.Trigger = TokenTriggers.ParameterStart;
                     break;
                 case TkType.ParenRight:
-                    tokenInfo.Type = TokenType.Delimiter;
-                    tokenInfo.Color = TokenColor.Text;
-                    tokenInfo.Trigger = TokenTriggers.ParameterEnd;
+                    token_info.Type = TokenType.Delimiter;
+                    token_info.Color = TokenColor.Text;
+                    token_info.Trigger = TokenTriggers.ParameterEnd;
                     break;
                 case TkType.Comma:
-                    tokenInfo.Type = TokenType.Text;
-                    tokenInfo.Color = TokenColor.Text;
-                    tokenInfo.Trigger = TokenTriggers.ParameterNext;
+                    token_info.Type = TokenType.Text;
+                    token_info.Color = TokenColor.Text;
+                    token_info.Trigger = TokenTriggers.ParameterNext;
                     break;
             }
-            if (flags.HasFlag(NSScanState.NormalStringLit) || flags.HasFlag(NSScanState.RawStringLit)) {
-                tokenInfo.Color = TokenColor.String;
-                tokenInfo.Type = TokenType.String;
+            if (flags.HasFlag(NSScanState.StringLit) || flags.HasFlag(NSScanState.StringLitRaw)) {
+                token_info.Color = TokenColor.String;
+                token_info.Type = TokenType.String;
 
             }
             state = (int)flags;
-            tokenInfo.StartIndex = m_tokenizer.m_tokenpos_start;
-            tokenInfo.EndIndex = m_tokenizer.m_tokenpos_start_next;
+            token_info.StartIndex = m_tokenizer.m_tokenpos_start;
+            token_info.EndIndex = m_tokenizer.m_tokenpos_start_next-1;
+            Debug.WriteLine("$" + m_source_line_str.Substring( token_info.StartIndex,token_info.EndIndex - token_info.StartIndex+1) + "$" + m_tokenizer.m_token_type);
             m_tokenizer.TokenNext(flags);
             return true;
         }
     }
 
     class NSTokenizer {
-        private TkType m_token_type; // rename token_kind
+        public TkType m_token_type;
         private string m_source;
         public int m_tokenpos_start;
         public int m_tokenpos_start_next;
         private int m_tokenpos_end;
-        //public TStringTypes inString = TStringTypes.stNone;
         private string m_token_next;
-        //public int Start {
-        //    get {
-        //        return m_start;
-        //    }
-        //}
-        //public int End {
-        //    get {
-        //        return tokenEnd - 1;
-        //    }
-        //}
-        public string NextToken {
-            get {
-                return m_token_next;
-            }
-        }
-        public TkType Kind {
-            get {
-                return m_token_type;
-            }
-        }
         public NSTokenizer(string source) {
             //inString = TStringTypes.stNone;
             m_source = source;
@@ -294,19 +294,6 @@ namespace NimStudio.NimStudio {
             m_tokenpos_start_next = 0;
             TokenNext(NSScanState.None);
         }
-        private static int SkipChar(string str, char chr, int idx) {
-            if (idx == -1) {
-                return idx;
-            }
-            while (idx + 1 < str.Length && str[idx + 1] == chr) {
-                idx++;
-            }
-            if (idx >= str.Length) {
-                return -1;
-            }
-            return idx;
-        }
-
         private bool CheckEqual(int position, char chr) {
             if (position >= m_source.Length) {
                 return false;
@@ -323,20 +310,28 @@ namespace NimStudio.NimStudio {
             }
         }
 
-        private bool Peek(string teststr) {
-            if (m_tokenpos_start + teststr.Length > m_source.Length)
-                return false;
-            return false;
-            //m_source[m_start
+        private char PeekChar(int pos) {
+            if (m_tokenpos_start + pos > m_source.Length)
+                return '\0';
+            return m_source[m_tokenpos_start + pos];
+        }
 
+        private bool CharNext(char ctest, int pos=1) {
+            if (m_tokenpos_start + pos >= m_source.Length)
+                return false;
+            if (m_source[m_tokenpos_start+pos]==ctest)
+                return true;
+            return false;
         }
 
 
+        private char CharNext() {
+            if (m_tokenpos_start + 1 >= m_source.Length)
+                return '\0';
+            return m_source[m_tokenpos_start+1];
+        }
+
         public void TokenNext(NSScanState flags) {
-            /*  if (m_source.Contains("else:"))
-                {
-                Debugger.Break();
-                }*/
             m_tokenpos_start = m_tokenpos_start_next;
             if (m_tokenpos_start_next >= m_source.Length) {
                 m_token_type = TkType.Eof;
@@ -346,11 +341,12 @@ namespace NimStudio.NimStudio {
                 m_token_type = TkType.Eof;
                 return;
             }
-            if (m_source[m_tokenpos_start] == '#' && flags == NSScanState.None) {
+            char char_curr = m_source[m_tokenpos_start];
+            if (char_curr == '#' && flags == NSScanState.None) {
                 m_token_type = TkType.Comment;
                 m_tokenpos_start_next = m_source.Length;
                 m_tokenpos_end = m_source.Length;
-            } else if (m_source[m_tokenpos_start] == '\'') {
+            } else if (char_curr == '\'') {
                 m_token_type = TkType.CharLit;
                 if (m_tokenpos_start + 2 < m_source.Length && m_source[m_tokenpos_start + 2] == '\'') {
                     m_tokenpos_start_next = m_tokenpos_start + 3;
@@ -359,7 +355,7 @@ namespace NimStudio.NimStudio {
                     m_tokenpos_start_next = m_tokenpos_start + 1;
                     m_tokenpos_end = m_tokenpos_start + 1;
                 }
-            } else if (m_source[m_tokenpos_start] == '"') {
+            } else if (char_curr == '"') {
                 if (m_tokenpos_start + 2 < m_source.Length && m_source.Substring(m_tokenpos_start, 3) == "\"\"\"") {
                     m_tokenpos_start_next = m_tokenpos_start + 3;
                     m_tokenpos_end = m_tokenpos_start + 3;
@@ -371,8 +367,8 @@ namespace NimStudio.NimStudio {
                     m_token_type = TkType.StringLit;
                     return;
                 }
-            } else if (m_source[m_tokenpos_start] == '{') {
-                if (CheckEqual(m_tokenpos_start + 1, '.') && CheckNotEqual(m_tokenpos_start + 2, '.')) {
+            } else if (char_curr == '{') {
+                if (CharNext('.') && !CharNext('.',2)) {
                     m_tokenpos_start_next = m_tokenpos_start + 2;
                     m_tokenpos_end = m_tokenpos_start + 2;
                     m_token_type = TkType.CurlyDotLeft;
@@ -380,48 +376,47 @@ namespace NimStudio.NimStudio {
                     m_tokenpos_start_next = m_tokenpos_start + 1;
                     m_tokenpos_end = m_tokenpos_start + 1;
                     m_token_type = TkType.Punctuation;
-
                 }
-
-            } else if (m_source[m_tokenpos_start] == '.') {
-                if (CheckEqual(m_tokenpos_start + 1, '}')) {
+            } else if (char_curr == '.') {
+                if (CharNext('}')) {
                     m_tokenpos_start_next = m_tokenpos_start + 2;
                     m_tokenpos_end = m_tokenpos_start + 2;
                     m_token_type = TkType.CurlyDotRight;
+                //} else if (CharNext() >= '0' &&  CharNext() <= '9') {
                 } else {
                     m_tokenpos_start_next = m_tokenpos_start + 1;
                     m_tokenpos_end = m_tokenpos_start + 1;
                     m_token_type = TkType.Dot;
                 }
-            } else if (m_source[m_tokenpos_start] == '(') {
+            } else if (char_curr == '(') {
                 m_token_type = TkType.ParenLeft;
                 m_tokenpos_start_next = m_tokenpos_start + 1;
                 m_tokenpos_end = m_tokenpos_start + 1;
-            } else if (m_source[m_tokenpos_start] == ')') {
+            } else if (char_curr == ')') {
                 m_token_type = TkType.ParenRight;
                 m_tokenpos_start_next = m_tokenpos_start + 1;
                 m_tokenpos_end = m_tokenpos_start + 1;
-            } else if (m_source[m_tokenpos_start] == ',') {
+            } else if (char_curr == ',') {
                 m_token_type = TkType.Comma;
                 m_tokenpos_start_next = m_tokenpos_start + 1;
                 m_tokenpos_end = m_tokenpos_start + 1;
-            } else if (m_source[m_tokenpos_start] == '*') {
+            } else if (char_curr == '*') {
                 m_token_type = TkType.Punctuation;
                 m_tokenpos_start_next = m_tokenpos_start + 1;
                 m_tokenpos_end = m_tokenpos_start + 1;
-            } else if (m_source[m_tokenpos_start] == ':') {
+            } else if (char_curr == ':') {
                 m_token_type = TkType.Punctuation;
                 m_tokenpos_start_next = m_tokenpos_start + 1;
                 m_tokenpos_end = m_tokenpos_start + 1;
-            } else if (m_source[m_tokenpos_start] == ' ') {
+            } else if (char_curr == ' ') {
                 m_token_type = TkType.Space;
                 m_tokenpos_start_next = m_tokenpos_start + 1;
                 m_tokenpos_end = m_tokenpos_start + 1;
-            } else if (m_source[m_tokenpos_start] == '[') {
+            } else if (char_curr == '[') {
                 m_token_type = TkType.BracketLeft;
                 m_tokenpos_start_next = m_tokenpos_start + 1;
                 m_tokenpos_end = m_tokenpos_start + 1;
-            } else if (m_source[m_tokenpos_start] == ']') {
+            } else if (char_curr == ']') {
                 m_token_type = TkType.BracketRight;
                 m_tokenpos_start_next = m_tokenpos_start + 1;
                 m_tokenpos_end = m_tokenpos_start + 1;
@@ -439,68 +434,35 @@ namespace NimStudio.NimStudio {
                         m_tokenpos_start_next++;
                 }
                 // check if delimeter before m_tokenpos_start_next
-                var quoteIdx = m_source.IndexOf('"', m_tokenpos_start);
-                var parenIdx = m_source.IndexOf('(', m_tokenpos_start);
-                var closeParenIdx = m_source.IndexOf(')', m_tokenpos_start);
-                var starIdx = m_source.IndexOf('*', m_tokenpos_start);
-                var colonIdx = m_source.IndexOf(':', m_tokenpos_start);
-                var dotidx = m_source.IndexOf('.', m_tokenpos_start);
-                var squareIdx = m_source.IndexOf('[', m_tokenpos_start);
-                var closeSquareIdx = m_source.IndexOf(']', m_tokenpos_start);
+                var delim_idx = m_source.IndexOfAny(NSScanner.token_delims, m_tokenpos_start);
+
                 if (m_tokenpos_start_next == -1) {
                     m_token_next = m_source.Substring(m_tokenpos_start);
                     m_tokenpos_start_next = m_source.Length;
                     m_tokenpos_end = m_source.Length;
                 }
-                if (squareIdx != -1 && squareIdx < m_tokenpos_start_next) {
-                    m_tokenpos_start_next = squareIdx;
-                    m_tokenpos_end = squareIdx;
-                }
-                if (closeSquareIdx != -1 && closeSquareIdx < m_tokenpos_start_next) {
-                    m_tokenpos_start_next = closeSquareIdx;
-                    m_tokenpos_end = closeSquareIdx;
-                }
-                if (parenIdx != -1 && parenIdx < m_tokenpos_start_next) {
-                    m_token_type = TkType.Identifier;
-                    m_tokenpos_start_next = parenIdx;
-                    m_tokenpos_end = parenIdx;
-                }
-                if (closeParenIdx != -1 && closeParenIdx < m_tokenpos_start_next) {
-                    m_tokenpos_start_next = closeParenIdx;
-                    m_tokenpos_end = closeParenIdx;
-                }
-                if (starIdx != -1 && starIdx < m_tokenpos_start_next) {
-                    m_tokenpos_start_next = starIdx;
-                    m_tokenpos_end = starIdx;
-                    m_token_type = TkType.Identifier;
-                }
-                if (quoteIdx != -1 && quoteIdx < m_tokenpos_start_next) {
-                    m_tokenpos_start_next = quoteIdx;
-                    m_tokenpos_end = quoteIdx;
-                }
-                if (colonIdx != -1 && colonIdx < m_tokenpos_start_next) {
-                    m_tokenpos_start_next = colonIdx;
-                    m_tokenpos_end = colonIdx;
-                }
-                if (dotidx != -1 && dotidx < m_tokenpos_start_next) {
-                    m_tokenpos_start_next = dotidx;
-                    m_tokenpos_end = dotidx;
+                if (delim_idx != -1 && delim_idx < m_tokenpos_start_next) {
+                    m_tokenpos_start_next = delim_idx;
+                    m_tokenpos_end = delim_idx;
+                    if (m_source[delim_idx] == '(' || m_source[delim_idx] == '*') {
+                        m_token_type = TkType.Identifier;
+                    }
                 }
 
                 m_token_next = m_source.Substring(m_tokenpos_start, (m_tokenpos_start_next - m_tokenpos_start));
 
-                if (LangConstants.keywords.Contains(m_token_next)) {
+                if (LangConst.keywords.Contains(m_token_next)) {
                     m_token_type = TkType.Keyword;
-                }
+                } else if (LangConst.datatypes.Contains(m_token_next))
+                    m_token_type = TkType.DataType;
             }
         }
-
     }
     [Flags]
     enum NSScanState: int {
         None = 0,
-        RawStringLit = 1,
-        NormalStringLit = 2,
+        StringLitRaw = 1,
+        StringLit = 2,
         Pragma = 4
     }
 
@@ -515,7 +477,8 @@ namespace NimStudio.NimStudio {
         Comment, 
         CommentLong, 
         CurlyDotLeft, 
-        CurlyDotRight, 
+        CurlyDotRight,
+        DataType,
         Directive, 
         Dot, 
         Eof, 
@@ -704,5 +667,8 @@ namespace NimStudio.NimStudio {
     tkYield,
 
      */
+
+
+
 
 }

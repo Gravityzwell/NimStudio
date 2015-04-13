@@ -36,7 +36,7 @@ namespace NimStudio.NimStudio {
             m_colorable_items.Add((int)TokenColor.String,  new ColorableItem("String", COLORINDEX.CI_BROWN, COLORINDEX.CI_USERTEXT_BK,  false, false));
             //m_colorable_items.Add((int)TokenColor.Text,  new ColorableItem("Text",  COLORINDEX.CI_SYSPLAINTEXT_FG, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
             m_colorable_items.Add((int)TokenColor.Number+1,  new ColorableItem("NimLang Procedure",  COLORINDEX.CI_RED, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
-            m_colorable_items.Add((int)TokenColor.Number+2,  new ColorableItem("NimLang Sequence2",  COLORINDEX.CI_MAGENTA, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
+            m_colorable_items.Add((int)TokenColor.Number+2,  new ColorableItem("NimLang DataType",  COLORINDEX.CI_BROWN, COLORINDEX.CI_USERTEXT_BK,  false, false)); 
         }
 
         public override void Initialize() {
