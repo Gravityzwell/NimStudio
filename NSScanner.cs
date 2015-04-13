@@ -129,7 +129,8 @@ namespace NimStudio.NimStudio {
         public int m_linenum_curr;
         public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',' };
         public static char[] token_para_star = new char[] { '(', '*' };
-        public static string token_nums = "0123456789";
+        //public static string token_nums = "0123456789";
+        public static string token_nums = "0123456789xX_'iIuUaAbBcCdDeEfF";
 
         public NSScanner(IVsTextBuffer buffer) {
             m_buffer = buffer;
@@ -362,10 +363,10 @@ namespace NimStudio.NimStudio {
                     return;
 
                 case '.':
+                    // float literals can't be declared/assigned as v1=.1 (compile error)
                     if (CharNext('}')) {
                         m_tokenpos_start_next = m_tokenpos_start + 2;
                         m_token_type = TkType.CurlyDotRight;
-                    //} else if (CharNext() >= '0' &&  CharNext() <= '9') {
                     } else {
                         m_tokenpos_start_next = m_tokenpos_start + 1;
                         m_token_type = TkType.Dot;
@@ -402,6 +403,17 @@ namespace NimStudio.NimStudio {
                     m_tokenpos_start_next = m_tokenpos_start;
                     while (m_tokenpos_start_next + 1 < m_source.Length && m_source[m_tokenpos_start_next + 1] == ' ')
                         m_tokenpos_start_next++;
+                    m_tokenpos_start_next++;
+                    return;
+
+                case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+                    m_token_type = TkType.NumberInt;
+                    m_tokenpos_start_next = m_tokenpos_start;
+                    while (m_tokenpos_start_next + 1 < m_source.Length) {
+                        if (NSScanner.token_nums.IndexOf(m_source[m_tokenpos_start_next + 1]) != -1)
+                            m_tokenpos_start_next++;
+                        break;
+                    }
                     m_tokenpos_start_next++;
                     return;
 
