@@ -53,10 +53,6 @@ namespace NimStudio.NimStudio {
         stRaw
     }
 
-    //public interface ILineScanner: IScanner {
-    //    void SetLine(int line);
-    //}
-
     class NSColorizer : Colorizer, IDisposable {
         private NSScanner m_scanner;
 
@@ -89,37 +85,6 @@ namespace NimStudio.NimStudio {
             return ret;
         }
     }
-
-    /*
-    public class NSLineColorizer: Colorizer {
-        public NSLineColorizer(NSLangServ svc, IVsTextLines buffer, NSScanner scanner): base(svc, buffer, scanner) {
-            Debug.Print("NSLineColorizer constructor");
-        }
-
-        public override int ColorizeLine(int line, int length, IntPtr ptr, int state, uint[] attrs) {
-            Debug.Print("ColorizeLine");
-            if (Scanner is ILineScanner) {
-                ((ILineScanner)Scanner).SetLine(line);
-                Debug.Print("setline");
-            } else {
-                Debug.Print("nosetline");
-            }
-            return base.ColorizeLine(line, length, ptr, state, attrs);
-        }
-
-        public override int GetColorInfo(string line, int length, int state) {
-            Debug.Print("GetColorInfo");
-            return base.GetColorInfo(line, length, state);
-        }
-
-        public override TokenInfo[] GetLineInfo(IVsTextLines buffer, int line, IVsTextColorState colorState) {
-            Debug.Print("GetLineInfo");
-            if (Scanner is ILineScanner)
-                ((ILineScanner)Scanner).SetLine(line);
-            return base.GetLineInfo(buffer, line, colorState);
-        }
-    }
-    */
 
     class NSScanner: IScanner {
         private IVsTextBuffer m_buffer;
