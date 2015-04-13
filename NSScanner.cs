@@ -124,36 +124,193 @@ namespace NimStudio.NimStudio {
     class NSScanner: IScanner {
         private IVsTextBuffer m_buffer;
         public NSSource m_nssource;
-        public string m_source_line_str;
-        private NSTokenizer m_tokenizer;
+        public string m_source;
         public int m_linenum_curr;
         public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',' };
-        public static char[] token_para_star = new char[] { '(', '*' };
-        //public static string token_nums = "0123456789";
         public static string token_nums = "0123456789xX_'iIuUaAbBcCdDeEfF";
+        public int m_tokenpos_start;
+        public int m_tokenpos_start_next;
+        public TkType m_token_type;
 
         public NSScanner(IVsTextBuffer buffer) {
             m_buffer = buffer;
             Debug.Print("NSScanner");
         }
 
-        // Called first. Calls NSTokenizer, which sets m_ vars. Then ScanTokenAndProvideInfoAboutIt is called, which populates token_info
+        // IVsColorizer->ColorizeLine (base) calls SetSource with text for the line
+        // SetSource calls TokenNextGet(state=none) which processes the first token
+        // IVsColorizer->ColorizeLine calls ScanTokenAndProvideInfoAboutIt(state) repeatedly until it returns false
+        // ScanTokenAndProvideInfoAboutIt calls TokenNextGet(state) to process subsequent tokens
         public void SetSource(string source, int offset) {
             // source is a line
-            //Debug.Print("SetSource:" + source + ":" + DateTime.Now.Millisecond.ToString());
-            m_source_line_str = source.Substring(offset);
-            m_tokenizer = new NSTokenizer(m_source_line_str);
+            m_source = source.Substring(offset);
+            m_tokenpos_start = 0;
+            m_tokenpos_start_next = 0;
+            TokenNextGet(NSScanState.None);
         }
 
-        // populates token_info using m_ vars set in NSTokenizer
+        private bool CharNext(char ctest, int pos=1) {
+            if (m_tokenpos_start + pos >= m_source.Length)
+                return false;
+            if (m_source[m_tokenpos_start+pos]==ctest)
+                return true;
+            return false;
+        }
+
+        private char CharNext() {
+            if (m_tokenpos_start + 1 >= m_source.Length)
+                return '\0';
+            return m_source[m_tokenpos_start+1];
+        }
+
+        public void TokenNextGet(NSScanState flags) {
+
+            int m_tokenpos_start = m_tokenpos_start_next;
+            if (m_tokenpos_start_next >= m_source.Length) {
+                m_token_type = TkType.Eof;
+                return;
+            }
+
+            switch (m_source[m_tokenpos_start]) {
+                case '#':
+                    if (flags == NSScanState.None) {
+                        m_token_type = TkType.Comment;
+                        m_tokenpos_start_next = m_source.Length;
+                        return;
+                    }
+                    break;
+
+                case '\'':
+                    m_token_type = TkType.CharLit;
+                    // 'a', '\"', 'xAA', '\9', '\32', '\255'  ,''=should not compile
+                    if (CharNext('\'',2)) { // 'a'
+                        m_tokenpos_start_next = m_tokenpos_start + 3;
+                    } else if (CharNext('\'',3)){ // '\"'
+                        m_tokenpos_start_next = m_tokenpos_start + 4;
+                    } else if (CharNext('\'',4)){ // 'xAA'
+                        m_tokenpos_start_next = m_tokenpos_start + 5;
+                    } else if (CharNext('\'',5)){ // '\255'
+                        m_tokenpos_start_next = m_tokenpos_start + 6;
+                    } else { // unfinished char literal?
+                        m_token_type = TkType.Other;
+                        m_tokenpos_start_next = m_tokenpos_start + 1;
+                    }
+                    return;
+
+                case '"':
+                    if (m_tokenpos_start + 2 < m_source.Length && m_source.Substring(m_tokenpos_start, 3) == "\"\"\"") {
+                        m_tokenpos_start_next = m_tokenpos_start + 3;
+                        m_token_type = TkType.StringLitLong;
+                    } else {
+                        m_tokenpos_start_next = m_tokenpos_start + 1;
+                        m_token_type = TkType.StringLit;
+                    }
+                    return;
+
+                case '{':
+                    if (CharNext('.') && !CharNext('.',2)) {
+                        m_tokenpos_start_next = m_tokenpos_start + 2;
+                        m_token_type = TkType.CurlyDotLeft;
+                    } else {
+                        m_tokenpos_start_next = m_tokenpos_start + 1;
+                        m_token_type = TkType.Punctuation;
+                    }
+                    return;
+
+                case '.':
+                    // float literals can't be declared/assigned as .1 (compile error)
+                    if (CharNext('}')) {
+                        m_tokenpos_start_next = m_tokenpos_start + 2;
+                        m_token_type = TkType.CurlyDotRight;
+                    } else {
+                        m_tokenpos_start_next = m_tokenpos_start + 1;
+                        m_token_type = TkType.Dot;
+                    }
+                    return;
+
+                case '(':
+                    m_token_type = TkType.ParenLeft;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    return;
+
+                case ')':
+                    m_token_type = TkType.ParenRight;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    return;
+
+                case ',':
+                    m_token_type = TkType.Comma;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    return;
+
+                case '*':
+                    m_token_type = TkType.Punctuation;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    return;
+
+                case ':':
+                    m_token_type = TkType.Punctuation;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    return;
+
+                case ' ':
+                    m_token_type = TkType.Space;
+                    m_tokenpos_start_next = m_tokenpos_start;
+                    while (m_tokenpos_start_next + 1 < m_source.Length && m_source[m_tokenpos_start_next + 1] == ' ')
+                        m_tokenpos_start_next++;
+                    m_tokenpos_start_next++;
+                    return;
+
+                case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+                    m_token_type = TkType.NumberInt;
+                    m_tokenpos_start_next = m_tokenpos_start;
+                    while (m_tokenpos_start_next + 1 < m_source.Length) {
+                        if (NSScanner.token_nums.IndexOf(m_source[m_tokenpos_start_next + 1]) != -1)
+                            m_tokenpos_start_next++;
+                        break;
+                    }
+                    m_tokenpos_start_next++;
+                    return;
+
+                case '[':
+                    m_token_type = TkType.BracketLeft;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    return;
+
+                case ']':
+                    m_token_type = TkType.BracketRight;
+                    m_tokenpos_start_next = m_tokenpos_start + 1;
+                    return;
+
+            }
+
+            m_token_type = TkType.Other;
+            m_tokenpos_start_next = m_source.IndexOfAny(NSScanner.token_delims, m_tokenpos_start);
+            
+            string token_str;
+            if (m_tokenpos_start_next == -1) {
+                token_str = m_source.Substring(m_tokenpos_start);
+                m_tokenpos_start_next = m_source.Length;
+            } else {
+                token_str = m_source.Substring(m_tokenpos_start, (m_tokenpos_start_next - m_tokenpos_start));
+            }
+
+            if (LangConst.keywords.Contains(token_str)) {
+                m_token_type = TkType.Keyword;
+            } else if (LangConst.datatypes.Contains(token_str))
+                m_token_type = TkType.DataType;
+
+        }
+
+        // populates token_info using m_ vars
         public bool ScanTokenAndProvideInfoAboutIt(TokenInfo token_info, ref int state) {
             NSScanState flags = (NSScanState)state;
             //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Second.ToString());
             //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Millisecond.ToString());
-            var lastToken = m_tokenizer.m_token_type;
-            switch (m_tokenizer.m_token_type) {
+            var lastToken = m_token_type;
+            switch (m_token_type) {
                 case TkType.Eof:
-                    return false;
+                    return false; // end of line
                 case TkType.None:
                     token_info.Type = TokenType.Unknown;
                     token_info.Color = TokenColor.Text;
@@ -272,180 +429,14 @@ namespace NimStudio.NimStudio {
 
             }
             state = (int)flags;
-            token_info.StartIndex = m_tokenizer.m_tokenpos_start;
-            token_info.EndIndex = m_tokenizer.m_tokenpos_start_next-1;
-            Debug.WriteLine("$" + m_source_line_str.Substring( token_info.StartIndex,token_info.EndIndex - token_info.StartIndex+1) + "$" + m_tokenizer.m_token_type);
-            m_tokenizer.TokenNext(flags);
+            token_info.StartIndex = m_tokenpos_start;
+            token_info.EndIndex = m_tokenpos_start_next-1;
+            Debug.WriteLine("$" + m_source.Substring( token_info.StartIndex,token_info.EndIndex - token_info.StartIndex+1) + "$" + m_token_type);
+            TokenNextGet(flags);
             return true;
         }
     }
 
-    class NSTokenizer {
-        public TkType m_token_type;
-        private string m_source;
-        public int m_tokenpos_start;
-        public int m_tokenpos_start_next;
-        private string m_token_next;
-        public NSTokenizer(string source) {
-            m_source = source;
-            //Debug.Print("NSTokenizer:" + source + ":" + DateTime.Now.Millisecond.ToString());
-            m_tokenpos_start = 0;
-            m_tokenpos_start_next = 0;
-            TokenNext(NSScanState.None);
-        }
-
-        private bool CharNext(char ctest, int pos=1) {
-            if (m_tokenpos_start + pos >= m_source.Length)
-                return false;
-            if (m_source[m_tokenpos_start+pos]==ctest)
-                return true;
-            return false;
-        }
-
-        private char CharNext() {
-            if (m_tokenpos_start + 1 >= m_source.Length)
-                return '\0';
-            return m_source[m_tokenpos_start+1];
-        }
-
-        public void TokenNext(NSScanState flags) {
-
-            m_tokenpos_start = m_tokenpos_start_next;
-            if (m_tokenpos_start_next >= m_source.Length) {
-                m_token_type = TkType.Eof;
-                return;
-            }
-
-            switch (m_source[m_tokenpos_start]) {
-                case '#':
-                    if (flags == NSScanState.None) {
-                        m_token_type = TkType.Comment;
-                        m_tokenpos_start_next = m_source.Length;
-                        return;
-                    }
-                    break;
-
-                case '\'':
-                    m_token_type = TkType.CharLit;
-                    // 'a', '\"', 'xAA', '\9', '\32', '\255'  ,''=should not compile
-                    if (CharNext('\'',2)) { // 'a'
-                        m_tokenpos_start_next = m_tokenpos_start + 3;
-                    } else if (CharNext('\'',3)){ // '\"'
-                        m_tokenpos_start_next = m_tokenpos_start + 4;
-                    } else if (CharNext('\'',4)){ // 'xAA'
-                        m_tokenpos_start_next = m_tokenpos_start + 5;
-                    } else if (CharNext('\'',5)){ // '\255'
-                        m_tokenpos_start_next = m_tokenpos_start + 6;
-                    } else { // unfinished char literal?
-                        m_token_type = TkType.Other;
-                        m_tokenpos_start_next = m_tokenpos_start + 1;
-                    }
-                    return;
-
-                case '"':
-                    if (m_tokenpos_start + 2 < m_source.Length && m_source.Substring(m_tokenpos_start, 3) == "\"\"\"") {
-                        m_tokenpos_start_next = m_tokenpos_start + 3;
-                        m_token_type = TkType.StringLitLong;
-                    } else {
-                        m_tokenpos_start_next = m_tokenpos_start + 1;
-                        m_token_type = TkType.StringLit;
-                    }
-                    return;
-
-                case '{':
-                    if (CharNext('.') && !CharNext('.',2)) {
-                        m_tokenpos_start_next = m_tokenpos_start + 2;
-                        m_token_type = TkType.CurlyDotLeft;
-                    } else {
-                        m_tokenpos_start_next = m_tokenpos_start + 1;
-                        m_token_type = TkType.Punctuation;
-                    }
-                    return;
-
-                case '.':
-                    // float literals can't be declared/assigned as v1=.1 (compile error)
-                    if (CharNext('}')) {
-                        m_tokenpos_start_next = m_tokenpos_start + 2;
-                        m_token_type = TkType.CurlyDotRight;
-                    } else {
-                        m_tokenpos_start_next = m_tokenpos_start + 1;
-                        m_token_type = TkType.Dot;
-                    }
-                    return;
-
-                case '(':
-                    m_token_type = TkType.ParenLeft;
-                    m_tokenpos_start_next = m_tokenpos_start + 1;
-                    return;
-
-                case ')':
-                    m_token_type = TkType.ParenRight;
-                    m_tokenpos_start_next = m_tokenpos_start + 1;
-                    return;
-
-                case ',':
-                    m_token_type = TkType.Comma;
-                    m_tokenpos_start_next = m_tokenpos_start + 1;
-                    return;
-
-                case '*':
-                    m_token_type = TkType.Punctuation;
-                    m_tokenpos_start_next = m_tokenpos_start + 1;
-                    return;
-
-                case ':':
-                    m_token_type = TkType.Punctuation;
-                    m_tokenpos_start_next = m_tokenpos_start + 1;
-                    return;
-
-                case ' ':
-                    m_token_type = TkType.Space;
-                    m_tokenpos_start_next = m_tokenpos_start;
-                    while (m_tokenpos_start_next + 1 < m_source.Length && m_source[m_tokenpos_start_next + 1] == ' ')
-                        m_tokenpos_start_next++;
-                    m_tokenpos_start_next++;
-                    return;
-
-                case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-                    m_token_type = TkType.NumberInt;
-                    m_tokenpos_start_next = m_tokenpos_start;
-                    while (m_tokenpos_start_next + 1 < m_source.Length) {
-                        if (NSScanner.token_nums.IndexOf(m_source[m_tokenpos_start_next + 1]) != -1)
-                            m_tokenpos_start_next++;
-                        break;
-                    }
-                    m_tokenpos_start_next++;
-                    return;
-
-                case '[':
-                    m_token_type = TkType.BracketLeft;
-                    m_tokenpos_start_next = m_tokenpos_start + 1;
-                    return;
-
-                case ']':
-                    m_token_type = TkType.BracketRight;
-                    m_tokenpos_start_next = m_tokenpos_start + 1;
-                    return;
-
-            }
-
-            m_token_type = TkType.Other;
-            m_tokenpos_start_next = m_source.IndexOfAny(NSScanner.token_delims, m_tokenpos_start);
-            
-            if (m_tokenpos_start_next == -1) {
-                m_token_next = m_source.Substring(m_tokenpos_start);
-                m_tokenpos_start_next = m_source.Length;
-            } else {
-                m_token_next = m_source.Substring(m_tokenpos_start, (m_tokenpos_start_next - m_tokenpos_start));
-            }
-
-            if (LangConst.keywords.Contains(m_token_next)) {
-                m_token_type = TkType.Keyword;
-            } else if (LangConst.datatypes.Contains(m_token_next))
-                m_token_type = TkType.DataType;
-
-        }
-    }
     [Flags]
     enum NSScanState: int {
         None = 0,
@@ -453,7 +444,6 @@ namespace NimStudio.NimStudio {
         StringLit = 2,
         Pragma = 4
     }
-
 
     public enum TkType: int {
         Assembler,
