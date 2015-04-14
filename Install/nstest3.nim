@@ -1,6 +1,8 @@
 
 import strutils
 
+# this is a comment
+
 proc FtestProcedure(str1: string, v1: int, v2: float): int =
     echo str1
     return 1
