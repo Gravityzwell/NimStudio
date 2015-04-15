@@ -1,9 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="ef6a91e8-dd7d-48aa-a77c-69b7b8e9229a" Version="1.15" Language="en-US" Publisher="NimStudio" />
+        <Identity Id="ef6a91e8-dd7d-48aa-a77c-69b7b8e9229a" Version="1.28" Language="en-US" Publisher="NimStudio" />
         <DisplayName>NimStudio</DisplayName>
         <Description>NimStudio for Visual Studio</Description>
+        <MoreInfo>https://github.com/Gravityzwell/NimStudio/wiki</MoreInfo>
     </Metadata>
     <Installation InstalledByMsi="false">
         <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[12.0]" />

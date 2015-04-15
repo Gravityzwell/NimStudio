@@ -84,12 +84,6 @@ namespace NimStudio.NimStudio {
     "NimStudioPackage", "OptionsPage", 113, 114, true)]
 
     [Microsoft.VisualStudio.Shell.ProvideService(typeof(NSLangServ))]
-    //[Microsoft.VisualStudio.Shell.ProvideLanguageService(typeof(VSNimLangServ), "VSNimLang", 0,
-    //    AutoOutlining = true,
-    //    EnableCommenting = true,
-    //    MatchBraces = true,
-    //    ShowMatchingBrace = true)]
-
     public sealed class NSPackage: Package, IOleComponent {
 
         #if ivslang
@@ -104,8 +98,6 @@ namespace NimStudio.NimStudio {
         public static string nimsettingsini;
         public static Dictionary<int, string> menucmds;
 
-        //public static string UserDataPath;
-
         public NSPackage() {
             //Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering constructor for: {0}", this.ToString()));
         }
@@ -116,10 +108,6 @@ namespace NimStudio.NimStudio {
             base.Initialize();
             nspackage = this;
 
-
-
-            //System.Windows.Media.Imaging.BitmapImage img = new System.Windows.Media.Imaging.BitmapImage();
-            //imgicon = new System.Windows.Media.Imaging.BitmapImage();
             #if ivslang
             LangInfo = new VSNLanguageInfo();
             ((IServiceContainer)this).AddService(typeof(VSNLanguageInfo), LangInfo, true);
@@ -156,54 +144,50 @@ namespace NimStudio.NimStudio {
             }
 
             nimsettingsini = System.IO.Path.Combine(UserDataPath, "nimstudio.ini");
-            //System.Diagnostics.Debug.Print("NimStudio ini:" + nimsettingsini);
-            //if (!File.Exists(nimsettingsini)) {
-            //    TextWriter tw = new StreamWriter(nimsettingsini);
-            //    tw.WriteLine("[Main]");
-            //    tw.WriteLine("nim.exe=");
-            //    tw.WriteLine("nimsuggest.exe=");
-            //    tw.Close();
-            //}
+            NSIni.Init(nimsettingsini);
+            NSSugInit();
 
-            NSSugInit(nimsettingsini);
-            //string[] nimexes = { "nim.exe", "nimsuggest.exe" };
-            //for (int lexe = 0; lexe < 2; lexe++) {
-            //    if (NSIni.Get("Main", nimexes[lexe]) == "") {
-            //        // nim exe not found in INI - try to find it in path, or c:\nim\bin
-            //        var patharr = new List<string>((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';'));
-            //        patharr.Add(@"c:\nim\bin");
-            //        foreach (string spathi in patharr) {
-            //            string sfullpath = Path.Combine(spathi.Trim(), nimexes[lexe]);
-            //            if (File.Exists(sfullpath)) {
-            //                NSIni.Add("Main", nimexes[lexe], Path.GetFullPath(sfullpath));
-            //                NSIni.Write();
-            //                break;
-            //            }
-            //        }
-            //    } else {
-            //        if (!File.Exists(NSIni.Get("Main", nimexes[lexe]))) {
-            //            System.Diagnostics.Debug.Print("NimStudio warning:" + nimexes[lexe] + " not found!");
-            //        }
-            //    }
-            //}
-
-            //if (NSIni.Get("Main", nimexes[0]) == "" || NSIni.Get("Main", nimexes[1]) == "") {
-            //    string msg = "";
-            //    if (NSIni.Get("Main", nimexes[0]) == "" && NSIni.Get("Main", nimexes[1]) == "")
-            //        msg = "Path to nim.exe and nimsuggest.exe not found.";
-            //    else
-            //        msg = String.Format("Path to {0} not found.", (NSIni.Get("Main", nimexes[0]) == "") ? nimexes[0] : nimexes[1]);
-                    
-            //    System.Windows.Forms.MessageBox.Show(msg, "NimStudio configuration", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
-            //}
-            //if (NSIni.Get("Main", nimexes[1]) != "") { 
-            //    nimsuggest = new NimSuggestProc();
-            //    //nimsuggest.Init();
-            //}
+            if (NSIni.Get("Main", "exttoolsadded") != "true") {
+                NSIni.Add("Main", "exttoolsadded", "true");
+                NSIni.Write();
+                string reg_keyname = "HKEY_CURRENT_USER\\Software\\Microsoft\\VisualStudio\\12.0\\External Tools";
+                object reg_ret;
+                bool regstateok=false;
+                reg_ret = Registry.GetValue(reg_keyname, "ToolNumKeys", -1);
+                while (true) {
+                    if (reg_ret==null) break;
+                    if (reg_ret.GetType()!=typeof(int)) break;
+                    int totkeys = (int)reg_ret;
+                    if (totkeys==-1) break;
+                    for (int rloop = 0; rloop < totkeys; rloop++) {
+                        reg_ret = Registry.GetValue(reg_keyname, "ToolTitle" + rloop.ToString(), null);
+                        if (reg_ret==null) break;
+                        if (reg_ret.GetType()!=typeof(string)) break;
+                        if (reg_ret=="NimStudio Compile+Run") break;
+                        if (rloop==totkeys-1) regstateok=true;
+                    }
+                    if (regstateok) {
+                        Registry.SetValue(reg_keyname, "ToolTitle" + totkeys.ToString(), "NimStudio Compile+Run", RegistryValueKind.String);
+                        Registry.SetValue(reg_keyname, "ToolSourceKey" + totkeys.ToString(), "", RegistryValueKind.String);
+                        Registry.SetValue(reg_keyname, "ToolOpt" + totkeys.ToString(), 26, RegistryValueKind.DWord);
+                        Registry.SetValue(reg_keyname, "ToolDir" + totkeys.ToString(), "$(ItemDir)", RegistryValueKind.String);
+                        Registry.SetValue(reg_keyname, "ToolCmd" + totkeys.ToString(), "cmd.exe", RegistryValueKind.String);
+                        Registry.SetValue(reg_keyname, "ToolArg" + totkeys.ToString(), @"/c """"c:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\vcvars32.bat"" & del $(ItemDir)$(ItemFileName).exe 2>nul & ""c:\Nim\bin\nim.exe"" c $(ItemPath) & echo ****Running**** & $(ItemDir)$(ItemFileName).exe""", RegistryValueKind.String);
+                        totkeys++;
+                        Registry.SetValue(reg_keyname, "ToolTitle" + totkeys.ToString(), "NimStudio Compile", RegistryValueKind.String);
+                        Registry.SetValue(reg_keyname, "ToolSourceKey" + totkeys.ToString(), "", RegistryValueKind.String);
+                        Registry.SetValue(reg_keyname, "ToolOpt" + totkeys.ToString(), 26, RegistryValueKind.DWord);
+                        Registry.SetValue(reg_keyname, "ToolDir" + totkeys.ToString(), "$(ItemDir)", RegistryValueKind.String);
+                        Registry.SetValue(reg_keyname, "ToolCmd" + totkeys.ToString(), "cmd.exe", RegistryValueKind.String);
+                        Registry.SetValue(reg_keyname, "ToolArg" + totkeys.ToString(), @"/c """"c:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\vcvars32.bat"" & del $(ItemDir)$(ItemFileName).exe 2>nul & ""c:\Nim\bin\nim.exe"" c $(ItemPath)""", RegistryValueKind.String);
+                        totkeys++;
+                        Registry.SetValue(reg_keyname, "ToolNumKeys", totkeys, RegistryValueKind.DWord);
+                    }
+                }
+            }
         }
 
-        public void NSSugInit(string nimsettingsini) {
-            NSIni.Init(nimsettingsini);
+        public void NSSugInit() {
             string[] nimexes = { "nim.exe", "nimsuggest.exe" };
             for (int lexe = 0; lexe < 2; lexe++) {
                 if (NSIni.Get("Main", nimexes[lexe]) == "") {
@@ -321,13 +305,9 @@ namespace NimStudio.NimStudio {
 
             if (menucmds[menucmd.CommandID.ID] == "NSMenuCmdOptionsLoad") {
                 NSIni.Init(NSIni.inifilepath);
-                NSSugInit(nimsettingsini);
+                NSSugInit();
                 System.Windows.Forms.MessageBox.Show("NimStudio INI loaded.", "NimStudio", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
             }
-
-            //string msg = "Command ID: " + menucmd.CommandID.ID.ToString();
-            //System.Windows.Forms.MessageBox.Show(msg, "Nim Command", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
-
 
 
         }
