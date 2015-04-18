@@ -90,6 +90,41 @@ namespace NimStudio.NimStudio {
             return null;
         }
 
+        //public override AuthoringScope ParseSource(ParseRequest req) {
+        //    Source source = (Source)GetSource(req.FileName);
+        //    switch (req.Reason) {
+        //        case ParseReason.HighlightBraces:
+        //        case ParseReason.MatchBraces:
+        //        case ParseReason.MemberSelectAndHighlightBraces:
+        //            if (source.Braces != null) {
+        //                foreach (TextSpan[] brace in source.Braces) {
+        //                    if (brace.Length == 2) {
+        //                        if (req.Sink.HiddenRegions == true
+        //                              && source.GetText(brace[0]).Equals("{")
+        //                              && source.GetText(brace[1]).Equals("}")) {
+        //                            //construct a TextSpan of everything between the braces
+        //                            TextSpan hideSpan = new TextSpan();
+        //                            hideSpan.iStartIndex = brace[0].iStartIndex;
+        //                            hideSpan.iStartLine = brace[0].iStartLine;
+        //                            hideSpan.iEndIndex = brace[1].iEndIndex;
+        //                            hideSpan.iEndLine = brace[1].iEndLine;
+        //                            req.Sink.ProcessHiddenRegions = true;
+        //                            req.Sink.AddHiddenRegion(hideSpan);
+        //                        }
+        //                        req.Sink.MatchPair(brace[0], brace[1], 1);
+        //                    } else if (brace.Length >= 3)
+        //                        req.Sink.MatchTriple(brace[0], brace[1], brace[2], 1);
+        //                }
+        //            }
+        //            break;
+        //        default:
+        //            break;
+        //    }
+        //    // Must always return a valid AuthoringScope object.
+        //    return new MyAuthoringScope();
+        //}
+
+
         public void Dispose() {
         }
     }

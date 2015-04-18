@@ -43,7 +43,7 @@ namespace NimStudio.NimStudio {
         MatchBraces = true,
         ShowMatchingBrace = true,
         AutoOutlining = true,
-        EnableAsyncCompletion = true  // Background parsing
+        EnableAsyncCompletion = false  // Background parsing
         )]
 
     [ProvideLanguageExtension(typeof(NSLangServ), NSConst.FileExt)]

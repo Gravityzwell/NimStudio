@@ -15,8 +15,8 @@ using System.Runtime.InteropServices;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
 
 namespace NimStudio.NimStudio {
-    public partial class NSSource : Source {
 
+    public partial class NSSource : Source {
         public DateTime LastDirtyTime { get; private set; }
         public NSLangServ Service { get; private set; }
         public MethodData MethodData { get; private set; }
@@ -24,7 +24,7 @@ namespace NimStudio.NimStudio {
         public bool RegionsLoaded { get; set; }
         public ParseReason m_parse_reason;
         //public NSScanner m_scanner=null; // { get; set; }
-        private NSScanner m_scanner=null; // { get; set; }
+        public NSScanner m_scanner=null; // { get; set; }
 
         public NSSource(NSLangServ service, IVsTextLines textLines, Colorizer colorizer) : base(service, textLines, colorizer) {
 
@@ -307,17 +307,16 @@ namespace NimStudio.NimStudio {
 
         public override ParseRequest BeginParse(int line, int idx, TokenInfo info, ParseReason reason, IVsTextView view, ParseResultHandler callback) {
             //return base.BeginParse(line, idx, info, reason, view, callback);
+            m_parse_reason = ParseReason.Check;
+
             switch (reason) {
             case ParseReason.Autos:
                 break;
             case ParseReason.Check:
-                Debug.WriteLine("Source.BeginParse.Check");
-                m_parse_reason = ParseReason.Check;
-                Recolorize(0, this.LineCount);
-                return null;
-                //this.
-                //m_scanner
-                //break;
+                Debug.WriteLine("Source BeginParse Check");
+                //Recolorize(0, this.LineCount);
+                break;
+                //return null;
             case ParseReason.CodeSpan:
                 break;
             case ParseReason.CompleteWord:
@@ -344,7 +343,6 @@ namespace NimStudio.NimStudio {
                 break;
             }
 
-            Debug.WriteLine("Source.BeginParse: " + reason);
             return base.BeginParse(line, idx, info, reason, view, callback);
             //return null;
         }
@@ -402,6 +400,9 @@ namespace NimStudio.NimStudio {
 
         public override AuthoringSink CreateAuthoringSink(ParseReason reason, int line, int col) {
             //throw new NotImplementedException("Ooops");
+            //AuthoringSink as1 = new AuthoringSink(reason, line, col, 100);
+            //as1.ProcessHiddenRegions = true;
+            //return as1;
             return base.CreateAuthoringSink(reason, line, col);
         }
 
@@ -432,7 +433,8 @@ namespace NimStudio.NimStudio {
         }
 
         public override void ProcessHiddenRegions(System.Collections.ArrayList hiddenRegions) {
-            throw new NotImplementedException();
+            base.ProcessHiddenRegions(hiddenRegions);
+            return;
         }
 
         class TextSpanEqCmp : IEqualityComparer<TextSpan> {

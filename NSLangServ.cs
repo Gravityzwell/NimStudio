@@ -20,7 +20,7 @@ namespace NimStudio.NimStudio {
 
     public class NSLangServ: LanguageService {
         private NSScanner m_scanner;
-        private LanguagePreferences languageprefs;
+        private LanguagePreferences lang_prefs;
         public static IVsTextView textview_current;
         public static string codefile_path_current;
         public static System.IServiceProvider _serviceprovider_sys;
@@ -51,14 +51,17 @@ namespace NimStudio.NimStudio {
         }
 
         public override LanguagePreferences GetLanguagePreferences() {
-            if (languageprefs == null) {
-                languageprefs = new LanguagePreferences(this.Site, typeof(NSLangServ).GUID, this.Name);
-                if (this.languageprefs != null)
-                    this.languageprefs.Init();
-                languageprefs.ParameterInformation = true;
-                languageprefs.EnableQuickInfo = true;
+            if (lang_prefs == null) {
+                lang_prefs = new LanguagePreferences(this.Site, typeof(NSLangServ).GUID, this.Name);
+                if (this.lang_prefs != null)
+                    this.lang_prefs.Init();
+                lang_prefs.ParameterInformation = true;
+                lang_prefs.EnableQuickInfo = true;
+                lang_prefs.MaxRegionTime = 10000;
+                lang_prefs.AutoOutlining = true;
+                //LanguagePreferences 
             }
-            return this.languageprefs;
+            return this.lang_prefs;
         }
 
         public override IScanner GetScanner(IVsTextLines buffer) {
@@ -149,8 +152,70 @@ namespace NimStudio.NimStudio {
             return Microsoft.VisualStudio.VSConstants.S_OK;
         }
 
+        //[CLSCompliantAttribute(false)]
+        //public delegate void ParseResultHandler(ParseRequest request);
+
         public override AuthoringScope ParseSource(ParseRequest req) {
             NSUtil.DebugPrintAlways("ParseSource:" + req.Reason);
+            NSSource source = (NSSource)this.GetSource(req.FileName);
+            switch (req.Reason) {
+                case ParseReason.HighlightBraces:
+                case ParseReason.MatchBraces:
+                    break;
+                case ParseReason.Check:
+                    NSUtil.DebugPrintAlways("AuthoringScope ParseSource START");
+                    source.m_scanner.m_fullscan = true;
+                    source.Recolorize(0,source.LineCount);
+                    source.m_scanner.m_fullscan = false;
+                    NSUtil.DebugPrintAlways("AuthoringScope ParseSource END");
+                    return null;
+                    break;
+                case ParseReason.QuickInfo:
+
+                    //IVsTextLines buffer = null;
+                    //buffer = source.GetTextLines();
+                    //int totlines;
+                    //buffer.GetLineCount(out totlines);
+                    //LINEDATA[] ld;
+                    ////buffer.GetLineData(1,ld,null);
+                    //int linelen;
+                    //buffer.GetLengthOfLine(7,out linelen);
+                    //TextSpan hideSpan = new TextSpan();
+                    //hideSpan.iStartIndex = 1;
+                    //hideSpan.iStartLine = 10;
+                    //hideSpan.iEndIndex = linelen;
+                    //hideSpan.iEndLine = 13;
+                    //req.Sink.ProcessHiddenRegions = true;
+                    //req.Sink.AddHiddenRegion(hideSpan, "THIS");
+
+                    break;
+                case ParseReason.MemberSelectAndHighlightBraces:
+                    //if (source.Braces != null) {
+                    //    foreach (TextSpan[] brace in source.GetTextLines()) {
+                    //        if (brace.Length == 2) {
+                    //            if (req.Sink.HiddenRegions == true
+                    //                  && source.GetText(brace[0]).Equals("{")
+                    //                  && source.GetText(brace[1]).Equals("}")) {
+                    //                //construct a TextSpan of everything between the braces
+                    //                TextSpan hideSpan = new TextSpan();
+                    //                hideSpan.iStartIndex = brace[0].iStartIndex;
+                    //                hideSpan.iStartLine = brace[0].iStartLine;
+                    //                hideSpan.iEndIndex = brace[1].iEndIndex;
+                    //                hideSpan.iEndLine = brace[1].iEndLine;
+                    //                req.Sink.ProcessHiddenRegions = true;
+                    //                req.Sink.AddHiddenRegion(hideSpan);
+                    //            }
+                    //            req.Sink.MatchPair(brace[0], brace[1], 1);
+                    //        } else if (brace.Length >= 3)
+                    //            req.Sink.MatchTriple(brace[0], brace[1], brace[2], 1);
+                    //    }
+                    //}
+                    break;
+                default:
+                    break;
+            }
+            //return new MyAuthoringScope();
+
             return new NSAuthoringScope(req, req.FileName, "");
             //return req.Scope;
         }

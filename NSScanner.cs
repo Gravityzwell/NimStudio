@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.Package;
 using Microsoft.VisualStudio.TextManager.Interop;
 using System.Diagnostics;
 using VSTkColor = Microsoft.VisualStudio.Package.TokenColor;
+using System.Runtime.InteropServices;
 
 namespace NimStudio.NimStudio {
 
@@ -85,18 +86,73 @@ namespace NimStudio.NimStudio {
         }
 
         public override int ColorizeLine(int line, int length, IntPtr ptr, int state, uint[] attrs) {
+            //Debug.WriteLine("ColorizeLine");
+            if (m_scanner.m_nssource.m_parse_reason == ParseReason.Check && m_scanner.m_fullscan == true)
+                return 0;
+
             m_scanner.m_linenum_curr = line;
             int ret;
             ret = base.ColorizeLine(line, length, ptr, state, attrs);
             return ret;
+
+            int linepos = 0;
+            if (this.m_scanner != null) {
+                try {
+                    string text = Marshal.PtrToStringUni(ptr, length);
+                    this.m_scanner.SetSource(text, 0);
+                    TokenInfo tokenInfo = new TokenInfo();
+                    tokenInfo.EndIndex = -1;
+                    while (this.m_scanner.ScanTokenAndProvideInfoAboutIt(tokenInfo, ref state)) {
+                        if (attrs != null) {
+                            for (; linepos < tokenInfo.StartIndex; linepos++)
+                                attrs[linepos] = (uint)TokenColor.Text;
+                            for (; linepos <= tokenInfo.EndIndex; linepos++)
+                                attrs[linepos] = (uint)tokenInfo.Color;
+                        }
+                    }
+                } catch (Exception) {
+                }
+            }
+            if (attrs != null) {
+                for (; linepos < length; linepos++)
+                    attrs[linepos] = (uint)TokenColor.Text;
+            }
+            return state;
+
         }
     }
 
-    class NSScanner: IScanner {
+    public class NSTkM {
+
+        public List<Tk> m_arr=null;
+
+        public NSTkM() {
+            m_arr = new List<Tk>();
+        }
+
+        //public Arr
+
+        public class Tk {
+            public int line;
+            public int col;
+            public TkType type;
+            public int indent;
+            public Tk parent;
+        }
+
+
+        public void Add(int line, int col, TkType type) {
+        
+        }
+
+    }
+
+    public class NSScanner: IScanner {
         private IVsTextBuffer m_buffer;
         public NSSource m_nssource;
         public string m_source;
         public int m_linenum_curr;
+        public bool m_fullscan=false;
         // lexer.nim OpChars {'+', '-', '*', '/', '\\', '<', '>', '!', '?', '^', '.', '|', '=', '%', '&', '$', '@', '~', ':'}
         public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',', '=', ';', '+', '-', '/', '<', '>', '!', '?', '^', '|', '%', '&', '$', '@', '~'};
         public static string token_nums = "0123456789xX_'iIuUaAbBcCdDeEfF";
@@ -120,6 +176,10 @@ namespace NimStudio.NimStudio {
         // ScanTokenAndProvideInfoAboutIt calls TokenNextGet(state) to process subsequent tokens
         public void SetSource(string source, int offset) {
             // source is a line
+            if (m_fullscan) 
+                Debug.Print("Fullscan");
+            else
+                Debug.Print("Partscan");
             m_source = source.Substring(offset);
             m_tokenpos_start = 0;
             m_tokenpos_start_next = 0;
@@ -482,7 +542,7 @@ namespace NimStudio.NimStudio {
 
 
     [Flags]
-    enum NSScanState: int {
+    public enum NSScanState: int {
         None = 0,
         StringLitRaw = 1,
         StringLit = 2,
