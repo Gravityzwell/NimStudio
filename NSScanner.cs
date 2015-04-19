@@ -102,7 +102,7 @@ namespace NimStudio.NimStudio {
             //return ret;
 
             int linepos = 0;
-            try {
+            //try {
                 string text = Marshal.PtrToStringUni(ptr, length);
                 if (m_scanner.m_fullscan == 2) {
                     m_scanner.m_token_type = TkType.None;
@@ -123,9 +123,10 @@ namespace NimStudio.NimStudio {
                         m_scanner.m_fullscan=0;
 
                         for (uint tkloop = 0; tkloop < m_scanner.m_tkm.tk_tot; tkloop++) {
-                            if (m_scanner.m_tkm[tkloop].type == TkType.Other) {
+                            if (m_scanner.m_tkm[tkloop] != null && m_scanner.m_tkm[tkloop].type == TkType.Other) {
                                 //uint tkspot=tkloop;
-                                for (uint tkspot = tkloop; tkspot < m_scanner.m_tkm.tk_tot; tkspot++) {
+                                for (uint tkspot = tkloop+1; tkspot < m_scanner.m_tkm.tk_tot; tkspot++) {
+                                    if (m_scanner.m_tkm[tkspot]==null) break;
                                     if (m_scanner.m_tkm[tkspot].type==TkType.ParenLeft) {
                                         m_scanner.m_tkm[tkloop].type = TkType.Procedure;
                                         break;
@@ -139,16 +140,20 @@ namespace NimStudio.NimStudio {
                         }
                     }
                 } else {
-                    List<Tk> line_tk = (List<Tk>)m_scanner.m_tkm[linenum];
-                    TokenInfo tkinfo = new TokenInfo();
-                    foreach (Tk tk in line_tk) {
-                        m_scanner.TkTypeToTokenInfo(tkinfo, tk);
-                        if (attrs != null) {
-                            for (; linepos < tkinfo.StartIndex; linepos++)
-                                attrs[linepos] = (uint)TokenColor.Text;
+                    if (m_scanner.m_tkm.tk_tot>0) { 
+                        List<Tk> line_tk = (List<Tk>)m_scanner.m_tkm[linenum];
+                        if (line_tk != null) {
+                            TokenInfo tkinfo = new TokenInfo();
+                            foreach (Tk tk in line_tk) {
+                                m_scanner.TkTypeToTokenInfo(tkinfo, tk);
+                                if (attrs != null) {
+                                    for (; linepos < tkinfo.StartIndex; linepos++)
+                                        attrs[linepos] = (uint)TokenColor.Text;
 
-                            for (; linepos <= tkinfo.EndIndex; linepos++)
-                                attrs[linepos] = (uint)tkinfo.Color;
+                                    for (; linepos <= tkinfo.EndIndex; linepos++)
+                                        attrs[linepos] = (uint)tkinfo.Color;
+                                }
+                            }
                         }
                     }
                 }
@@ -163,9 +168,9 @@ namespace NimStudio.NimStudio {
                 //            attrs[linepos] = (uint)tokenInfo.Color;
                 //    }
                 //}
-            } catch (Exception e) {
-                Debug.WriteLine(e.Message);
-            }
+            //} catch (Exception e) {
+            //    Debug.WriteLine(e.Message);
+            //}
 
             //if (attrs != null) {
             //    for (; linepos < length; linepos++)
@@ -187,8 +192,13 @@ namespace NimStudio.NimStudio {
         }
 
         public List<Tk> this[int linenum] {
-            get { return m_arr[linenum]; }
-            set { m_arr[linenum] = value; }
+            get { 
+                if (linenum < this.m_arr.Count)
+                    return this.m_arr[linenum];
+                else
+                    return null;
+            }
+            set { this.m_arr[linenum] = value; }
         }
 
         public Tk this[int linenum, int col] {
@@ -241,6 +251,7 @@ namespace NimStudio.NimStudio {
 
         public void Clear() {
             m_arr.Clear();
+            tk_tot=0;
         }
     }
 
