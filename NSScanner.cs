@@ -81,9 +81,9 @@ namespace NimStudio.NimStudio {
             IsClosed = true;
         }
 
-        public void SetCurrentLine(int line) {
-            m_scanner.m_linenum_curr = line;
-        }
+        //public void SetCurrentLine(int line) {
+        //    m_scanner.m_linenum_curr = line;
+        //}
 
         public override int ColorizeLine(int linenum, int length, IntPtr ptr, int state, uint[] attrs) {
             //Debug.WriteLine("ColorizeLine");
@@ -91,12 +91,10 @@ namespace NimStudio.NimStudio {
                 return 0;
 
             if (m_scanner.m_nssource.m_parse_reason == ParseReason.Check && m_scanner.m_fullscan == 3) {
-                m_scanner.m_tkm.Clear();
-                m_scanner.m_fullscan=2;
-                m_scanner.m_indent=0;
+                m_scanner.FullScanInit();
             }
 
-            m_scanner.m_linenum_curr = linenum;
+            //m_scanner.m_linenum_curr = linenum;
             //int ret;
             //ret = base.ColorizeLine(line, length, ptr, state, attrs);
             //return ret;
@@ -105,40 +103,37 @@ namespace NimStudio.NimStudio {
             //try {
                 string text = Marshal.PtrToStringUni(ptr, length);
                 if (m_scanner.m_fullscan == 2) {
-                    m_scanner.m_token_type = TkType.None;
-                    m_scanner.m_source = text;
-                    m_scanner.m_tokenpos_start = 0;
-                    m_scanner.m_tokenpos_start_next = 0;
-                    m_scanner.m_tokens_delims.Clear();
-                    //for (int lspot=0; lspot < m_source.Length; lspot++) {
-                    //    if (token_delims.Contains(m_source[lspot]))
-                    //        m_tokens_delims.Add(lspot);
+                    m_scanner.FullScanLine(text, linenum);
+                    //m_scanner.m_token_type = TkType.None;
+                    //m_scanner.m_source = text;
+                    //m_scanner.m_tokenpos_start = 0;
+                    //m_scanner.m_tokenpos_start_next = 0;
+                    //m_scanner.m_tokens_delims.Clear();
+                    //while (m_scanner.m_token_type != TkType.Eof) {
+                    //    m_scanner.TokenNextGet2();
+                    //    m_scanner.m_tkm.Add(m_scanner.m_linenum_curr, m_scanner.m_tokenpos_start, m_scanner.m_tokenpos_start_next-1, 
+                    //        m_scanner.m_token_type, m_scanner.m_indent);
                     //}
-                    while (m_scanner.m_token_type != TkType.Eof) {
-                        m_scanner.TokenNextGet2();
-                        m_scanner.m_tkm.Add(m_scanner.m_linenum_curr, m_scanner.m_tokenpos_start, m_scanner.m_tokenpos_start_next-1, 
-                            m_scanner.m_token_type, m_scanner.m_indent);
-                    }
-                    if (linenum == m_scanner.m_nssource.LineCount - 1) {
-                        m_scanner.m_fullscan=0;
+                    //if (linenum == m_scanner.m_nssource.LineCount - 1) {
+                    //    m_scanner.m_fullscan=0;
 
-                        for (uint tkloop = 0; tkloop < m_scanner.m_tkm.tk_tot; tkloop++) {
-                            if (m_scanner.m_tkm[tkloop] != null && m_scanner.m_tkm[tkloop].type == TkType.Other) {
-                                //uint tkspot=tkloop;
-                                for (uint tkspot = tkloop+1; tkspot < m_scanner.m_tkm.tk_tot; tkspot++) {
-                                    if (m_scanner.m_tkm[tkspot]==null) break;
-                                    if (m_scanner.m_tkm[tkspot].type==TkType.ParenLeft) {
-                                        m_scanner.m_tkm[tkloop].type = TkType.Procedure;
-                                        break;
-                                    }
-                                    if (m_scanner.m_tkm[tkspot].type==TkType.Space) continue;
-                                    if (m_scanner.m_tkm[tkspot].type==TkType.Star) continue;
-                                    break;
-                                }
+                    //    for (uint tkloop = 0; tkloop < m_scanner.m_tkm.tk_tot; tkloop++) {
+                    //        if (m_scanner.m_tkm[tkloop] != null && m_scanner.m_tkm[tkloop].type == TkType.Other) {
+                    //            //uint tkspot=tkloop;
+                    //            for (uint tkspot = tkloop+1; tkspot < m_scanner.m_tkm.tk_tot; tkspot++) {
+                    //                if (m_scanner.m_tkm[tkspot]==null) break;
+                    //                if (m_scanner.m_tkm[tkspot].type==TkType.ParenLeft) {
+                    //                    m_scanner.m_tkm[tkloop].type = TkType.Procedure;
+                    //                    break;
+                    //                }
+                    //                if (m_scanner.m_tkm[tkspot].type==TkType.Space) continue;
+                    //                if (m_scanner.m_tkm[tkspot].type==TkType.Star) continue;
+                    //                break;
+                    //            }
 
-                            }
-                        }
-                    }
+                    //        }
+                    //    }
+                    //}
                 } else {
                     if (m_scanner.m_tkm.tk_tot>0) { 
                         List<Tk> line_tk = (List<Tk>)m_scanner.m_tkm[linenum];
@@ -275,7 +270,7 @@ namespace NimStudio.NimStudio {
         public NSSource m_nssource;
         public string m_source;
         public NSScanState m_state;
-        public int m_linenum_curr;
+        //public int m_linenum_curr;
         public int m_fullscan=0; // 3=start fullscan
         // lexer.nim OpChars {'+', '-', '*', '/', '\\', '<', '>', '!', '?', '^', '.', '|', '=', '%', '&', '$', '@', '~', ':'}
         public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',', '=', ';', '+', '-', '/', '<', '>', '!', '?', '^', '|', '%', '&', '$', '@', '~'};
@@ -287,7 +282,7 @@ namespace NimStudio.NimStudio {
         public TkType m_token_type_prev;
         public string m_token_keyword_prev;
         public char m_token_delim_prev='\0';
-        public List<int> m_tokens_delims=new List<int>();
+        //public List<int> m_tokens_delims=new List<int>();
         public NSTkM m_tkm;
 
         public NSScanner(IVsTextBuffer buffer) {
@@ -310,14 +305,50 @@ namespace NimStudio.NimStudio {
             m_source = source.Substring(offset);
             m_tokenpos_start = 0;
             m_tokenpos_start_next = 0;
-            m_tokens_delims.Clear();
-            for (int lspot=0; lspot < m_source.Length; lspot++) {
-                if (token_delims.Contains(m_source[lspot]))
-                    m_tokens_delims.Add(lspot);
-            }
+            //m_tokens_delims.Clear();
+            //for (int lspot=0; lspot < m_source.Length; lspot++) {
+            //    if (token_delims.Contains(m_source[lspot]))
+            //        m_tokens_delims.Add(lspot);
+            //}
             //m_tkm.Add(m_linenum_curr,m_tokenpos_start,m_tokenpos_start_next-1, m_token_type);
             //TokenNextGet(NSScanState.None);
 
+        }
+        public void FullScanInit() {
+            m_tkm.Clear();
+            m_fullscan=2;
+            m_indent=0;
+        }
+
+        public void FullScanLine(string text, int linenum) {
+            m_token_type = TkType.None;
+            m_source = text;
+            m_tokenpos_start = 0;
+            m_tokenpos_start_next = 0;
+            //m_tokens_delims.Clear();
+
+            while (m_token_type != TkType.Eof) {
+                TokenNextGet2();
+                m_tkm.Add(linenum, m_tokenpos_start, m_tokenpos_start_next-1, m_token_type, m_indent);
+            }
+            if (linenum == m_nssource.LineCount - 1) {
+                m_fullscan=0;
+                for (uint tkloop = 0; tkloop < m_tkm.tk_tot; tkloop++) {
+                    if (m_tkm[tkloop] != null && m_tkm[tkloop].type == TkType.Other) {
+                        //uint tkspot=tkloop;
+                        for (uint tkspot = tkloop+1; tkspot < m_tkm.tk_tot; tkspot++) {
+                            if (m_tkm[tkspot]==null) break;
+                            if (m_tkm[tkspot].type==TkType.ParenLeft) {
+                                m_tkm[tkloop].type = TkType.Procedure;
+                                break;
+                            }
+                            if (m_tkm[tkspot].type==TkType.Space) continue;
+                            if (m_tkm[tkspot].type==TkType.Star) continue;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         private bool CharNext(char ctest, int pos=1) {
@@ -334,15 +365,15 @@ namespace NimStudio.NimStudio {
             return m_source[m_tokenpos_start+1];
         }
 
-        private char DelimNext(int from_pos) {
-            if (from_pos >= m_source.Length)
-                return '\0';
-            int delimpos = m_source.IndexOfAny(NSScanner.token_delims, from_pos);
-            if (delimpos!=-1)
-                return m_token_delim_prev=m_source[delimpos];
-            else
-                return '\0';
-        }
+        //private char DelimNext(int from_pos) {
+        //    if (from_pos >= m_source.Length)
+        //        return '\0';
+        //    int delimpos = m_source.IndexOfAny(NSScanner.token_delims, from_pos);
+        //    if (delimpos!=-1)
+        //        return m_token_delim_prev=m_source[delimpos];
+        //    else
+        //        return '\0';
+        //}
 
         //public void TokenNextGet(NSScanState flags) {
 
@@ -826,8 +857,8 @@ namespace NimStudio.NimStudio {
             //    token_info.Type = TokenType.String;
             //}
             //state = (int)flags;
-            token_info.StartIndex = m_tokenpos_start;
-            token_info.EndIndex = m_tokenpos_start_next-1;
+            //token_info.StartIndex = m_tokenpos_start;
+            //token_info.EndIndex = m_tokenpos_start_next-1;
             token_info.StartIndex = tk.col_start;
             token_info.EndIndex = tk.col_end;
             //Debug.WriteLine("$" + m_source.Substring( m_tokenpos_start,m_tokenpos_start_next - 
