@@ -313,6 +313,11 @@ namespace NimStudio.NimStudio {
             case ParseReason.Autos:
                 break;
             case ParseReason.Check:
+                NSUtil.DebugPrintAlways("AuthoringScope ParseSource START");
+                m_scanner.m_fullscan = 3;
+                Recolorize(0,LineCount);
+                //m_scanner.m_fullscan = false;
+                NSUtil.DebugPrintAlways("AuthoringScope ParseSource END");
                 Debug.WriteLine("Source BeginParse Check");
                 //Recolorize(0, this.LineCount);
                 break;

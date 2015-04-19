@@ -163,12 +163,11 @@ namespace NimStudio.NimStudio {
                 case ParseReason.MatchBraces:
                     break;
                 case ParseReason.Check:
-                    NSUtil.DebugPrintAlways("AuthoringScope ParseSource START");
-                    source.m_scanner.m_fullscan = true;
-                    source.Recolorize(0,source.LineCount);
-                    source.m_scanner.m_fullscan = false;
-                    NSUtil.DebugPrintAlways("AuthoringScope ParseSource END");
-                    return null;
+                    //NSUtil.DebugPrintAlways("AuthoringScope ParseSource START");
+                    //source.m_scanner.m_fullscan = true;
+                    //source.Recolorize(0,source.LineCount);
+                    //source.m_scanner.m_fullscan = false;
+                    //NSUtil.DebugPrintAlways("AuthoringScope ParseSource END");
                     break;
                 case ParseReason.QuickInfo:
 
