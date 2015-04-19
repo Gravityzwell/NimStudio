@@ -465,6 +465,9 @@ namespace NimStudio.NimStudio {
             if (textView == null || Service == null || !Service.Preferences.EnableCodeSense)
                 return;
 
+            base.OnCommand(textView, command, ch);
+            return;
+
             int line, idx;
             textView.GetCaretPos(out line, out idx);
 
