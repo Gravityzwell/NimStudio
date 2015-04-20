@@ -246,6 +246,9 @@ namespace NimStudio.NimStudio {
                     case VSConstants.VSStd97CmdID.FileClose:
                         Debug.Print("Close");
                         break;
+                    case VSConstants.VSStd97CmdID.FileOpen:
+                        Debug.Print("FileOpen");
+                        break;
                 }
             }
 

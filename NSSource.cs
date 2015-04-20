@@ -307,18 +307,16 @@ namespace NimStudio.NimStudio {
 
         public override ParseRequest BeginParse(int line, int idx, TokenInfo info, ParseReason reason, IVsTextView view, ParseResultHandler callback) {
             //return base.BeginParse(line, idx, info, reason, view, callback);
-            m_parse_reason = ParseReason.Check;
 
             switch (reason) {
             case ParseReason.Autos:
                 break;
             case ParseReason.Check:
-                NSUtil.DebugPrintAlways("AuthoringScope ParseSource START");
-                m_scanner.m_fullscan = 3;
-                Recolorize(0,LineCount);
+                m_parse_reason = ParseReason.Check;
+                NSUtil.DebugPrintAlways("NSSource BeginParse Check");
+                //m_scanner.m_fullscan = 3;
+                //Recolorize(0,LineCount);
                 //m_scanner.m_fullscan = false;
-                NSUtil.DebugPrintAlways("AuthoringScope ParseSource END");
-                Debug.WriteLine("Source BeginParse Check");
                 //Recolorize(0, this.LineCount);
                 break;
                 //return null;
@@ -437,29 +435,29 @@ namespace NimStudio.NimStudio {
             */
         }
 
-        public override void ProcessHiddenRegions(System.Collections.ArrayList hiddenRegions) {
-            base.ProcessHiddenRegions(hiddenRegions);
-            return;
-        }
+        //public override void ProcessHiddenRegions(System.Collections.ArrayList hiddenRegions) {
+        //    base.ProcessHiddenRegions(hiddenRegions);
+        //    return;
+        //}
 
-        class TextSpanEqCmp : IEqualityComparer<TextSpan> {
-            public bool Equals(TextSpan x, TextSpan y) {
-                return x.iStartLine == y.iStartLine && x.iEndLine == y.iEndLine
-                       && x.iEndIndex == y.iEndIndex && x.iStartIndex == y.iStartIndex;
-            }
+        //class TextSpanEqCmp : IEqualityComparer<TextSpan> {
+        //    public bool Equals(TextSpan x, TextSpan y) {
+        //        return x.iStartLine == y.iStartLine && x.iEndLine == y.iEndLine
+        //               && x.iEndIndex == y.iEndIndex && x.iStartIndex == y.iStartIndex;
+        //    }
 
-            public int GetHashCode(TextSpan x) {
-                return x.iStartLine ^ x.iEndLine ^ x.iEndIndex ^ x.iStartIndex;
-            }
+        //    public int GetHashCode(TextSpan x) {
+        //        return x.iStartLine ^ x.iEndLine ^ x.iEndIndex ^ x.iStartIndex;
+        //    }
 
-            public static readonly TextSpanEqCmp Instance = new TextSpanEqCmp();
-        }
+        //    public static readonly TextSpanEqCmp Instance = new TextSpanEqCmp();
+        //}
 
-        bool _processingOfHiddenRegions;
+        //bool _processingOfHiddenRegions;
 
-        public override MethodData CreateMethodData() {
-            return MethodData = base.CreateMethodData();
-        }
+        //public override MethodData CreateMethodData() {
+        //    return MethodData = base.CreateMethodData();
+        //}
 
         public override void OnCommand(IVsTextView textView, VsCommands2K command, char ch) {
             if (textView == null || Service == null || !Service.Preferences.EnableCodeSense)
@@ -601,31 +599,31 @@ namespace NimStudio.NimStudio {
         int _oldIdx = -1;
         IVsTextView _oldTextView;
 
-        public void TryHighlightBraces1(IVsTextView textView) {
-            if (_processingOfHiddenRegions)
-                return;
+        //public void TryHighlightBraces1(IVsTextView textView) {
+        //    if (_processingOfHiddenRegions)
+        //        return;
 
-            if (textView == null)
-                return;
+        //    if (textView == null)
+        //        return;
 
-            if (Service == null || !Service.Preferences.EnableMatchBraces || !Service.Preferences.EnableMatchBracesAtCaret)
-                return;
+        //    if (Service == null || !Service.Preferences.EnableMatchBraces || !Service.Preferences.EnableMatchBracesAtCaret)
+        //        return;
 
-            int line, idx;
-            textView.GetCaretPos(out line, out idx);
+        //    int line, idx;
+        //    textView.GetCaretPos(out line, out idx);
 
-            _oldTextView = textView;
-            _oldLine = line;
-            _oldIdx = idx;
+        //    _oldTextView = textView;
+        //    _oldLine = line;
+        //    _oldIdx = idx;
 
-            TokenInfo tokenBeforeCaret = GetTokenInfo(line, idx);
-            TokenInfo tokenAfterCaret = GetTokenInfo(line, idx + 1);
+        //    TokenInfo tokenBeforeCaret = GetTokenInfo(line, idx);
+        //    TokenInfo tokenAfterCaret = GetTokenInfo(line, idx + 1);
 
-            if ((tokenAfterCaret.Trigger & TokenTriggers.MatchBraces) != 0)
-                HighlightBraces(textView, line, idx + 1);
-            else if ((tokenBeforeCaret.Trigger & TokenTriggers.MatchBraces) != 0)
-                HighlightBraces(textView, line, idx);
-        }
+        //    if ((tokenAfterCaret.Trigger & TokenTriggers.MatchBraces) != 0)
+        //        HighlightBraces(textView, line, idx + 1);
+        //    else if ((tokenBeforeCaret.Trigger & TokenTriggers.MatchBraces) != 0)
+        //        HighlightBraces(textView, line, idx);
+        //}
 
         private static bool IsInContent(string lileText, int col) {
             col--;
@@ -693,8 +691,8 @@ namespace NimStudio.NimStudio {
         public void OnSetFocus(IVsTextView view) {
             _oldLine = -1; // we should reset it. otherwise the TryHighlightBraces don't highlight braces
             _oldIdx = -1;
-
-            TryHighlightBraces1(view);
+            //return base.onsetfoc
+            //TryHighlightBraces1(view);
         }
 
 
@@ -705,23 +703,15 @@ namespace NimStudio.NimStudio {
                 SetText(lineIndex, 0, lineIndex + 1, 0, "");
             }
         }
-        /// <summary>Get text of line frome text bufer of IDE.</summary>
-        /// <param name="line">Line position (first line is 1).</param>
-        /// <returns>The text of line.</returns>
-        public new string GetLine(int line) {
-            line--; // Convert to zero based index.
 
-            #if DEBUG
-            //int lineCount = LineCount;
+        //public new string GetLine(int line) {
+        //    line--; // Convert to zero based index.
 
-            //if (line >= lineCount) // just for debugging purpose.
-            //  Debug.Assert(line < lineCount);
-            #endif
-
-            return base.GetLine(line);
-        }
+        //    return base.GetLine(line);
+        //}
 
         public int LineCount {
+            //return GetLineCount();
             get {
                 int lineCount;
                 int hr1 = GetTextLines().GetLineCount(out lineCount);

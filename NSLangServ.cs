@@ -9,6 +9,7 @@ using dcto = System.Collections.Generic.Dictionary<string, object>;
 
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Package;
 using Microsoft.VisualStudio.OLE.Interop;
@@ -19,7 +20,7 @@ using Microsoft.VisualStudio.Utilities;
 namespace NimStudio.NimStudio {
 
     public class NSLangServ: LanguageService {
-        private NSScanner m_scanner;
+        //private NSScanner m_scanner;
         private LanguagePreferences lang_prefs;
         public static IVsTextView textview_current;
         public static string codefile_path_current;
@@ -65,10 +66,32 @@ namespace NimStudio.NimStudio {
         }
 
         public override IScanner GetScanner(IVsTextLines buffer) {
-            if (m_scanner == null)
-                m_scanner = new NSScanner(buffer);
-            return m_scanner;
+            //if (m_scanner == null)
+            //    m_scanner = new NSScanner(buffer);
+            //return m_scanner;
+            var model = (Microsoft.VisualStudio.ComponentModelHost.IComponentModel)GetService(typeof(Microsoft.VisualStudio.ComponentModelHost.SComponentModel));
+            var adapterFactory = model.GetService<Microsoft.VisualStudio.Editor.IVsEditorAdaptersFactoryService>();
+
+            //var adapter = _serviceprovider_sys.GetService(typeof(IVsEditorAdaptersFactoryService));
+            //var model = GetService(typeof(SComponentModel)) as IComponentModel;
+            //var adapter = model.GetService<IVsEditorAdaptersFactoryService>();
+
+            //Source src = GetSource(buffer);
+            NSScanner nsscanner;
+            IVsTextBufferProvider buffprov = buffer as IVsTextBufferProvider;
+            //adapter.GetDocumentBuffer(srpTextLines);
+            Microsoft.VisualStudio.Text.ITextBuffer itb = adapterFactory.GetDocumentBuffer(buffer);
+            //it2.add
+            if (!itb.Properties.ContainsProperty("scanner_added")) {
+                nsscanner = new NSScanner(buffer);
+                itb.Properties.AddProperty("scanner_added", nsscanner);
+            }
+            return (NSScanner)itb.Properties.GetProperty("scanner_added");
+            //return null;
+            //return new NSScanner(buffer);
         }
+
+        //public override IScanner GetScanner(Microsoft.VisualStudio.Text.ITextBuffer buffer) {
 
         //public override CodeWindowManager CreateCodeWindowManager(IVsCodeWindow codewindow, Source source) {
         //    NSCodeWindow nscw = new NSCodeWindow(codewindow, source);
@@ -132,12 +155,27 @@ namespace NimStudio.NimStudio {
         }
 
         public override Source CreateSource(IVsTextLines buffer) {       
+            //return new NSSource(this, buffer, GetColorizer(buffer));
+            //return null;
+            /*
+            NSSource nss;
+            nss = new NSSource(this, buffer, null);
+
+            NSColorizer colorizer;
+            colorizer = new NSColorizer(this, buffer, (NSScanner)GetScanner(buffer));
+            nss.m_scanner = colorizer.Scanner as NSScanner;
+            nss.m_scanner.m_nssource = nss;
+
+            return nss; */
+
             return new NSSource(this, buffer, GetColorizer(buffer));
         }
 
 
         public override Colorizer GetColorizer(IVsTextLines buffer) {
+            //return null;
             NSColorizer colorizer;
+            //Source src = GetSource(buffer);
             colorizer = new NSColorizer(this, buffer, (NSScanner)GetScanner(buffer));
             return colorizer;
         }
@@ -156,14 +194,16 @@ namespace NimStudio.NimStudio {
         //public delegate void ParseResultHandler(ParseRequest request);
 
         public override AuthoringScope ParseSource(ParseRequest req) {
-            NSUtil.DebugPrintAlways("ParseSource:" + req.Reason);
             NSSource source = (NSSource)this.GetSource(req.FileName);
             switch (req.Reason) {
                 case ParseReason.HighlightBraces:
                 case ParseReason.MatchBraces:
                     break;
                 case ParseReason.Check:
-                    //NSUtil.DebugPrintAlways("AuthoringScope ParseSource START");
+                    NSUtil.DebugPrintAlways("AuthoringScope ParseSource Check");
+                    source.m_scanner.m_fullscan = 3;
+                    source.Recolorize(0,source.LineCount);
+
                     //source.m_scanner.m_fullscan = true;
                     //source.Recolorize(0,source.LineCount);
                     //source.m_scanner.m_fullscan = false;

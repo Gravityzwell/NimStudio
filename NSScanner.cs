@@ -135,6 +135,7 @@ namespace NimStudio.NimStudio {
                     //    }
                     //}
                 } else {
+                    Debug.WriteLine("Partial:" + linenum.ToString());
                     if (m_scanner.m_tkm.tk_tot>0) { 
                         List<Tk> line_tk = (List<Tk>)m_scanner.m_tkm[linenum];
                         if (line_tk != null) {
@@ -142,10 +143,10 @@ namespace NimStudio.NimStudio {
                             foreach (Tk tk in line_tk) {
                                 m_scanner.TkTypeToTokenInfo(tkinfo, tk);
                                 if (attrs != null) {
-                                    for (; linepos < tkinfo.StartIndex; linepos++)
+                                    for (; linepos < tkinfo.StartIndex && linepos < attrs.Length; linepos++)
                                         attrs[linepos] = (uint)TokenColor.Text;
 
-                                    for (; linepos <= tkinfo.EndIndex; linepos++)
+                                    for (; linepos <= tkinfo.EndIndex && linepos < attrs.Length; linepos++)
                                         attrs[linepos] = (uint)tkinfo.Color;
                                 }
                             }
@@ -315,6 +316,7 @@ namespace NimStudio.NimStudio {
 
         }
         public void FullScanInit() {
+            Debug.WriteLine("FullScanInit");
             m_tkm.Clear();
             m_fullscan=2;
             m_indent=0;
