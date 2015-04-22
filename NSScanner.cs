@@ -64,9 +64,11 @@ namespace NimStudio.NimStudio {
 
     class NSColorizer : Colorizer, IDisposable {
         private NSScanner m_scanner;
+        private IVsTextLines m_buffer;
 
         public NSColorizer(NSLangServ ls, IVsTextLines buffer, NSScanner scanner): base(ls, buffer, scanner) {
             m_scanner = scanner;
+            m_buffer = buffer;
         }
 
         public bool IsClosed { get; private set; }
@@ -90,9 +92,9 @@ namespace NimStudio.NimStudio {
             if (m_scanner.m_nssource == null) 
                 return 0;
 
-            if (m_scanner.m_nssource.m_parse_reason == ParseReason.Check && m_scanner.m_fullscan == 3) {
-                m_scanner.FullScanInit();
-            }
+            //if (m_scanner.m_nssource.m_parse_reason == ParseReason.Check && m_scanner.m_fullscan == 3) {
+            //    m_scanner.FullScanInit();
+            //}
 
             //m_scanner.m_linenum_curr = linenum;
             //int ret;
@@ -135,8 +137,8 @@ namespace NimStudio.NimStudio {
                     //    }
                     //}
                 } else {
-                    Debug.WriteLine("Partial:" + linenum.ToString());
                     if (m_scanner.m_tkm.tk_tot>0) { 
+                        Debug.WriteLine("Partial:" + linenum.ToString());
                         List<Tk> line_tk = (List<Tk>)m_scanner.m_tkm[linenum];
                         if (line_tk != null) {
                             TokenInfo tkinfo = new TokenInfo();
@@ -216,13 +218,6 @@ namespace NimStudio.NimStudio {
                         return m_arr[line_idx][colget];
                     }
                     linestot += m_arr[line_idx].Count;
-                    // l0=10
-                    // l1=5
-                    // l2=20
-                    // l3 = 100
-                    // tkidx = 11
-                    // 
-
                 }
                 return null; 
             }
@@ -273,6 +268,7 @@ namespace NimStudio.NimStudio {
         public NSScanState m_state;
         //public int m_linenum_curr;
         public int m_fullscan=0; // 3=start fullscan
+        public string m_full_text;
         // lexer.nim OpChars {'+', '-', '*', '/', '\\', '<', '>', '!', '?', '^', '.', '|', '=', '%', '&', '$', '@', '~', ':'}
         public static char[] token_delims = new char[] { ' ', '"', '(', ')', '*', ':', '.', '[', ']', ',', '=', ';', '+', '-', '/', '<', '>', '!', '?', '^', '|', '%', '&', '$', '@', '~'};
         public static string token_nums = "0123456789xX_'iIuUaAbBcCdDeEfF";
@@ -320,6 +316,19 @@ namespace NimStudio.NimStudio {
             m_tkm.Clear();
             m_fullscan=2;
             m_indent=0;
+            int lines_tot;
+            int col_last;
+            m_buffer.GetLastLineIndex(out lines_tot, out col_last);
+            string line_text;
+            int line_end_idx;
+            IVsTextLines tlines = m_buffer as IVsTextLines;
+            for (int line_loop=0; line_loop < lines_tot; line_loop++) {
+                tlines.GetLengthOfLine(line_loop, out line_end_idx);
+                tlines.GetLineText(line_loop, 0, line_end_idx, line_end_idx, out line_text);
+            
+            }
+            Debug.WriteLine("FullScanInit");
+        
         }
 
         public void FullScanLine(string text, int linenum) {
@@ -328,13 +337,14 @@ namespace NimStudio.NimStudio {
             m_tokenpos_start = 0;
             m_tokenpos_start_next = 0;
             //m_tokens_delims.Clear();
-
-            while (m_token_type != TkType.Eof) {
+            Debug.WriteLine("FullScanLine" + linenum.ToString());
+            while (m_token_type != TkType.EOL) {
                 TokenNextGet2();
                 m_tkm.Add(linenum, m_tokenpos_start, m_tokenpos_start_next-1, m_token_type, m_indent);
             }
             if (linenum == m_nssource.LineCount - 1) {
                 m_fullscan=0;
+                Debug.WriteLine("FullScanLine m_fullscan=0");
                 for (uint tkloop = 0; tkloop < m_tkm.tk_tot; tkloop++) {
                     if (m_tkm[tkloop] != null && m_tkm[tkloop].type == TkType.Other) {
                         //uint tkspot=tkloop;
@@ -556,7 +566,7 @@ namespace NimStudio.NimStudio {
 
             m_tokenpos_start = m_tokenpos_start_next;
             if (m_tokenpos_start_next >= m_source.Length) {
-                m_token_type = TkType.Eof;
+                m_token_type = TkType.EOL;
                 return;
             }
 
@@ -736,7 +746,7 @@ namespace NimStudio.NimStudio {
             //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Second.ToString());
             //Debug.Print("ScanTokenAndProvideInfoAboutIt " + DateTime.Now.Millisecond.ToString());
             switch (tk.type) {
-                case TkType.Eof:
+                case TkType.EOL:
                     token_info.StartIndex=-1;
                     return false; // end of line
                 case TkType.None:
@@ -912,7 +922,7 @@ namespace NimStudio.NimStudio {
         DataType,
         Directive, 
         Dot, 
-        Eof, 
+        EOL, 
         Escape,
         Hyperlink, 
         Identifier, 
