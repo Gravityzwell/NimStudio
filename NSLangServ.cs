@@ -201,8 +201,7 @@ namespace NimStudio.NimStudio {
                     break;
                 case ParseReason.Check:
                     NSUtil.DebugPrintAlways("AuthoringScope ParseSource Check");
-                    source.m_scanner.m_fullscan = 3;
-                    source.m_scanner.FullScanInit();
+                    source.m_scanner.FullScan();
                     source.Recolorize(0,source.LineCount);
 
                     //source.m_scanner.m_fullscan = true;
