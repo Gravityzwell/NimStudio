@@ -17,7 +17,8 @@ using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
 namespace NimStudio.NimStudio {
 
     public partial class NSSource : Source {
-        public DateTime LastDirtyTime { get; private set; }
+        public DateTime DirtyTime { get; private set; }
+        public int FullScanTime;
         public NSLangServ Service { get; private set; }
         public MethodData MethodData { get; private set; }
         public int TimeStamp { get; private set; }
@@ -37,7 +38,8 @@ namespace NimStudio.NimStudio {
 
             //Scanner = colorizer.Scanner as NSScanner;
             LastParseTime = 0;
-            LastDirtyTime = DateTime.Now;
+            DirtyTime = DateTime.Now;
+            FullScanTime = 0;
         }
 
         public IVsTextLines TextLines { get {
@@ -49,6 +51,7 @@ namespace NimStudio.NimStudio {
 
         public override void OnChangeLineText(TextLineChange[] lineChange, int last) {
             base.OnChangeLineText(lineChange, last);
+            FullScanTime = System.Environment.TickCount;
             TimeStamp++;
 
             //if (Scanner != null && Scanner.GetLexer().ClearHoverHighlights()) {
@@ -101,7 +104,7 @@ namespace NimStudio.NimStudio {
                 //Debug.WriteLine("IsDirty = " + value);
                 base.IsDirty = value;
                 if (value)
-                    LastDirtyTime = DateTime.Now;
+                    DirtyTime = DateTime.Now;
                 //else
                 //  LastParseTime = System.DateTime.Now;
             }
@@ -296,13 +299,26 @@ namespace NimStudio.NimStudio {
 
         public override void OnIdle(bool periodic) {
             //Source src = this.GetSource(this.LastActiveTextView);
+            if (!periodic || !IsDirty) {
+                return; 
+            }
+
             if (LastParseTime >= Int32.MaxValue >> 12) {
-                LastParseTime = 0;
+                //LastParseTime = 0;
             }
             //if (src != null && src.LastParseTime >= Int32.MaxValue >> 12) {
             //    src.LastParseTime = 0;
             //}
-            base.OnIdle(periodic);
+
+            int msec = System.Environment.TickCount;
+            if ((msec > FullScanTime + 4000) ) {
+                
+                Debug.Print("FullScan OnIdle");
+                FullScanTime = System.Environment.TickCount;
+                    //this.BeginParse(0, 0, new TokenInfo(), ParseReason.Check, null, new ParseResultHandler(this.HandleParseResponse));
+                    //this.dirty = false;
+            }
+            //base.OnIdle(periodic);
         }
 
         public override ParseRequest BeginParse(int line, int idx, TokenInfo info, ParseReason reason, IVsTextView view, ParseResultHandler callback) {

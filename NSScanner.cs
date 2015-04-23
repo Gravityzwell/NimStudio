@@ -253,8 +253,10 @@ namespace NimStudio.NimStudio {
             //TokenNextGet(NSScanState.None);
 
         }
+
         public void FullScan() {
             Debug.WriteLine("FullScan");
+            m_nssource.FullScanTime = System.Environment.TickCount;
             m_tkm.Clear();
             //m_fullscan=2;
             m_indent=0;
